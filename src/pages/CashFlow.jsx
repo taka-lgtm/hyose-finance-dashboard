@@ -7,9 +7,13 @@ import { useSettings } from "../contexts/SettingsContext";
 Chart.register(...registerables);
 
 export default function CashFlow({ cfData, saveCF }) {
-  const { settings } = useSettings();
+  const { settings, fiscalMonths } = useSettings();
   const safetyLine = settings.safetyLine;
-  const CF = cfData && cfData.length > 0 ? cfData : DEFAULT_CF;
+  // 決算月の順序に並び替え
+  const rawCF = cfData && cfData.length > 0 ? cfData : DEFAULT_CF;
+  const CF = rawCF.length > 0
+    ? [...rawCF].sort((a, b) => fiscalMonths.indexOf(a.m) - fiscalMonths.indexOf(b.m))
+    : rawCF;
   const hasData = CF.length > 0;
   const min = hasData ? Math.min(...CF.map((v) => v.残高)) : 0;
   const max = hasData ? Math.max(...CF.map((v) => v.残高)) : 0;
