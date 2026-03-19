@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
 import { Chart, registerables } from "chart.js";
-import { PL as DEFAULT_PL, BS as DEFAULT_BS, CF, ALERTS, M, pct, sgn, lvl, calcHealth, calcLoanDerived, chartFont, chartGrid, chartLegend } from "../data";
+import { PL as DEFAULT_PL, BS as DEFAULT_BS, CF, ALERTS, M, MY, pct, sgn, lvl, calcHealth, calcLoanDerived, chartFont, chartGrid, chartLegend } from "../data";
 import Sparkline from "../components/Sparkline";
 
 Chart.register(...registerables);
@@ -131,10 +131,10 @@ export default function Overview({ loans, navigate, plData, bsData }) {
           <div className="k-row">
             <div>
               <div className="k-label">借入残高</div>
-              <div className="k-val">{M(tBal)}</div>
-              <div className="k-ctx">加重平均 {wRate}% / 月返済 {M(tMon)}</div>
+              <div className="k-val">{MY(tBal)}</div>
+              <div className="k-ctx">加重平均 {wRate}% / 月返済 {MY(tMon)}</div>
             </div>
-            <Sparkline data={[19320, 17320, 15320, tBal].reverse()} color="#e5a83a" />
+            <Sparkline data={[tBal * 1.08, tBal * 1.05, tBal * 1.02, tBal]} color="#e5a83a" />
           </div>
           <div className="k-foot"><span>変動{loans.filter((l) => l.rt === "変動").length}件</span><span>償還 {dy.toFixed(1)}年</span></div>
         </div>
