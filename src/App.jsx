@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { SettingsProvider } from "./contexts/SettingsContext";
 import Login from "./pages/Login";
 import Layout from "./components/Layout";
 import Overview from "./pages/Overview";
@@ -9,6 +10,7 @@ import CashFlow from "./pages/CashFlow";
 import Debt from "./pages/Debt";
 import Actions from "./pages/Actions";
 import Users from "./pages/Users";
+import Settings from "./pages/Settings";
 import { INITIAL_LOANS, PL as DEFAULT_PL, BS as DEFAULT_BS, BUDGET_MONTHLY as DEFAULT_BM, CF as DEFAULT_CF } from "./data";
 import { fetchLoans, addLoanDoc, updateLoanDoc, deleteLoanDoc, seedLoansIfEmpty, fetchFinancialData, saveFinancialData, addLoanLog } from "./lib/firestore";
 
@@ -150,6 +152,7 @@ function Dashboard() {
     debt: <Debt loans={loans} addLoan={addLoan} updateLoan={updateLoan} removeLoan={removeLoan} loading={loansLoading} />,
     actions: <Actions />,
     users: <Users />,
+    settings: <Settings />,
   };
 
   return (
@@ -168,7 +171,9 @@ function Dashboard() {
 export default function App() {
   return (
     <AuthProvider>
-      <Dashboard />
+      <SettingsProvider>
+        <Dashboard />
+      </SettingsProvider>
     </AuthProvider>
   );
 }

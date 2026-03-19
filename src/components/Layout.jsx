@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { lastPL, pct, sgn } from "../data";
 import { useAuth } from "../contexts/AuthContext";
+import { useSettings } from "../contexts/SettingsContext";
 
 const NAV = [
   { id: "overview", label: "経営概況", icon: "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z|M9 22V12h6v10" },
@@ -10,6 +11,7 @@ const NAV = [
   { id: "debt", label: "融資管理", badgeFn: true, icon: "M2 5h20v14H2z|M2 10h20" },
   { id: "actions", label: "アクション", badge: "4", icon: "M10.268 21a2 2 0 0 0 3.464 0|M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" },
   { id: "users", label: "ユーザー管理", icon: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2|M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8|M23 21v-2a4 4 0 0 0-3-3.87|M16 3.13a4 4 0 0 1 0 7.75" },
+  { id: "settings", label: "設定", icon: "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z|M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" },
 ];
 
 function NavIcon({ d }) {
@@ -22,6 +24,7 @@ function NavIcon({ d }) {
 
 export default function Layout({ page, navigate, loans, children }) {
   const { userDoc, logout } = useAuth();
+  const { settings } = useSettings();
   const [menuOpen, setMenuOpen] = useState(false);
   const sg = pct(lastPL.売上高, lastPL.予算売上);
   const og = pct(lastPL.営業利益, lastPL.予算営業利益);
@@ -43,8 +46,10 @@ export default function Layout({ page, navigate, loans, children }) {
       <aside className="nav nav-desktop">
         <div className="nb">
           <div className="nb-row">
-            <div className="nb-logo">H</div>
-            <div className="nb-text">HYOSE<small>Command Center</small></div>
+            {settings.logoUrl
+              ? <img src={settings.logoUrl} alt="" className="nb-logo-img" />
+              : <div className="nb-logo">{(settings.companyName || "H")[0]}</div>}
+            <div className="nb-text">{settings.companyName || "HYOSE"}<small>Command Center</small></div>
           </div>
         </div>
         <div className="nh">
@@ -89,8 +94,10 @@ export default function Layout({ page, navigate, loans, children }) {
           <span className={`mob-hamburger-line ${menuOpen?"open":""}`} />
         </button>
         <div className="mob-header-brand">
-          <div className="mob-logo">H</div>
-          <span className="mob-brand-text">HYOSE</span>
+          {settings.logoUrl
+            ? <img src={settings.logoUrl} alt="" className="mob-logo-img" />
+            : <div className="mob-logo">{(settings.companyName || "H")[0]}</div>}
+          <span className="mob-brand-text">{settings.companyName || "HYOSE"}</span>
         </div>
         <div className="mob-header-right">
           {userDoc?.photoURL
@@ -104,8 +111,10 @@ export default function Layout({ page, navigate, loans, children }) {
       <nav className={`mob-drawer ${menuOpen?"open":""}`}>
         <div className="mob-drawer-head">
           <div className="mob-drawer-brand">
-            <div className="nb-logo">H</div>
-            <div className="nb-text">HYOSE<small>Command Center</small></div>
+            {settings.logoUrl
+              ? <img src={settings.logoUrl} alt="" className="nb-logo-img" />
+              : <div className="nb-logo">{(settings.companyName || "H")[0]}</div>}
+            <div className="nb-text">{settings.companyName || "HYOSE"}<small>Command Center</small></div>
           </div>
         </div>
         <div className="mob-drawer-health">

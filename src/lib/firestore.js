@@ -74,6 +74,27 @@ export async function fetchLoanLogs(limit = 100) {
 }
 
 // ═══════════════════════════════
+// SETTINGS（会社設定）
+// ═══════════════════════════════
+
+const SETTINGS_DOC = "settings";
+const SETTINGS_ID = "general";
+
+export async function fetchSettings() {
+  const snap = await getDocs(collection(db, SETTINGS_DOC));
+  const result = {};
+  snap.docs.forEach((d) => { result[d.id] = d.data(); });
+  return result[SETTINGS_ID] || null;
+}
+
+export async function saveSettings(data) {
+  await setDoc(doc(db, SETTINGS_DOC, SETTINGS_ID), {
+    ...data,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+// ═══════════════════════════════
 // SEED: Initialize Firestore with default data
 // ═══════════════════════════════
 
