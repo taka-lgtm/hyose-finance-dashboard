@@ -37,10 +37,6 @@ export const BUDGET_MONTHLY = MONTHS.map((m, i) => {
 });
 
 // ── 融資データ（円単位・CSVベースの実データ） ──
-// 月別残高推移の月ラベル（長期）
-export const PROJ_MONTHS = ["2026/01", "2026/02", "2026/03", "2026/04", "2026/05", "2026/06", "2026/07", "2026/08", "2026/09", "2026/10", "2026/11", "2026/12"];
-// 月別残高推移の月ラベル（短期・当座貸越）
-export const PROJ_MONTHS_SHORT = ["2025/03", "2025/04", "2025/05", "2025/06", "2025/07", "2025/08", "2025/09", "2025/10", "2025/11", "2025/12", "2026/01", "2026/02"];
 
 export const INITIAL_LOANS = [
   // ── 長期借入 23件 ──
@@ -51,7 +47,6 @@ export const INITIAL_LOANS = [
     rt: "変動", baseRate: 1.25, guaranteeFee: 0, rate: 1.25,
     condition: "P", guaranteeOrg: "", guaranteeType: "", guaranteeSec: "", guaranteePlan: "",
     collateral: "プロパー", method: "元金均等", grace: 0,
-    projections: [30841000, 30008000, 29175000, 28342000, 27509000, 26676000, 25843000, 25010000, 24177000, 23344000, 22511000, 21678000],
     notes: "",
   },
   {
@@ -61,7 +56,6 @@ export const INITIAL_LOANS = [
     rt: "固定", baseRate: 0.46, guaranteeFee: 1.36, rate: 1.82,
     condition: "P", guaranteeOrg: "", guaranteeType: "", guaranteeSec: "", guaranteePlan: "",
     collateral: "プロパー", method: "元金均等", grace: 0,
-    projections: [13680000, 13395000, 13110000, 12825000, 12540000, 12255000, 11970000, 11685000, 11400000, 11115000, 10830000, 10545000],
     notes: "当初3年0.46％、以降1.36％",
   },
   {
@@ -71,7 +65,6 @@ export const INITIAL_LOANS = [
     rt: "固定", baseRate: 0.45, guaranteeFee: 1.35, rate: 1.80,
     condition: "P", guaranteeOrg: "", guaranteeType: "", guaranteeSec: "", guaranteePlan: "",
     collateral: "プロパー", method: "元金均等", grace: 0,
-    projections: [70000000, 69500000, 69000000, 68500000, 68000000, 67500000, 67000000, 66500000, 66000000, 65500000, 65000000, 64500000],
     notes: "当初3年0.45％、以降1.35％",
   },
   {
@@ -81,7 +74,6 @@ export const INITIAL_LOANS = [
     rt: "固定", baseRate: 0.30, guaranteeFee: 0, rate: 0.30,
     condition: "P", guaranteeOrg: "", guaranteeType: "", guaranteeSec: "", guaranteePlan: "",
     collateral: "プロパー", method: "元金均等", grace: 0,
-    projections: [30400000, 29920000, 29440000, 28960000, 28480000, 28000000, 27520000, 27040000, 26560000, 26080000, 25600000, 25120000],
     notes: "",
   },
   {
@@ -91,7 +83,6 @@ export const INITIAL_LOANS = [
     rt: "固定", baseRate: 0.70, guaranteeFee: 0, rate: 0.70,
     condition: "P", guaranteeOrg: "", guaranteeType: "", guaranteeSec: "", guaranteePlan: "",
     collateral: "プロパー", method: "元金均等", grace: 0,
-    projections: [45920000, 45440000, 44960000, 44480000, 44000000, 43520000, 43040000, 42560000, 42080000, 41600000, 41120000, 40640000],
     notes: "",
   },
   {
@@ -101,7 +92,6 @@ export const INITIAL_LOANS = [
     rt: "固定", baseRate: 1.06, guaranteeFee: 0, rate: 1.06,
     condition: "P", guaranteeOrg: "", guaranteeType: "", guaranteeSec: "", guaranteePlan: "",
     collateral: "プロパー", method: "元金均等", grace: 0,
-    projections: [26881000, 26762000, 26643000, 26524000, 26405000, 26286000, 26167000, 26048000, 25929000, 25810000, 25691000, 25572000],
     notes: "2019.12.16～返済",
   },
   {
@@ -111,7 +101,6 @@ export const INITIAL_LOANS = [
     rt: "変動", baseRate: 1.25, guaranteeFee: 0, rate: 1.25,
     condition: "P", guaranteeOrg: "", guaranteeType: "", guaranteeSec: "", guaranteePlan: "",
     collateral: "プロパー", method: "元金均等", grace: 0,
-    projections: [15658000, 15324000, 14990000, 14656000, 14322000, 13988000, 13654000, 13320000, 12986000, 12652000, 12318000, 11984000],
     notes: "",
   },
   {
@@ -121,7 +110,6 @@ export const INITIAL_LOANS = [
     rt: "変動", baseRate: 1.00, guaranteeFee: 0, rate: 1.00,
     condition: "P", guaranteeOrg: "", guaranteeType: "", guaranteeSec: "", guaranteePlan: "",
     collateral: "プロパー", method: "元金均等", grace: 0,
-    projections: [1630000, 1296000, 962000, 628000, 294000, -40000, -374000, -708000, -1042000, -1376000, -1710000, -2044000],
     notes: "2017.4.17～返済開始",
   },
   {
@@ -131,7 +119,6 @@ export const INITIAL_LOANS = [
     rt: "変動", baseRate: 0.80, guaranteeFee: 0, rate: 0.80,
     condition: "保", guaranteeOrg: "国", guaranteeType: "一般", guaranteeSec: "無担保", guaranteePlan: "伴走特別一般",
     collateral: "保証協会", method: "元金均等", grace: 0,
-    projections: [19086000, 18827000, 18568000, 18309000, 18050000, 17791000, 17532000, 17273000, 17014000, 16755000, 16496000, 16237000],
     notes: "",
   },
   {
@@ -141,7 +128,6 @@ export const INITIAL_LOANS = [
     rt: "変動", baseRate: 0.80, guaranteeFee: 0, rate: 0.80,
     condition: "保", guaranteeOrg: "国", guaranteeType: "セーフティ", guaranteeSec: "無担保", guaranteePlan: "伴走特別",
     collateral: "保証協会", method: "元金均等", grace: 0,
-    projections: [5550000, 5475000, 5400000, 5325000, 5250000, 5175000, 5100000, 5025000, 4950000, 4875000, 4800000, 4725000],
     notes: "プロパー",
   },
   {
@@ -151,7 +137,6 @@ export const INITIAL_LOANS = [
     rt: "固定", baseRate: 0.70, guaranteeFee: 0, rate: 0.70,
     condition: "保", guaranteeOrg: "県", guaranteeType: "コロナ", guaranteeSec: "無担保", guaranteePlan: "県経滑保証料応",
     collateral: "保証協会", method: "元金均等", grace: 24,
-    projections: [11600000, 11390000, 11180000, 10970000, 10760000, 10550000, 10340000, 10130000, 9920000, 9710000, 9500000, 9290000],
     notes: "返済R4.10.17～ コロナ-利息のみR2.10.15～支払、R4.10.15～21万円返済",
   },
   {
@@ -161,7 +146,6 @@ export const INITIAL_LOANS = [
     rt: "固定", baseRate: 0.70, guaranteeFee: 0, rate: 0.70,
     condition: "保", guaranteeOrg: "県", guaranteeType: "セーフティ", guaranteeSec: "無担保", guaranteePlan: "県経滑保証料応",
     collateral: "保証協会", method: "元金均等", grace: 25,
-    projections: [19120000, 18800000, 18480000, 18160000, 17840000, 17520000, 17200000, 16880000, 16560000, 16240000, 15920000, 15600000],
     notes: "返済R5.4.17～ コロナ3年間利子補給、25ヶ月～117ヶ月32万、118ヶ月～24万円返済",
   },
   {
@@ -171,7 +155,6 @@ export const INITIAL_LOANS = [
     rt: "固定", baseRate: 0.70, guaranteeFee: 0, rate: 0.70,
     condition: "保", guaranteeOrg: "国", guaranteeType: "コロナ", guaranteeSec: "無担保", guaranteePlan: "県コロナ対応全額",
     collateral: "保証協会", method: "元金均等", grace: 36,
-    projections: [44160000, 43440000, 42720000, 42000000, 41280000, 40560000, 39840000, 39120000, 38400000, 37680000, 36960000, 36240000],
     notes: "県コロナ対応全額 保証料￥0 37ヶ月～119ヶ月72万円、120ヶ月目24万円",
   },
   {
@@ -181,7 +164,6 @@ export const INITIAL_LOANS = [
     rt: "変動", baseRate: 0.90, guaranteeFee: 0.48, rate: 1.38,
     condition: "保", guaranteeOrg: "", guaranteeType: "一般", guaranteeSec: "有担保", guaranteePlan: "リードα",
     collateral: "保証協会", method: "元金均等", grace: 0,
-    projections: [42900000, 42350000, 41800000, 41250000, 40700000, 40150000, 39600000, 39050000, 38500000, 37950000, 37400000, 36850000],
     notes: "保証料 1,742,400",
   },
   {
@@ -191,7 +173,6 @@ export const INITIAL_LOANS = [
     rt: "変動", baseRate: 0, guaranteeFee: 0, rate: 1.28,
     condition: "保", guaranteeOrg: "", guaranteeType: "", guaranteeSec: "", guaranteePlan: "",
     collateral: "保証協会", method: "元金均等", grace: 0,
-    projections: [43700000, 43280000, 42860000, 42440000, 42020000, 41600000, 41180000, 40760000, 40340000, 39920000, 39500000, 39080000],
     notes: "保証料 897,600",
   },
   {
@@ -201,7 +182,6 @@ export const INITIAL_LOANS = [
     rt: "変動", baseRate: 1.62, guaranteeFee: 0, rate: 1.62,
     condition: "P", guaranteeOrg: "", guaranteeType: "", guaranteeSec: "", guaranteePlan: "",
     collateral: "プロパー", method: "元金均等", grace: 0,
-    projections: [24500000, 24000000, 23500000, 23000000, 22500000, 22000000, 21500000, 21000000, 20500000, 20000000, 19500000, 19000000],
     notes: "",
   },
   {
@@ -211,7 +191,6 @@ export const INITIAL_LOANS = [
     rt: "変動", baseRate: 1.20, guaranteeFee: 0, rate: 1.20,
     condition: "P", guaranteeOrg: "", guaranteeType: "", guaranteeSec: "", guaranteePlan: "",
     collateral: "プロパー", method: "元金均等", grace: 0,
-    projections: [25500000, 30000000, 29500000, 29000000, 28500000, 28000000, 27500000, 27000000, 26500000, 26000000, 25500000, 25000000],
     notes: "",
   },
   {
@@ -221,7 +200,6 @@ export const INITIAL_LOANS = [
     rt: "変動", baseRate: 1.45, guaranteeFee: 0, rate: 1.45,
     condition: "保", guaranteeOrg: "", guaranteeType: "", guaranteeSec: "", guaranteePlan: "",
     collateral: "保証協会", method: "元金均等", grace: 36,
-    projections: [20000000, 20000000, 20000000, 20000000, 20000000, 20000000, 20000000, 20000000, 20000000, 20000000, 20000000, 20000000],
     notes: "返済3年据置",
   },
   {
@@ -231,7 +209,6 @@ export const INITIAL_LOANS = [
     rt: "変動", baseRate: 1.45, guaranteeFee: 0, rate: 1.45,
     condition: "保", guaranteeOrg: "", guaranteeType: "", guaranteeSec: "", guaranteePlan: "",
     collateral: "保証協会", method: "元金均等", grace: 36,
-    projections: [10000000, 10000000, 10000000, 10000000, 10000000, 10000000, 10000000, 10000000, 10000000, 10000000, 10000000, 10000000],
     notes: "返済3年据置",
   },
   {
@@ -241,7 +218,6 @@ export const INITIAL_LOANS = [
     rt: "変動", baseRate: 1.45, guaranteeFee: 0, rate: 1.45,
     condition: "保", guaranteeOrg: "", guaranteeType: "", guaranteeSec: "", guaranteePlan: "",
     collateral: "保証協会", method: "元金均等", grace: 0,
-    projections: [48749000, 48332000, 47915000, 47498000, 47081000, 46664000, 46247000, 45830000, 45413000, 44996000, 44579000, 44162000],
     notes: "",
   },
   {
@@ -251,7 +227,6 @@ export const INITIAL_LOANS = [
     rt: "変動", baseRate: 1.45, guaranteeFee: 0, rate: 1.45,
     condition: "保", guaranteeOrg: "", guaranteeType: "", guaranteeSec: "", guaranteePlan: "",
     collateral: "保証協会", method: "元金均等", grace: 36,
-    projections: [30000000, 30000000, 30000000, 30000000, 30000000, 30000000, 30000000, 30000000, 30000000, 30000000, 30000000, 30000000],
     notes: "返済3年据置",
   },
   {
@@ -261,7 +236,6 @@ export const INITIAL_LOANS = [
     rt: "変動", baseRate: 1.20, guaranteeFee: 0, rate: 1.20,
     condition: "P", guaranteeOrg: "", guaranteeType: "", guaranteeSec: "", guaranteePlan: "",
     collateral: "プロパー", method: "元金均等", grace: 0,
-    projections: [42494000, 50000000, 49166000, 48332000, 47498000, 46664000, 45830000, 44996000, 44162000, 43328000, 42494000, 41660000],
     notes: "",
   },
   {
@@ -271,7 +245,6 @@ export const INITIAL_LOANS = [
     rt: "変動", baseRate: 1.80, guaranteeFee: 0, rate: 1.80,
     condition: "P", guaranteeOrg: "", guaranteeType: "", guaranteeSec: "土地担保", guaranteePlan: "",
     collateral: "土地担保", method: "元金均等", grace: 0,
-    projections: [29833000, 29666000, 29499000, 29332000, 29165000, 28998000, 28831000, 28664000, 28497000, 28330000, 28163000, 27996000],
     notes: "",
   },
   // ── 短期借入 1件 ──
@@ -282,7 +255,6 @@ export const INITIAL_LOANS = [
     rt: "変動", baseRate: 1.65, guaranteeFee: 0, rate: 1.65,
     condition: "P", guaranteeOrg: "", guaranteeType: "", guaranteeSec: "", guaranteePlan: "",
     collateral: "プロパー", method: "一括返済", grace: 0,
-    projections: [20000000, 20000000, 20000000, 20000000, 20000000, 20000000, 20000000, 20000000, 0, 0, 0, 0],
     notes: "",
   },
   // ── 当座貸越 2枠 ──
@@ -293,7 +265,6 @@ export const INITIAL_LOANS = [
     rt: "変動", baseRate: 1.437, guaranteeFee: 0, rate: 1.44,
     condition: "P", guaranteeOrg: "", guaranteeType: "", guaranteeSec: "", guaranteePlan: "",
     collateral: "プロパー", method: "", grace: 0,
-    projections: [20000000, 20000000, 20000000, 20000000, 20000000, 0, 0, 0, 0, 0, 0, 0],
     notes: "",
   },
   {
@@ -303,7 +274,6 @@ export const INITIAL_LOANS = [
     rt: "固定", baseRate: 0, guaranteeFee: 0, rate: 0,
     condition: "", guaranteeOrg: "", guaranteeType: "", guaranteeSec: "", guaranteePlan: "",
     collateral: "", method: "", grace: 0,
-    projections: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     notes: "",
   },
 ];
