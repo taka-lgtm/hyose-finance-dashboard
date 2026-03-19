@@ -96,14 +96,25 @@ function Dashboard() {
     }
   }, [userName, loans]);
 
-  const savePL = useCallback(async (data) => {
-    setPlData(data);
-    try { await saveFinancialData("pl", { data }); } catch (e) { console.error(e); }
+  // 既存データとマージ（同じ年度は上書き、異なる年度は保持）
+  const savePL = useCallback(async (incoming) => {
+    setPlData((prev) => {
+      const map = new Map(prev.map((d) => [d.y, d]));
+      incoming.forEach((d) => map.set(d.y, d));
+      const merged = [...map.values()].sort((a, b) => a.y.localeCompare(b.y));
+      saveFinancialData("pl", { data: merged }).catch(console.error);
+      return merged;
+    });
   }, []);
 
-  const saveBS = useCallback(async (data) => {
-    setBsData(data);
-    try { await saveFinancialData("bs", { data }); } catch (e) { console.error(e); }
+  const saveBS = useCallback(async (incoming) => {
+    setBsData((prev) => {
+      const map = new Map(prev.map((d) => [d.y, d]));
+      incoming.forEach((d) => map.set(d.y, d));
+      const merged = [...map.values()].sort((a, b) => a.y.localeCompare(b.y));
+      saveFinancialData("bs", { data: merged }).catch(console.error);
+      return merged;
+    });
   }, []);
 
   const navigate = useCallback((id) => {
