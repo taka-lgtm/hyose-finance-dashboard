@@ -117,6 +117,11 @@ function Dashboard() {
     });
   }, []);
 
+  const saveCF = useCallback(async (incoming) => {
+    setCfData(incoming);
+    saveFinancialData("cf", { data: incoming }).catch(console.error);
+  }, []);
+
   const navigate = useCallback((id) => {
     setPage(id);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -138,10 +143,10 @@ function Dashboard() {
   const dataLoading = loansLoading || finLoading;
 
   const pages = {
-    overview: <Overview loans={loans} navigate={navigate} plData={plData} bsData={bsData} loading={dataLoading} />,
+    overview: <Overview loans={loans} navigate={navigate} plData={plData} bsData={bsData} cfData={cfData} loading={dataLoading} />,
     performance: <Performance bmData={bmData} />,
     financials: <Financials plData={plData} bsData={bsData} loans={loans} savePL={savePL} saveBS={saveBS} />,
-    cashflow: <CashFlow cfData={cfData} />,
+    cashflow: <CashFlow cfData={cfData} saveCF={saveCF} />,
     debt: <Debt loans={loans} addLoan={addLoan} updateLoan={updateLoan} removeLoan={removeLoan} loading={loansLoading} />,
     actions: <Actions />,
     users: <Users />,
