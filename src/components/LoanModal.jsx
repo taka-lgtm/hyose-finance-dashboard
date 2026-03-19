@@ -12,16 +12,35 @@ const EMPTY = {
   collateral: "プロパー", notes: "",
 };
 
-export default function LoanModal({ open, onClose, onSubmit, loans }) {
+// editing: null（新規）または既存ローンオブジェクト（編集）
+export default function LoanModal({ open, onClose, onSubmit, onUpdate, onDelete, editing, loans }) {
   const [form, setForm] = useState(EMPTY);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
   const overlayRef = useRef(null);
+  const isEdit = !!editing;
 
-  // 既存融資の銀行名 + BANK_COLORSのキーから候補を生成
   const allBanks = [...new Set([...Object.keys(BANK_COLORS), ...loans.map((l) => l.bank)])];
 
   useEffect(() => {
-    if (open) setForm(EMPTY);
-  }, [open]);
+    if (!open) { setDeleteConfirm(false); return; }
+    if (editing) {
+      // 編集モード: 既存データでフォームを初期化
+      const e = editing;
+      setForm({
+        category: e.category || "長期", purpose: e.purpose || "", name: e.name || "", num: e.num || "",
+        bank: e.bank || "", bankSeq: e.bankSeq ?? "", start: e.start || "", endDate: e.endDate || "",
+        debitDay: e.debitDay ?? "", principal: e.principal ?? "", balance: e.balance ?? "",
+        rate: e.rate ?? "", rt: e.rt || "固定", baseRate: e.baseRate ?? "", guaranteeFee: e.guaranteeFee ?? "0",
+        monthly: e.monthly ?? "", method: e.method || "", term: e.term ?? "", grace: e.grace ?? "0",
+        condition: e.condition || "P", guaranteeOrg: e.guaranteeOrg || "", guaranteeType: e.guaranteeType || "",
+        guaranteeSec: e.guaranteeSec || "", guaranteePlan: e.guaranteePlan || "",
+        collateral: e.collateral || "", notes: e.notes || "",
+      });
+    } else {
+      setForm(EMPTY);
+    }
+    setDeleteConfirm(false);
+  }, [open, editing]);
 
   useEffect(() => {
     const handleEsc = (e) => { if (e.key === "Escape" && open) onClose(); };
@@ -32,12 +51,31 @@ export default function LoanModal({ open, onClose, onSubmit, loans }) {
   const set = (key, val) => {
     setForm((prev) => {
       const next = { ...prev, [key]: val };
-      // Auto-fill balance when principal changes
-      if (key === "principal" && (!prev.balance || prev.balance === prev.principal)) {
+      if (key === "principal" && !isEdit && (!prev.balance || prev.balance === prev.principal)) {
         next.balance = val;
       }
       return next;
     });
+  };
+
+  const buildPayload = () => {
+    const balance = Number(form.balance) || Number(form.principal);
+    const monthly = Number(form.monthly) || 0;
+    const baseRate = parseFloat(form.baseRate) || parseFloat(form.rate);
+    const guaranteeFee = parseFloat(form.guaranteeFee) || 0;
+    return {
+      category: form.category, purpose: form.purpose, bank: form.bank,
+      bankSeq: Number(form.bankSeq) || 0, name: form.name,
+      num: form.num || (isEdit ? "" : `NEW-${Date.now().toString(36).toUpperCase().slice(-6)}`),
+      start: form.start || "", endDate: form.endDate || "",
+      debitDay: Number(form.debitDay) || null, principal: Number(form.principal),
+      rate: parseFloat(form.rate), baseRate, guaranteeFee, rt: form.rt,
+      method: form.method, term: Number(form.term) || (monthly > 0 ? Math.ceil(balance / monthly) : 0),
+      grace: Number(form.grace) || 0, condition: form.condition,
+      guaranteeOrg: form.guaranteeOrg, guaranteeType: form.guaranteeType,
+      guaranteeSec: form.guaranteeSec, guaranteePlan: form.guaranteePlan,
+      collateral: form.collateral, balance, monthly, notes: form.notes,
+    };
   };
 
   const submit = () => {
@@ -47,53 +85,29 @@ export default function LoanModal({ open, onClose, onSubmit, loans }) {
     if (!form.rate) return alert("金利を入力してください");
     if (form.category !== "当座貸越" && !form.monthly) return alert("月返済額を入力してください");
 
-    const balance = Number(form.balance) || Number(form.principal);
-    const monthly = Number(form.monthly) || 0;
-    const baseRate = parseFloat(form.baseRate) || parseFloat(form.rate);
-    const guaranteeFee = parseFloat(form.guaranteeFee) || 0;
-    onSubmit({
-      category: form.category,
-      purpose: form.purpose,
-      bank: form.bank,
-      bankSeq: Number(form.bankSeq) || 0,
-      name: form.name,
-      num: form.num || `NEW-${Date.now().toString(36).toUpperCase().slice(-6)}`,
-      start: form.start || new Date().toISOString().slice(0, 10),
-      endDate: form.endDate || "",
-      debitDay: Number(form.debitDay) || null,
-      principal: Number(form.principal),
-      rate: parseFloat(form.rate),
-      baseRate,
-      guaranteeFee,
-      rt: form.rt,
-      method: form.method,
-      term: Number(form.term) || (monthly > 0 ? Math.ceil(balance / monthly) : 0),
-      grace: Number(form.grace) || 0,
-      condition: form.condition,
-      guaranteeOrg: form.guaranteeOrg,
-      guaranteeType: form.guaranteeType,
-      guaranteeSec: form.guaranteeSec,
-      guaranteePlan: form.guaranteePlan,
-      collateral: form.collateral,
-      balance,
-      monthly,
-      projections: [],
-      notes: form.notes,
-    });
+    const payload = buildPayload();
+    if (isEdit && onUpdate) {
+      onUpdate(editing.id, payload);
+    } else {
+      onSubmit(payload);
+    }
+    onClose();
+  };
+
+  const handleDelete = () => {
+    if (!deleteConfirm) { setDeleteConfirm(true); return; }
+    if (onDelete) onDelete(editing.id);
     onClose();
   };
 
   return (
-    <div
-      ref={overlayRef}
-      className={`modal-overlay ${open ? "open" : ""}`}
-      onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
-    >
+    <div ref={overlayRef} className={`modal-overlay ${open ? "open" : ""}`}
+      onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}>
       <div className="modal">
         <div className="modal-head">
           <div>
-            <h3>融資 新規登録</h3>
-            <p>新しい融資情報を登録します。登録後は融資管理ページに即時反映されます。</p>
+            <h3>{isEdit ? "融資 編集" : "融資 新規登録"}</h3>
+            <p>{isEdit ? `${editing.bank} / ${editing.name} の情報を編集します。` : "新しい融資情報を登録します。"}</p>
           </div>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
@@ -107,11 +121,9 @@ export default function LoanModal({ open, onClose, onSubmit, loans }) {
             <div className="form-group">
               <label className="form-label">銀行名<span className="req">*</span></label>
               <input className="form-input" list="bankList" value={form.bank} onChange={(e) => set("bank", e.target.value)} placeholder="銀行名を入力または選択" />
-              <datalist id="bankList">
-                {allBanks.map((b) => <option key={b} value={b} />)}
-              </datalist>
+              <datalist id="bankList">{allBanks.map((b) => <option key={b} value={b} />)}</datalist>
             </div>
-            <Field label="借入日" req type="date" value={form.start} onChange={(v) => set("start", v)} />
+            <Field label="借入日" type="date" value={form.start} onChange={(v) => set("start", v)} />
             <Field label="最終期限" type="date" value={form.endDate} onChange={(v) => set("endDate", v)} />
             <Field label="引落日" type="number" value={form.debitDay} onChange={(v) => set("debitDay", v)} placeholder="例: 15" />
 
@@ -148,8 +160,13 @@ export default function LoanModal({ open, onClose, onSubmit, loans }) {
           </div>
         </div>
         <div className="modal-foot">
+          {isEdit && (
+            <button className="btn" style={{ borderColor: deleteConfirm ? "var(--rd)" : "var(--bd)", color: deleteConfirm ? "#fff" : "var(--rd)", background: deleteConfirm ? "var(--rd)" : "transparent", marginRight: "auto" }} onClick={handleDelete}>
+              {deleteConfirm ? "本当に削除する" : "この融資を削除"}
+            </button>
+          )}
           <button className="btn" onClick={onClose}>キャンセル</button>
-          <button className="btn pr" onClick={submit}>登録する</button>
+          <button className="btn pr" onClick={submit}>{isEdit ? "保存する" : "登録する"}</button>
         </div>
       </div>
     </div>

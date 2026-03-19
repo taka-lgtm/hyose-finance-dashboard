@@ -10,7 +10,7 @@ import Debt from "./pages/Debt";
 import Actions from "./pages/Actions";
 import Users from "./pages/Users";
 import { INITIAL_LOANS, PL as DEFAULT_PL, BS as DEFAULT_BS, BUDGET_MONTHLY as DEFAULT_BM, CF as DEFAULT_CF } from "./data";
-import { fetchLoans, addLoanDoc, deleteLoanDoc, seedLoansIfEmpty, fetchFinancialData, saveFinancialData } from "./lib/firestore";
+import { fetchLoans, addLoanDoc, updateLoanDoc, deleteLoanDoc, seedLoansIfEmpty, fetchFinancialData, saveFinancialData } from "./lib/firestore";
 
 function Dashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -70,6 +70,15 @@ function Dashboard() {
     }
   }, []);
 
+  const updateLoan = useCallback(async (id, data) => {
+    try {
+      await updateLoanDoc(id, data);
+      setLoans((prev) => prev.map((l) => l.id === id ? { ...l, ...data } : l));
+    } catch (e) {
+      console.error("Failed to update loan:", e);
+    }
+  }, []);
+
   const removeLoan = useCallback(async (id) => {
     try {
       await deleteLoanDoc(id);
@@ -114,7 +123,7 @@ function Dashboard() {
     performance: <Performance bmData={bmData} />,
     financials: <Financials plData={plData} bsData={bsData} savePL={savePL} saveBS={saveBS} />,
     cashflow: <CashFlow cfData={cfData} />,
-    debt: <Debt loans={loans} addLoan={addLoan} removeLoan={removeLoan} loading={loansLoading} />,
+    debt: <Debt loans={loans} addLoan={addLoan} updateLoan={updateLoan} removeLoan={removeLoan} loading={loansLoading} />,
     actions: <Actions />,
     users: <Users />,
   };
