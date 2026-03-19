@@ -1,0 +1,183 @@
+import { useRef, useEffect } from "react";
+import { Chart, registerables } from "chart.js";
+import { PL as DEFAULT_PL, BS as DEFAULT_BS, CF, ALERTS, M, pct, sgn, lvl, calcHealth, calcLoanDerived, chartFont, chartGrid, chartLegend } from "../data";
+import Sparkline from "../components/Sparkline";
+
+Chart.register(...registerables);
+
+export default function Overview({ loans, navigate, plData, bsData }) {
+  const PLd = plData || DEFAULT_PL;
+  const BSd = bsData || DEFAULT_BS;
+  const lastPL = PLd[PLd.length - 1], prevPL = PLd[PLd.length - 2] || lastPL;
+  const lastBS = BSd[BSd.length - 1], prevBS = BSd[BSd.length - 2] || lastBS;
+  const h = calcHealth(loans);
+  const { tBal, tMon, wRate } = calcLoanDerived(loans);
+  const s = pct(lastPL.売上高, lastPL.予算売上), o = pct(lastPL.営業利益, lastPL.予算営業利益);
+  const gm = lastPL.売上総利益 / lastPL.売上高 * 100, pgm = prevPL.売上総利益 / prevPL.売上高 * 100;
+  const cr = lastBS.流動資産 / lastBS.流動負債 * 100;
+  const dy = (lastBS.固定負債 + lastBS.流動負債 - lastBS.流動資産 * 0.3) / (lastPL.経常利益 + 300);
+  const minCF = Math.min(...CF.map((v) => v.残高));
+  const topL = [...loans].sort((a, b) => b.rate - a.rate);
+  const trendRef = useRef(null);
+  const chartRef = useRef(null);
+
+  useEffect(() => {
+    if (chartRef.current) chartRef.current.destroy();
+    if (!trendRef.current) return;
+    Chart.defaults.color = "rgba(139,146,168,.7)";
+    Chart.defaults.borderColor = "rgba(255,255,255,.04)";
+    chartRef.current = new Chart(trendRef.current, {
+      data: {
+        labels: PLd.map(d => d.y),
+        datasets: [
+          { type: "bar", label: "売上高", data: PLd.map((v) => v.売上高), backgroundColor: "rgba(91,141,239,.45)", borderRadius: 6, barThickness: 30 },
+          { type: "line", label: "営業利益", data: PLd.map((v) => v.営業利益), borderColor: "#22c994", pointBackgroundColor: "#22c994", pointRadius: 4, tension: 0.35, borderWidth: 2.5, yAxisID: "y1" },
+          { type: "line", label: "売上予算", data: PLd.map((v) => v.予算売上), borderColor: "rgba(255,255,255,.15)", pointRadius: 0, tension: 0.25, borderDash: [5, 5] },
+          { type: "line", label: "営利予算", data: PLd.map((v) => v.予算営業利益), borderColor: "rgba(229,168,58,.4)", pointRadius: 0, tension: 0.25, borderDash: [5, 5], yAxisID: "y1" },
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: chartLegend },
+        scales: {
+          y: { ticks: { callback: (v) => v + "万", font: chartFont }, grid: chartGrid },
+          y1: { position: "right", ticks: { callback: (v) => v + "万", font: chartFont }, grid: { display: false } },
+          x: { grid: { display: false }, ticks: { font: chartFont } },
+        },
+      },
+    });
+    return () => { if (chartRef.current) chartRef.current.destroy(); };
+  }, []);
+
+  return (
+    <div className="page"><div className="g">
+      <div className="ph">
+        <div><h2>経営概況</h2><p>経営の現在地を3秒で把握し、次の一手を決める。</p></div>
+        <div className="pa">
+          <button className="btn pr" onClick={() => navigate("actions")}>意思決定キュー →</button>
+          <button className="btn" onClick={() => navigate("debt")}>銀行面談モード</button>
+        </div>
+      </div>
+
+      <div className="fy">
+        <div className="fyl">FY2025 進捗</div>
+        <div className="fyt"><div className="fyf" style={{ width: "100%" }} /></div>
+        <div className="fyp">100%</div>
+      </div>
+
+      <div className="g2">
+        <div className="hh">
+          <div className="hs">
+            <div className="hl">経営健全度</div>
+            <div className="hn">{h.total}</div>
+            <div className="hg">Grade {h.grade}</div>
+          </div>
+          <div className="hd">
+            {h.dims.map((d) => (
+              <div key={d.label} className="hr">
+                <div className="hrl">{d.label}</div>
+                <div className="hrb"><span style={{ width: d.val + "%", background: d.color }} /></div>
+                <div className="hrv" style={{ color: d.color }}>{d.val}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="dig">
+          <div className="dl">Executive Digest</div>
+          <div className="dt">
+            売上高<strong className="up">{M(lastPL.売上高)}</strong>で4年連続増収。営業利益率<strong>{(lastPL.営業利益 / lastPL.売上高 * 100).toFixed(1)}%</strong>と改善基調。
+            予算比では売上<strong className={s < 0 ? "dn" : "up"}>{sgn(s)}</strong>、営利<strong className={o < 0 ? "dn" : "up"}>{sgn(o)}</strong>で未達。
+            自己資本比率<strong className="up">{(lastBS.純資産 / lastBS.資産合計 * 100).toFixed(1)}%</strong>は着実改善。
+            <strong className="at">変動金利2件</strong>と<strong className="dn">3ヶ月後の資金余力低下</strong>（最低{M(minCF)}）が最優先課題。
+          </div>
+        </div>
+      </div>
+
+      <div className="g4">
+        <div className="k hero">
+          <div className="k-row">
+            <div>
+              <div className="k-label">現金残高</div>
+              <div className="k-val">{M(lastBS.現預金)}</div>
+              <div className="k-ctx">流動比率 {cr.toFixed(0)}% / 最低 {M(minCF)}</div>
+            </div>
+            <Sparkline data={BSd.map((b) => b.現預金)} color="#22c994" />
+          </div>
+          <div className="k-foot"><span>安全水準 4,500万</span><span>{cr >= 200 ? "安定圏" : "注意"}</span></div>
+        </div>
+        <div className="k">
+          <div className="k-row">
+            <div>
+              <div className="k-label">売上高</div>
+              <div className="k-val">{M(lastPL.売上高)}</div>
+              <div className="k-ctx">前年 {sgn(pct(lastPL.売上高, prevPL.売上高))} / 予算 {sgn(s)}</div>
+            </div>
+            <Sparkline data={PLd.map((p) => p.売上高)} color="#5b8def" />
+          </div>
+          <div className="k-foot"><span>予算 {M(lastPL.予算売上)}</span></div>
+        </div>
+        <div className="k">
+          <div className="k-row">
+            <div>
+              <div className="k-label">営業利益</div>
+              <div className="k-val">{M(lastPL.営業利益)}</div>
+              <div className="k-ctx">前年 {sgn(pct(lastPL.営業利益, prevPL.営業利益))} / 予算 {sgn(o)}</div>
+            </div>
+            <Sparkline data={PLd.map((p) => p.営業利益)} color="#9b7cf6" />
+          </div>
+          <div className="k-foot"><span>利益率 {(lastPL.営業利益 / lastPL.売上高 * 100).toFixed(1)}%</span></div>
+        </div>
+        <div className="k">
+          <div className="k-row">
+            <div>
+              <div className="k-label">借入残高</div>
+              <div className="k-val">{M(tBal)}</div>
+              <div className="k-ctx">加重平均 {wRate}% / 月返済 {M(tMon)}</div>
+            </div>
+            <Sparkline data={[19320, 17320, 15320, tBal].reverse()} color="#e5a83a" />
+          </div>
+          <div className="k-foot"><span>変動{loans.filter((l) => l.rt === "変動").length}件</span><span>償還 {dy.toFixed(1)}年</span></div>
+        </div>
+      </div>
+
+      <div className="gs">
+        <div className="c">
+          <div className="ch">
+            <div><div className="ct">5年トレンド</div><div className="cs">売上高・営業利益・予算</div></div>
+            <span className="p bu">重点</span>
+          </div>
+          <div className="cb"><div className="chart tall"><canvas ref={trendRef} /></div></div>
+        </div>
+        <div className="c">
+          <div className="ch">
+            <div><div className="ct">意思決定キュー</div></div>
+            <span className="p bd">{ALERTS.filter((a) => a.lv === "bad").length} Critical</span>
+          </div>
+          <div className="cb">
+            {ALERTS.map((a, i) => (
+              <div key={i} className="dq">
+                <div className={`dqi ${a.lv === "bad" ? "cr" : a.lv === "warn" ? "wr" : "in"}`}>
+                  {a.lv === "bad" ? "!" : a.lv === "warn" ? "△" : "i"}
+                </div>
+                <div className="dqb"><h4>{a.title}</h4><p>{a.action}</p></div>
+                <div className="dqm"><div className="dqo">{a.owner}</div><div className="dqd">{a.date}</div></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="c">
+        <div className="ch"><div><div className="ct">今月の論点</div></div></div>
+        <div className="cb">
+          <div className="ms">
+            <div className="ms-r"><div className="ms-l">粗利率</div><div className="ms-v">{gm.toFixed(1)}%</div><div className={`ms-c ${gm >= pgm ? "up" : "dn"}`}>{gm - pgm >= 0 ? "+" : ""}{(gm - pgm).toFixed(1)}pt</div><div className="ms-n">在庫回転が鍵。棚卸 {M(lastBS.棚卸資産)}</div></div>
+            <div className="ms-r"><div className="ms-l">自己資本比率</div><div className="ms-v">{(lastBS.純資産 / lastBS.資産合計 * 100).toFixed(1)}%</div><div className="ms-c up">{sgn((lastBS.純資産 / lastBS.資産合計 * 100) - (prevBS.純資産 / prevBS.資産合計 * 100))}</div><div className="ms-n">4年連続改善。借入交渉の材料</div></div>
+            <div className="ms-r"><div className="ms-l">債務償還年数</div><div className="ms-v">{dy.toFixed(1)}年</div><div className={`ms-c ${dy > 8 ? "dn" : "up"}`}>{dy > 8 ? "要注意" : "許容"}</div><div className="ms-n">10年以下を維持</div></div>
+            <div className="ms-r"><div className="ms-l">借換え優先</div><div className="ms-v">{topL[0]?.rate}%</div><div className="ms-c dn">最高金利</div><div className="ms-n">{topL[0]?.bank} {topL[0]?.name}</div></div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+  );
+}
