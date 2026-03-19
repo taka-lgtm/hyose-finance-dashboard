@@ -63,9 +63,29 @@ export async function seedLoansIfEmpty(defaultLoans) {
   const existing = await fetchLoans();
   if (existing.length > 0) return existing;
 
-  // No loans in Firestore yet — seed with defaults
+  // Firestoreにデータがなければデフォルトで初期化
   const seeded = [];
   for (const loan of defaultLoans) {
+    const saved = await addLoanDoc(loan);
+    seeded.push(saved);
+  }
+  return seeded;
+}
+
+/**
+ * 全件削除 → 新データで再シード（ワンタイム用）
+ * 使用後は呼び出し元のUIごと削除すること
+ */
+export async function reseedLoans(newLoans) {
+  // 1. 既存データを全件削除
+  const existing = await fetchLoans();
+  for (const loan of existing) {
+    await deleteDoc(doc(db, LOANS_COL, loan.id));
+  }
+
+  // 2. 新データを全件追加
+  const seeded = [];
+  for (const loan of newLoans) {
     const saved = await addLoanDoc(loan);
     seeded.push(saved);
   }
