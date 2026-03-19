@@ -1,6 +1,8 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { Chart, registerables } from "chart.js";
 import { YEARS, M, pct, sgn, chartFont, chartGrid, chartLegend } from "../data";
+import { useAuth } from "../contexts/AuthContext";
+import { addLoanLog } from "../lib/firestore";
 import * as XLSX from "xlsx";
 
 Chart.register(...registerables);
@@ -65,8 +67,29 @@ function fileToBase64(file) {
   });
 }
 
-function CompTable({ rows, dataset, header = "項目", yoy = true, years }) {
+function CompTable({ rows, dataset, header = "項目", yoy = true, years, editable, onCellEdit, editedCells }) {
   const displayYears = years || dataset.map((d) => d.y);
+  const [editing, setEditing] = useState(null); // "row-col"
+  const [editVal, setEditVal] = useState("");
+  const inputRef = useRef(null);
+
+  useEffect(() => { if (editing && inputRef.current) inputRef.current.focus(); }, [editing]);
+
+  const startEdit = (ri, ci, key, val) => {
+    if (!editable || !key) return;
+    setEditing(`${ri}-${ci}`);
+    setEditVal(val == null ? "" : String(val));
+  };
+
+  const commitEdit = (ri, ci, key, year) => {
+    if (!editing) return;
+    const num = Number(editVal);
+    if (!isNaN(num) && onCellEdit) onCellEdit(ci, key, num, year);
+    setEditing(null);
+  };
+
+  const cancelEdit = () => setEditing(null);
+
   return (
     <table className="ct-tbl">
       <thead><tr><th>{header}</th>{displayYears.map((y) => <th key={y}>{y}</th>)}</tr></thead>
@@ -79,9 +102,27 @@ function CompTable({ rows, dataset, header = "項目", yoy = true, years }) {
               const prev = i === 0 ? null : (r.fn ? r.fn(dataset[i-1], i-1) : dataset[i-1][r.key]);
               const disp = r.fmt ? r.fmt(v) : M(v);
               const ch = prev == null ? null : pct(v, prev);
-              return (<td key={i}><div className="ctc"><div className="ctv">{disp}</div>
-                {yoy && <div className={`cty ${ch==null?"":ch<0?"dn":"up"}`}>{ch==null?"-":sgn(ch)}</div>}
-              </div></td>);
+              const cellKey = `${ri}-${i}`;
+              const isEditing = editing === cellKey;
+              const isEdited = editedCells?.has(`${item.y}-${r.key}`);
+              const canEdit = editable && r.key;
+              return (
+                <td key={i} className={isEdited ? "cell-edited" : ""}>
+                  {isEditing ? (
+                    <input ref={inputRef} type="number" className="cell-edit-input" value={editVal}
+                      onChange={(e) => setEditVal(e.target.value)}
+                      onBlur={() => commitEdit(ri, i, r.key, item.y)}
+                      onKeyDown={(e) => { if (e.key === "Enter") commitEdit(ri, i, r.key, item.y); if (e.key === "Escape") cancelEdit(); }}
+                    />
+                  ) : (
+                    <div className={`ctc ${canEdit ? "cell-editable" : ""}`}
+                      onClick={canEdit ? () => startEdit(ri, i, r.key, v) : undefined}>
+                      <div className="ctv">{disp}</div>
+                      {yoy && <div className={`cty ${ch==null?"":ch<0?"dn":"up"}`}>{ch==null?"-":sgn(ch)}</div>}
+                    </div>
+                  )}
+                </td>
+              );
             })}
           </tr>
         ))}
@@ -135,15 +176,47 @@ function RatioTable({ groups, dataset, years }) {
 }
 
 export default function Financials({ plData, bsData, loans = [], savePL, saveBS }) {
+  const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState(null);
   const [taxRate, setTaxRate] = useState(30);
+  const [editedCells, setEditedCells] = useState(new Set());
   const pdfRef = useRef(null);
   const plExcelRef = useRef(null);
   const bsExcelRef = useRef(null);
   const plChartRef = useRef(null), bsChartRef = useRef(null);
   const c1 = useRef(null), c2 = useRef(null);
   const years = plData.map((d) => d.y);
+
+  // セル編集ハンドラ（PL）
+  const handlePLEdit = useCallback((colIdx, key, value, year) => {
+    const oldVal = plData[colIdx]?.[key];
+    if (oldVal === value) return;
+    const updated = plData.map((d, i) => i === colIdx ? { ...d, [key]: value } : d);
+    savePL(updated);
+    setEditedCells((prev) => new Set(prev).add(`${year}-${key}`));
+    const userName = user?.displayName || user?.email || "不明";
+    addLoanLog({
+      action: "PL編集", user: userName,
+      target: `${year} / ${key}`,
+      details: `${oldVal ?? "-"} → ${value}`,
+    }).catch(() => {});
+  }, [plData, savePL, user]);
+
+  // セル編集ハンドラ（BS）
+  const handleBSEdit = useCallback((colIdx, key, value, year) => {
+    const oldVal = bsData[colIdx]?.[key];
+    if (oldVal === value) return;
+    const updated = bsData.map((d, i) => i === colIdx ? { ...d, [key]: value } : d);
+    saveBS(updated);
+    setEditedCells((prev) => new Set(prev).add(`${year}-${key}`));
+    const userName = user?.displayName || user?.email || "不明";
+    addLoanLog({
+      action: "BS編集", user: userName,
+      target: `${year} / ${key}`,
+      details: `${oldVal ?? "-"} → ${value}`,
+    }).catch(() => {});
+  }, [bsData, saveBS, user]);
 
   // 有利子負債: BS固定負債 + 短期借入金（あれば）で近似
   const getDebt = (i) => {
@@ -347,8 +420,8 @@ export default function Financials({ plData, bsData, loans = [], savePL, saveBS 
       )}
 
       {/* ── Data Tables ── */}
-      <div className="c"><div className="ch"><div><div className="sec-label">Profit & Loss</div><div className="ct">損益計算書</div></div><span className="p bu">PL</span></div><div className="cb tw"><CompTable rows={plRows} dataset={plData} years={years} /></div></div>
-      <div className="c"><div className="ch"><div><div className="sec-label">Balance Sheet</div><div className="ct">貸借対照表</div></div><span className="p gd">BS</span></div><div className="cb tw"><CompTable rows={bsRows} dataset={bsData} years={bsData.map(d=>d.y)} /></div></div>
+      <div className="c"><div className="ch"><div><div className="sec-label">Profit & Loss</div><div className="ct">損益計算書</div></div><span className="p bu">PL</span></div><div className="cb tw"><CompTable rows={plRows} dataset={plData} years={years} editable onCellEdit={handlePLEdit} editedCells={editedCells} /></div></div>
+      <div className="c"><div className="ch"><div><div className="sec-label">Balance Sheet</div><div className="ct">貸借対照表</div></div><span className="p gd">BS</span></div><div className="cb tw"><CompTable rows={bsRows} dataset={bsData} years={bsData.map(d=>d.y)} editable onCellEdit={handleBSEdit} editedCells={editedCells} /></div></div>
       <div className="c">
         <div className="ch">
           <div><div className="sec-label">Key Ratios</div><div className="ct">主要経営指標</div></div>

@@ -156,6 +156,18 @@ tr:hover td{background:rgba(255,255,255,.015)}
 .cty{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--tx3);white-space:nowrap}
 .cty.up{color:var(--ac)}.cty.dn{color:var(--rd)}
 
+/* インライン編集 */
+.cell-editable{cursor:pointer;border-radius:4px;transition:background .15s}
+.cell-editable:hover{background:rgba(255,255,255,.06)}
+.cell-edit-input{
+  width:100%;padding:4px 6px;border-radius:4px;text-align:center;
+  border:1px solid var(--ac);background:var(--sf);color:var(--tx);
+  font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;
+  outline:none;box-shadow:0 0 0 2px rgba(34,201,148,.2);
+}
+td.cell-edited{background:rgba(34,201,148,.06)}
+td.cell-edited .ctv{color:var(--ac)}
+
 /* 経営指標テーブル：グループヘッダー */
 .rat-tbl .rat-group-row td{
   font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
