@@ -234,6 +234,7 @@ function ListView({ loans, onEdit }) {
       <div className="cb tw">
         <table>
           <thead><tr>
+            <SH k="num">No.</SH>
             <SH k="category">区分</SH>
             <SH k="bank">銀行</SH>
             <SH k="name">融資名</SH>
@@ -250,6 +251,7 @@ function ListView({ loans, onEdit }) {
               const rc = l.rate >= 1.8 ? "var(--rd)" : l.rate >= 1.5 ? "var(--am)" : "var(--ac)";
               return (
                 <tr key={l.id || i}>
+                  <td className="mono" style={{ fontSize: 10, color: "var(--tx3)" }}>{l.num || "-"}</td>
                   <td><span className={`p ${l.category === "長期" ? "bu" : l.category === "短期" ? "wr" : "mt"}`} style={{ fontSize: 9 }}>{l.category}</span></td>
                   <td className="bold">{l.bank}</td>
                   <td>{l.name}</td>
