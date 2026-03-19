@@ -145,6 +145,40 @@ tr:hover td{background:rgba(255,255,255,.015)}
 .cty{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--tx3);white-space:nowrap}
 .cty.up{color:var(--ac)}.cty.dn{color:var(--rd)}
 
+/* 経営指標テーブル：グループヘッダー */
+.rat-tbl .rat-group-row td{
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
+  color:var(--ac);padding:12px 8px 6px;
+  border-bottom:1px solid rgba(34,201,148,.15);
+  background:rgba(34,201,148,.03);
+}
+.rat-tbl tr:first-child .rat-group-row td{padding-top:8px}
+
+/* 経営指標：改善/悪化の色分け */
+.ctv.rat-good{color:var(--ac)}
+.ctv.rat-bad{color:var(--rd)}
+
+/* 経営指標：注記マーク */
+.rat-note{color:var(--am);font-size:9px;margin-left:2px;vertical-align:super}
+
+/* 経営指標：脚注 */
+.rat-footnote{
+  font-size:10.5px;color:var(--tx3);padding:10px 12px 4px;line-height:1.6;
+  border-top:1px solid var(--bd);margin-top:4px;
+}
+
+/* 経営指標：税率設定 */
+.rat-tax-setting{
+  display:flex;align-items:center;gap:4px;margin-right:8px;
+  font-size:10.5px;color:var(--tx3);
+}
+.rat-tax-setting input{
+  width:42px;padding:3px 6px;border-radius:4px;text-align:center;
+  border:1px solid var(--bd);background:var(--sf);color:var(--tx);
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;
+}
+.rat-tax-setting input:focus{border-color:var(--ac);outline:none}
+
 /* Chart */
 .chart{position:relative;height:220px}.chart.tall{height:260px}
 

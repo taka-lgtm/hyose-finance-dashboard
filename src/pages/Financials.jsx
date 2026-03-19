@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { Chart, registerables } from "chart.js";
 import { YEARS, M, pct, sgn, chartFont, chartGrid, chartLegend } from "../data";
 import * as XLSX from "xlsx";
@@ -9,6 +9,8 @@ Chart.register(...registerables);
 const PL_MAP = {
   "売上高":"売上高","売上":"売上高","revenue":"売上高","sales":"売上高",
   "売上原価":"売上原価","原価":"売上原価","cogs":"売上原価",
+  "減価償却費":"減価償却費","償却費":"減価償却費","depreciation":"減価償却費",
+  "支払利息":"支払利息","利息":"支払利息","interest":"支払利息",
   "売上総利益":"売上総利益","粗利":"売上総利益","粗利益":"売上総利益",
   "販管費":"販管費","販売費及び一般管理費":"販管費",
   "営業利益":"営業利益","経常利益":"経常利益",
@@ -20,6 +22,7 @@ const BS_MAP = {
   "流動資産":"流動資産","固定資産":"固定資産",
   "資産合計":"資産合計","総資産":"資産合計",
   "流動負債":"流動負債","固定負債":"固定負債",
+  "短期借入金":"短期借入金",
   "純資産":"純資産","棚卸資産":"棚卸資産","在庫":"棚卸資産",
   "現預金":"現預金","現金及び預金":"現預金","現金":"現預金",
 };
@@ -87,15 +90,149 @@ function CompTable({ rows, dataset, header = "項目", yoy = true, years }) {
   );
 }
 
-export default function Financials({ plData, bsData, savePL, saveBS }) {
+// 指標の改善方向を判定するヘルパー（up=値が大きいほど良い、down=小さいほど良い）
+function ratioColor(cur, prev, direction = "up") {
+  if (cur == null || prev == null || isNaN(cur) || isNaN(prev)) return "";
+  const diff = cur - prev;
+  if (Math.abs(diff) < 0.01) return "";
+  if (direction === "up") return diff > 0 ? "rat-good" : "rat-bad";
+  return diff < 0 ? "rat-good" : "rat-bad";
+}
+
+// グループ付き指標テーブル
+function RatioTable({ groups, dataset, years }) {
+  const displayYears = years || dataset.map((d) => d.y);
+  return (
+    <table className="ct-tbl rat-tbl">
+      <thead><tr><th>指標</th>{displayYears.map((y) => <th key={y}>{y}</th>)}</tr></thead>
+      <tbody>
+        {groups.map((g, gi) => (
+          <React.Fragment key={gi}>
+            <tr className="rat-group-row"><td colSpan={displayYears.length + 1}>{g.label}</td></tr>
+            {g.rows.map((r, ri) => (
+              <tr key={ri}>
+                <td className="bold">{r.label}{r.note && <span className="rat-note">※</span>}</td>
+                {dataset.map((item, i) => {
+                  const v = r.fn(item, i);
+                  const prev = i === 0 ? null : r.fn(dataset[i - 1], i - 1);
+                  const disp = r.fmt(v);
+                  const color = ratioColor(v, prev, r.dir || "up");
+                  return (
+                    <td key={i}>
+                      <div className={`ctc`}>
+                        <div className={`ctv ${color}`}>{disp}</div>
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </React.Fragment>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+export default function Financials({ plData, bsData, loans = [], savePL, saveBS }) {
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState(null);
+  const [taxRate, setTaxRate] = useState(30);
   const pdfRef = useRef(null);
   const plExcelRef = useRef(null);
   const bsExcelRef = useRef(null);
   const plChartRef = useRef(null), bsChartRef = useRef(null);
   const c1 = useRef(null), c2 = useRef(null);
   const years = plData.map((d) => d.y);
+
+  // 有利子負債: BS固定負債 + 短期借入金（あれば）で近似
+  const getDebt = (i) => {
+    const bs = bsData[i];
+    if (!bs) return null;
+    return (bs.固定負債 || 0) + (bs.短期借入金 || 0);
+  };
+
+  // EBITDA計算（減価償却費がPLにある場合のみ）
+  const getEBITDA = (r) => {
+    if (r.減価償却費 == null) return null;
+    return r.営業利益 + r.減価償却費;
+  };
+
+  // 簡易FCF: 当期純利益 - Δ固定資産（減価償却費が相殺されるため）
+  const getFCF = (r, i) => {
+    if (i === 0 || !bsData[i] || !bsData[i - 1]) return null;
+    return r.当期純利益 - (bsData[i].固定資産 - bsData[i - 1].固定資産);
+  };
+
+  const fmtPct = (v) => (v == null || isNaN(v) ? "-" : v.toFixed(1) + "%");
+  const fmtTimes = (v) => (v == null || isNaN(v) ? "-" : v.toFixed(2) + "倍");
+  const fmtDays = (v) => (v == null || isNaN(v) ? "-" : v.toFixed(0) + "日");
+  const fmtMonths = (v) => (v == null || isNaN(v) ? "-" : v.toFixed(1) + "ヶ月");
+  const fmtYears = (v) => (v == null || isNaN(v) || !isFinite(v) ? "-" : v.toFixed(1) + "年");
+  const fmtTurn = (v) => (v == null || isNaN(v) ? "-" : v.toFixed(2) + "回");
+
+  // 減価償却費の有無を判定（1つでもあれば注記不要）
+  const hasDepreciation = plData.some((r) => r.減価償却費 != null);
+  const hasInterest = plData.some((r) => r.支払利息 != null);
+
+  // 4グループの指標定義
+  const ratioGroups = [
+    {
+      label: "収益力",
+      rows: [
+        { label: "売上成長率", fn: (r, i) => i === 0 ? null : pct(r.売上高, plData[i - 1]?.売上高), fmt: v => v == null ? "-" : sgn(v), dir: "up" },
+        { label: "売上総利益率", fn: r => r.売上総利益 / r.売上高 * 100, fmt: fmtPct, dir: "up" },
+        { label: "営業利益率", fn: r => r.営業利益 / r.売上高 * 100, fmt: fmtPct, dir: "up" },
+        { label: "EBITDA", fn: r => getEBITDA(r), fmt: v => v == null ? "-" : M(v), dir: "up", note: !hasDepreciation },
+        { label: "EBITDAマージン", fn: r => { const e = getEBITDA(r); return e == null ? null : e / r.売上高 * 100; }, fmt: fmtPct, dir: "up", note: !hasDepreciation },
+      ],
+    },
+    {
+      label: "効率性",
+      rows: [
+        { label: "総資産回転率", fn: (r, i) => bsData[i] ? r.売上高 / bsData[i].資産合計 : null, fmt: fmtTurn, dir: "up" },
+        { label: "在庫回転期間", fn: (r, i) => bsData[i]?.棚卸資産 ? bsData[i].棚卸資産 / r.売上原価 * 365 : null, fmt: fmtDays, dir: "down" },
+        { label: "ROE", fn: (r, i) => i === 0 || !bsData[i] || !bsData[i - 1] ? null : r.当期純利益 / ((bsData[i].純資産 + bsData[i - 1].純資産) / 2) * 100, fmt: fmtPct, dir: "up" },
+        { label: "ROA", fn: (r, i) => i === 0 || !bsData[i] || !bsData[i - 1] ? null : r.当期純利益 / ((bsData[i].資産合計 + bsData[i - 1].資産合計) / 2) * 100, fmt: fmtPct, dir: "up" },
+        { label: "ROIC", fn: (r, i) => {
+          const debt = getDebt(i);
+          if (debt == null || !bsData[i]) return null;
+          const ic = bsData[i].純資産 + debt;
+          return ic === 0 ? null : r.営業利益 * (1 - taxRate / 100) / ic * 100;
+        }, fmt: fmtPct, dir: "up" },
+      ],
+    },
+    {
+      label: "キャッシュ",
+      rows: [
+        { label: "現金残高", fn: (r, i) => bsData[i]?.現預金 ?? null, fmt: v => v == null ? "-" : M(v), dir: "up" },
+        { label: "月商倍率", fn: (r, i) => bsData[i]?.現預金 ? bsData[i].現預金 / (r.売上高 / 12) : null, fmt: fmtMonths, dir: "up" },
+        { label: "フリーCF（簡易）", fn: (r, i) => getFCF(r, i), fmt: v => v == null ? "-" : M(v), dir: "up" },
+      ],
+    },
+    {
+      label: "安全性",
+      rows: [
+        { label: "自己資本比率", fn: (r, i) => bsData[i] ? bsData[i].純資産 / bsData[i].資産合計 * 100 : null, fmt: fmtPct, dir: "up" },
+        { label: "流動比率", fn: (r, i) => bsData[i] ? bsData[i].流動資産 / bsData[i].流動負債 * 100 : null, fmt: v => v == null ? "-" : v.toFixed(0) + "%", dir: "up" },
+        { label: "D/Eレシオ", fn: (r, i) => {
+          const debt = getDebt(i);
+          return debt == null || !bsData[i]?.純資産 ? null : debt / bsData[i].純資産;
+        }, fmt: fmtTimes, dir: "down" },
+        { label: "ICR", fn: (r, i) => {
+          const pl = plData[i];
+          if (!pl?.支払利息) return null;
+          return pl.営業利益 / pl.支払利息;
+        }, fmt: v => v == null ? "-" : v.toFixed(1) + "倍", dir: "up", note: !hasInterest },
+        { label: "債務償還年数", fn: (r, i) => {
+          const debt = getDebt(i);
+          const ebitda = getEBITDA(r);
+          if (debt == null || ebitda == null || ebitda <= 0) return null;
+          return debt / ebitda;
+        }, fmt: fmtYears, dir: "down", note: !hasDepreciation },
+      ],
+    },
+  ];
 
   const plRows = [
     {label:"売上高",key:"売上高"},{label:"売上原価",key:"売上原価"},
@@ -108,15 +245,6 @@ export default function Financials({ plData, bsData, savePL, saveBS }) {
     {label:"資産合計",key:"資産合計"},{label:"流動負債",key:"流動負債"},
     {label:"固定負債",key:"固定負債"},{label:"純資産",key:"純資産"},
     {label:"現預金",key:"現預金"},{label:"棚卸資産",key:"棚卸資産"},
-  ];
-  const ratRows = [
-    {label:"売上成長率",fn:(r,i)=>i===0?null:pct(r.売上高,plData[i-1]?.売上高),fmt:v=>v==null?"-":sgn(v)},
-    {label:"売上総利益率",fn:r=>r.売上総利益/r.売上高*100,fmt:v=>isNaN(v)?"-":v.toFixed(1)+"%"},
-    {label:"営業利益率",fn:r=>r.営業利益/r.売上高*100,fmt:v=>isNaN(v)?"-":v.toFixed(1)+"%"},
-    {label:"自己資本比率",fn:(r,i)=>bsData[i]?bsData[i].純資産/bsData[i].資産合計*100:null,fmt:v=>v==null?"-":v.toFixed(1)+"%"},
-    {label:"流動比率",fn:(r,i)=>bsData[i]?bsData[i].流動資産/bsData[i].流動負債*100:null,fmt:v=>v==null?"-":v.toFixed(0)+"%"},
-    {label:"ROE",fn:(r,i)=>i===0||!bsData[i]||!bsData[i-1]?null:r.当期純利益/((bsData[i].純資産+bsData[i-1].純資産)/2)*100,fmt:v=>v==null?"-":v.toFixed(1)+"%"},
-    {label:"ROA",fn:(r,i)=>i===0||!bsData[i]||!bsData[i-1]?null:r.当期純利益/((bsData[i].資産合計+bsData[i-1].資産合計)/2)*100,fmt:v=>v==null?"-":v.toFixed(1)+"%"},
   ];
 
   // ── PDF Upload (PL+BS unified) ──
@@ -248,7 +376,26 @@ export default function Financials({ plData, bsData, savePL, saveBS }) {
       {/* ── Data Tables ── */}
       <div className="c"><div className="ch"><div><div className="sec-label">Profit & Loss</div><div className="ct">損益計算書</div></div><span className="p bu">PL</span></div><div className="cb tw"><CompTable rows={plRows} dataset={plData} years={years} /></div></div>
       <div className="c"><div className="ch"><div><div className="sec-label">Balance Sheet</div><div className="ct">貸借対照表</div></div><span className="p gd">BS</span></div><div className="cb tw"><CompTable rows={bsRows} dataset={bsData} years={bsData.map(d=>d.y)} /></div></div>
-      <div className="c"><div className="ch"><div><div className="sec-label">Key Ratios</div><div className="ct">主要経営指標</div></div><span className="p wr">指標</span></div><div className="cb tw"><CompTable rows={ratRows} dataset={plData} header="指標" yoy={false} years={years} /></div></div>
+      <div className="c">
+        <div className="ch">
+          <div><div className="sec-label">Key Ratios</div><div className="ct">主要経営指標</div></div>
+          <div className="rat-tax-setting">
+            <label>実効税率</label>
+            <input type="number" value={taxRate} min={0} max={100} step={1}
+              onChange={(e) => setTaxRate(Number(e.target.value) || 0)} />
+            <span>%</span>
+          </div>
+          <span className="p wr">指標</span>
+        </div>
+        <div className="cb tw">
+          <RatioTable groups={ratioGroups} dataset={plData} years={years} />
+          {(!hasDepreciation || !hasInterest) && (
+            <div className="rat-footnote">
+              ※ 減価償却費・支払利息がPLデータに含まれていないため、一部指標が算出できません。PDF/Excelで取り込むと自動計算されます。
+            </div>
+          )}
+        </div>
+      </div>
       <div className="g2">
         <div className="c"><div className="ch"><div><div className="ct">売上・利益推移</div></div></div><div className="cb"><div className="chart"><canvas ref={plChartRef} /></div></div></div>
         <div className="c"><div className="ch"><div><div className="ct">資産構成推移</div></div></div><div className="cb"><div className="chart"><canvas ref={bsChartRef} /></div></div></div>

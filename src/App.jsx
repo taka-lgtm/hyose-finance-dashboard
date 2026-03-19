@@ -129,7 +129,7 @@ function Dashboard() {
   const pages = {
     overview: <Overview loans={loans} navigate={navigate} plData={plData} bsData={bsData} loading={dataLoading} />,
     performance: <Performance bmData={bmData} />,
-    financials: <Financials plData={plData} bsData={bsData} savePL={savePL} saveBS={saveBS} />,
+    financials: <Financials plData={plData} bsData={bsData} loans={loans} savePL={savePL} saveBS={saveBS} />,
     cashflow: <CashFlow cfData={cfData} />,
     debt: <Debt loans={loans} addLoan={addLoan} updateLoan={updateLoan} removeLoan={removeLoan} loading={loansLoading} />,
     actions: <Actions />,
