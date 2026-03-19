@@ -1,13 +1,14 @@
 import { useRef, useEffect } from "react";
 import { Chart, registerables } from "chart.js";
-import { PL as DEFAULT_PL, BS as DEFAULT_BS, CF, ALERTS, M, MY, pct, sgn, lvl, calcHealth, calcLoanDerived, chartFont, chartGrid, chartLegend } from "../data";
+import { PL as DEFAULT_PL, BS as DEFAULT_BS, CF as DEFAULT_CF, ALERTS, M, MY, pct, sgn, lvl, calcHealth, calcLoanDerived, chartFont, chartGrid, chartLegend } from "../data";
 import Sparkline from "../components/Sparkline";
 
 Chart.register(...registerables);
 
-export default function Overview({ loans, navigate, plData, bsData }) {
+export default function Overview({ loans, navigate, plData, bsData, cfData }) {
   const PLd = plData || DEFAULT_PL;
   const BSd = bsData || DEFAULT_BS;
+  const CFd = cfData && cfData.length > 0 ? cfData : DEFAULT_CF;
   const lastPL = PLd[PLd.length - 1], prevPL = PLd[PLd.length - 2] || lastPL;
   const lastBS = BSd[BSd.length - 1], prevBS = BSd[BSd.length - 2] || lastBS;
   const h = calcHealth(loans);
@@ -16,7 +17,7 @@ export default function Overview({ loans, navigate, plData, bsData }) {
   const gm = lastPL.売上総利益 / lastPL.売上高 * 100, pgm = prevPL.売上総利益 / prevPL.売上高 * 100;
   const cr = lastBS.流動資産 / lastBS.流動負債 * 100;
   const dy = (lastBS.固定負債 + lastBS.流動負債 - lastBS.流動資産 * 0.3) / (lastPL.経常利益 + 300);
-  const minCF = Math.min(...CF.map((v) => v.残高));
+  const minCF = CFd.length > 0 ? Math.min(...CFd.map((v) => v.残高)) : 0;
   const topL = [...loans].sort((a, b) => b.rate - a.rate);
   const trendRef = useRef(null);
   const chartRef = useRef(null);
