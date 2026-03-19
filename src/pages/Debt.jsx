@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Chart, registerables } from "chart.js";
-import { MONTHS, PROJ_MONTHS, MY, lastPL, calcLoanDerived, exportBalanceCSV, exportSummaryCSV, chartFont, chartGrid, chartLegend } from "../data";
+import { MY, lastPL, calcLoanDerived, exportBalanceCSV, exportSummaryCSV, chartFont, chartGrid, chartLegend } from "../data";
 import { BANK_COLORS, getBankColor } from "../data/banks";
+import { calcAllProjections } from "../lib/loanCalc";
 import LoanModal from "../components/LoanModal";
 
 Chart.register(...registerables);
@@ -26,19 +27,8 @@ export default function Debt({ loans, addLoan, removeLoan, loading }) {
   const refiTarget = sorted.filter((l) => l.rate >= 1.5);
   const refiSavings = refiTarget.reduce((s, l) => s + Math.round(l.balance * (l.rate - 1.0) / 100), 0);
 
-  // projectionsがあればそれを使用、なければ自動計算にフォールバック
-  const projData = fl.map((l) => {
-    let months;
-    if (l.projections && l.projections.length >= 12) {
-      months = l.projections.slice(0, 12).map((v) => Math.max(0, v));
-    } else {
-      months = [];
-      let bal = l.balance;
-      for (let i = 0; i < 12; i++) { bal = Math.max(0, bal - l.monthly); months.push(bal); }
-    }
-    return { ...l, months };
-  });
-  const projTotals = PROJ_MONTHS.map((_, i) => projData.reduce((s, l) => s + l.months[i], 0));
+  // 借入条件から月別残高を自動計算
+  const { labels: projLabels, loanData: projData, totals: projTotals, bankData: projBankData } = calcAllProjections(fl);
 
   return (
     <div className="page"><div className="g">
@@ -72,7 +62,7 @@ export default function Debt({ loans, addLoan, removeLoan, loading }) {
       {view === "cards" && <CardsView sorted={sorted} bSum={bSum} bankInt={bankInt} tBal={tBal} removeLoan={removeLoan} />}
       {view === "table" && <TableView sorted={sorted} fl={fl} removeLoan={removeLoan} />}
       {view === "schedule" && <ScheduleView loans={loans} />}
-      {view === "balance" && <BalanceView fl={fl} projData={projData} projTotals={projTotals} wRate={wRate} tMon={tMon} loans={loans} banks={banks} bankFilter={bankFilter} />}
+      {view === "balance" && <BalanceView projData={projData} projLabels={projLabels} projTotals={projTotals} projBankData={projBankData} wRate={wRate} tMon={tMon} loans={loans} bankFilter={bankFilter} />}
       {view === "analysis" && <AnalysisView bSum={bSum} bankInt={bankInt} totalInt={totalInt} fixedBal={fixedBal} varBal={varBal} loans={loans} sorted={sorted} refiTarget={refiTarget} refiSavings={refiSavings} />}
 
       <LoanModal open={modalOpen} onClose={() => setModalOpen(false)} onSubmit={addLoan} loans={loans} />
@@ -170,27 +160,38 @@ function ScheduleView({ loans }) {
   </>);
 }
 
-function BalanceView({ fl, projData, projTotals, wRate, tMon, loans, banks, bankFilter }) {
-  const loanChartRef = useRef(null), bankChartRef = useRef(null);
-  const loanChart = useRef(null), bankChart = useRef(null);
+function BalanceView({ projData, projLabels, projTotals, projBankData, wRate, tMon, loans, bankFilter }) {
+  const loanChartRef = useRef(null), bankChartRef = useRef(null), totalChartRef = useRef(null);
+  const loanChart = useRef(null), bankChart = useRef(null), totalChart = useRef(null);
   const scrollRef = useRef(null), wrapRef = useRef(null);
-  const colors = ["#22c994", "#5b8def", "#e5a83a", "#9b7cf6", "#e55b5b", "#ff8c69", "#69d2e7", "#f0c674", "#c397e6", "#4ecdc4"];
 
-  // 融資別 残高推移チャート
+  // 区分別のスタイル
+  const getCategoryStyle = (cat) => {
+    if (cat === "短期") return { borderDash: [6, 3], borderColor: "#e5a83a" };
+    if (cat === "当座貸越") return { borderDash: [3, 3], borderColor: "rgba(255,255,255,.3)" };
+    return { borderDash: [], borderColor: null };
+  };
+
+  // 融資別 残高推移チャート（区分で色分け）
   useEffect(() => {
     loanChart.current?.destroy();
     if (!loanChartRef.current || !projData.length) return;
     loanChart.current = new Chart(loanChartRef.current, {
       type: "line",
       data: {
-        labels: PROJ_MONTHS,
-        datasets: projData.map((l, i) => ({
-          label: l.bank + " " + l.name,
-          data: l.months,
-          borderColor: getBankColor(l.bank) || colors[i % colors.length],
-          backgroundColor: (getBankColor(l.bank) || colors[i % colors.length]) + "18",
-          fill: true, tension: 0.3, borderWidth: 1.5, pointRadius: 2,
-        })),
+        labels: projLabels,
+        datasets: projData.map((l) => {
+          const cs = getCategoryStyle(l.category);
+          const color = cs.borderColor || getBankColor(l.bank);
+          return {
+            label: l.bank + " " + l.name,
+            data: l.balances,
+            borderColor: color,
+            backgroundColor: color + "18",
+            fill: true, tension: 0.3, borderWidth: 1.5, pointRadius: 2,
+            borderDash: cs.borderDash,
+          };
+        }),
       },
       options: {
         responsive: true, maintainAspectRatio: false,
@@ -202,28 +203,20 @@ function BalanceView({ fl, projData, projTotals, wRate, tMon, loans, banks, bank
       },
     });
     return () => loanChart.current?.destroy();
-  }, [projData]);
+  }, [projData, projLabels]);
 
   // 銀行別 残高推移チャート
-  const bankList = banks || [...new Set(fl.map((l) => l.bank))];
-  const bankProjData = bankList.map((b) => {
-    const bankLoans = projData.filter((l) => l.bank === b);
-    const totals = PROJ_MONTHS.map((_, i) => bankLoans.reduce((s, l) => s + l.months[i], 0));
-    return { bank: b, totals };
-  });
-
   useEffect(() => {
     bankChart.current?.destroy();
-    if (!bankChartRef.current || !bankProjData.length) return;
+    if (!bankChartRef.current || !projBankData.length) return;
     bankChart.current = new Chart(bankChartRef.current, {
       type: "line",
       data: {
-        labels: PROJ_MONTHS,
-        datasets: bankProjData.map((b) => ({
+        labels: projLabels,
+        datasets: projBankData.map((b) => ({
           label: b.bank,
-          data: b.totals,
+          data: b.balances,
           borderColor: getBankColor(b.bank),
-          backgroundColor: getBankColor(b.bank) + "18",
           fill: false, tension: 0.3, borderWidth: 2, pointRadius: 3,
         })),
       },
@@ -237,7 +230,35 @@ function BalanceView({ fl, projData, projTotals, wRate, tMon, loans, banks, bank
       },
     });
     return () => bankChart.current?.destroy();
-  }, [projData, bankProjData]);
+  }, [projBankData, projLabels]);
+
+  // 合計残高推移チャート
+  useEffect(() => {
+    totalChart.current?.destroy();
+    if (!totalChartRef.current || !projTotals.length) return;
+    totalChart.current = new Chart(totalChartRef.current, {
+      type: "line",
+      data: {
+        labels: projLabels,
+        datasets: [{
+          label: "借入残高 合計",
+          data: projTotals,
+          borderColor: "#22c994",
+          backgroundColor: "rgba(34,201,148,.08)",
+          fill: true, tension: 0.3, borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: "#22c994",
+        }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { ticks: { callback: (v) => Math.round(v / 10000).toLocaleString() + "万", font: chartFont }, grid: chartGrid },
+          x: { grid: { display: false }, ticks: { font: chartFont } },
+        },
+      },
+    });
+    return () => totalChart.current?.destroy();
+  }, [projTotals, projLabels]);
 
   useEffect(() => {
     const scr = scrollRef.current, wrap = wrapRef.current;
@@ -248,13 +269,20 @@ function BalanceView({ fl, projData, projTotals, wRate, tMon, loans, banks, bank
     return () => scr.removeEventListener("scroll", check);
   }, [projData]);
 
-  const curTotal = fl.reduce((s, l) => s + l.balance, 0);
-  const endTotal = projTotals[projTotals.length - 1];
+  const curTotal = projData.reduce((s, l) => s + l.balance, 0);
+  const endTotal = projTotals[projTotals.length - 1] || 0;
 
   return (<>
+    {/* 合計残高推移 */}
+    <div className="c">
+      <div className="ch"><div><div className="ct">借入残高 合計推移</div><div className="cs">全融資の合計残高（12ヶ月先まで自動計算）</div></div></div>
+      <div className="cb"><div className="chart"><canvas ref={totalChartRef} /></div></div>
+    </div>
+
+    {/* 残高推移表 */}
     <div className="c">
       <div className="ch">
-        <div><div className="ct">返済残高推移表<span className="unit-badge">単位: 万円</span></div><div className="cs">左2列固定、横スクロールで全月を確認（2026年 見込み）</div></div>
+        <div><div className="ct">返済残高推移表<span className="unit-badge">単位: 万円</span></div><div className="cs">据置中の融資は残高が水平推移</div></div>
         <button className="btn-export" onClick={() => exportBalanceCSV(loans, bankFilter)}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
           銀行提出用CSV
@@ -266,9 +294,9 @@ function BalanceView({ fl, projData, projTotals, wRate, tMon, loans, banks, bank
             <table className="bal-tbl">
               <thead><tr>
                 <th className="sticky sticky-0">融資名</th><th className="sticky sticky-1">銀行</th>
-                <th className="num-head">金利</th><th className="num-head">月返済</th>
+                <th className="num-head">区分</th><th className="num-head">金利</th><th className="num-head">月返済</th>
                 <th className="num-head" style={{ background: "rgba(34,201,148,.06)" }}>現在</th>
-                {PROJ_MONTHS.map((m) => <th key={m} className="num-head">{m}</th>)}
+                {projLabels.map((m) => <th key={m} className="num-head">{m}</th>)}
               </tr></thead>
               <tbody>
                 {projData.map((l, i) => {
@@ -277,15 +305,16 @@ function BalanceView({ fl, projData, projTotals, wRate, tMon, loans, banks, bank
                     <tr key={i}>
                       <td className="bold sticky sticky-0">{l.name}</td>
                       <td className="sticky sticky-1" style={{ color: "var(--tx2)" }}>{l.bank}</td>
+                      <td className="num"><span className={`p ${l.category === "長期" ? "bu" : l.category === "短期" ? "wr" : "mt"}`} style={{ fontSize: 9 }}>{l.category}</span></td>
                       <td className="num" style={{ color: rc }}>{l.rate}%</td>
                       <td className="num">{Math.round(l.monthly / 10000).toLocaleString()}</td>
                       <td className="num" style={{ background: "rgba(34,201,148,.04)", color: "var(--tx)" }}>{Math.round(l.balance / 10000).toLocaleString()}</td>
-                      {l.months.map((v, j) => <td key={j} className="num" style={v === 0 ? { color: "var(--tx3)", opacity: 0.5 } : {}}>{v === 0 ? "—" : Math.round(v / 10000).toLocaleString()}</td>)}
+                      {l.balances.map((v, j) => <td key={j} className="num" style={v === 0 ? { color: "var(--tx3)", opacity: 0.5 } : {}}>{v === 0 ? "—" : Math.round(v / 10000).toLocaleString()}</td>)}
                     </tr>
                   );
                 })}
                 <tr className="total-row">
-                  <td className="bold sticky sticky-0">合計</td><td className="sticky sticky-1" />
+                  <td className="bold sticky sticky-0">合計</td><td className="sticky sticky-1" /><td className="num" />
                   <td className="num">{wRate}%</td><td className="num">{Math.round(tMon / 10000).toLocaleString()}</td>
                   <td className="num" style={{ background: "rgba(34,201,148,.04)" }}>{Math.round(curTotal / 10000).toLocaleString()}</td>
                   {projTotals.map((v, i) => <td key={i} className="num">{Math.round(v / 10000).toLocaleString()}</td>)}
@@ -300,12 +329,14 @@ function BalanceView({ fl, projData, projTotals, wRate, tMon, loans, banks, bank
         </div>
       </div>
     </div>
+
+    {/* チャート */}
     <div className="g2">
-      <div className="c"><div className="ch"><div><div className="ct">融資別 残高推移</div><div className="cs">積み上げ面グラフ（据置中の融資は水平推移）</div></div></div><div className="cb"><div className="chart tall"><canvas ref={loanChartRef} /></div></div></div>
-      <div className="c"><div className="ch"><div><div className="ct">銀行別 残高推移</div><div className="cs">銀行ごとの合算残高推移</div></div></div><div className="cb"><div className="chart tall"><canvas ref={bankChartRef} /></div></div></div>
+      <div className="c"><div className="ch"><div><div className="ct">融資別 残高推移</div><div className="cs">長期=実線 / 短期=破線(橙) / 当座貸越=点線(灰)</div></div></div><div className="cb"><div className="chart tall"><canvas ref={loanChartRef} /></div></div></div>
+      <div className="c"><div className="ch"><div><div className="ct">銀行別 残高推移</div><div className="cs">銀行ごとの合算残高</div></div></div><div className="cb"><div className="chart tall"><canvas ref={bankChartRef} /></div></div></div>
     </div>
     <div className="g2">
-      <div className="c"><div className="ch"><div><div className="ct">年度末 借入残高予測</div></div></div>
+      <div className="c"><div className="ch"><div><div className="ct">12ヶ月後 借入残高予測</div></div></div>
         <div className="cb"><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <div style={{ textAlign: "center", padding: 16, borderRadius: "var(--rs)", background: "rgba(255,255,255,.02)", border: "1px solid var(--bd)" }}>
             <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>現在残高</div>
