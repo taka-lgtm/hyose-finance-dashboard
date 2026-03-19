@@ -15,6 +15,24 @@ export default function CashFlow({ cfData, saveCF }) {
     ? [...rawCF].sort((a, b) => fiscalMonths.indexOf(a.m) - fiscalMonths.indexOf(b.m))
     : rawCF;
   const hasData = CF.length > 0;
+
+  // 平均残高・月間増減を算出
+  const enriched = CF.map((v, i) => {
+    const prevBal = i > 0 ? CF[i - 1].残高 : v.残高;
+    const 平均残高 = Math.round((prevBal + v.残高) / 2);
+    const 月間増減 = v.残高 - prevBal;
+    const 収支差額 = v.入金 - v.出金;
+    // PLベース推計残高：初月はBS残高、以降は前月推計+収支差額
+    return { ...v, 平均残高, 月間増減, 収支差額 };
+  });
+
+  // PLベース推計残高を算出（初月はBS残高、以降は前月推計+収支差額）
+  const plEstimates = [];
+  enriched.forEach((v, i) => {
+    if (i === 0) plEstimates.push(v.残高);
+    else plEstimates.push(plEstimates[i - 1] + v.収支差額);
+  });
+
   const min = hasData ? Math.min(...CF.map((v) => v.残高)) : 0;
   const max = hasData ? Math.max(...CF.map((v) => v.残高)) : 0;
   const avgI = hasData ? Math.round(CF.reduce((s, v) => s + v.入金, 0) / CF.length) : 0;
@@ -59,10 +77,10 @@ export default function CashFlow({ cfData, saveCF }) {
     c1.current?.destroy(); c2.current?.destroy();
     if (!hasData) return;
     const labels = CF.map((v) => v.m);
-    if (r1.current) c1.current = new Chart(r1.current, { type: "line", data: { labels, datasets: [{ label: "残高", data: CF.map((v) => v.残高), borderColor: "#22c994", backgroundColor: "rgba(34,201,148,.06)", fill: true, pointRadius: 3, tension: 0.3, borderWidth: 2 }, { label: "予算", data: CF.map((v) => v.予算残高), borderColor: "rgba(255,255,255,.15)", pointRadius: 0, tension: 0.3, borderDash: [5, 5], borderWidth: 1.5 }, { label: "安全水準", data: CF.map(() => safetyLine), borderColor: "rgba(229,91,91,.35)", pointRadius: 0, borderDash: [3, 3], borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: chartLegend }, scales: { y: { ticks: { callback: (v) => v.toLocaleString() + "万", font: chartFont }, grid: chartGrid }, x: { grid: { display: false }, ticks: { font: chartFont } } } } });
+    if (r1.current) c1.current = new Chart(r1.current, { type: "line", data: { labels, datasets: [{ label: "BS月末残高", data: enriched.map((v) => v.残高), borderColor: "#22c994", backgroundColor: "rgba(34,201,148,.06)", fill: true, pointRadius: 3, tension: 0.3, borderWidth: 2 }, { label: "平均残高", data: enriched.map((v) => v.平均残高), borderColor: "#3b82f6", pointRadius: 3, tension: 0.3, borderWidth: 3 }, { label: "PLベース推計", data: plEstimates, borderColor: "rgba(255,255,255,.45)", pointRadius: 0, tension: 0.3, borderDash: [5, 5], borderWidth: 1.5 }, { label: "安全水準", data: CF.map(() => safetyLine), borderColor: "rgba(229,91,91,.35)", pointRadius: 0, borderDash: [3, 3], borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: chartLegend }, scales: { y: { ticks: { callback: (v) => v.toLocaleString() + "万", font: chartFont }, grid: chartGrid }, x: { grid: { display: false }, ticks: { font: chartFont } } } } });
     if (r2.current) c2.current = new Chart(r2.current, { type: "bar", data: { labels, datasets: [{ label: "入金", data: CF.map((v) => v.入金), backgroundColor: "rgba(34,201,148,.5)", borderRadius: 4 }, { label: "出金", data: CF.map((v) => -v.出金), backgroundColor: "rgba(229,91,91,.35)", borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: chartLegend }, scales: { y: { ticks: { callback: (v) => Math.abs(v).toLocaleString() + "万", font: chartFont }, grid: chartGrid }, x: { grid: { display: false }, ticks: { font: chartFont } } } } });
     return () => { c1.current?.destroy(); c2.current?.destroy(); };
-  }, [CF, hasData, safetyLine]);
+  }, [CF, enriched, plEstimates, hasData, safetyLine]);
 
   return (
     <div className="page"><div className="g">
@@ -121,43 +139,42 @@ export default function CashFlow({ cfData, saveCF }) {
           <div className="k"><div className="k-label">月平均Net CF</div><div className="k-val" style={{ color: avgI - avgO >= 0 ? "var(--ac)" : "var(--rd)" }}>{avgI - avgO >= 0 ? "+" : ""}{M(avgI - avgO)}</div><div className="k-ctx">出金 {M(avgO)} / 月</div></div>
         </div>
         <div className="g2">
-          <div className="c"><div className="ch"><div><div className="ct">残高推移</div><div className="cs">実績 vs 予算 vs 安全水準</div></div></div><div className="cb"><div className="chart tall"><canvas ref={r1} /></div></div></div>
+          <div className="c"><div className="ch"><div><div className="ct">残高推移</div><div className="cs">BS月末残高 vs 平均残高 vs PLベース推計</div></div></div><div className="cb"><div className="chart tall"><canvas ref={r1} /></div></div></div>
           <div className="c"><div className="ch"><div><div className="ct">入出金フロー</div></div></div><div className="cb"><div className="chart tall"><canvas ref={r2} /></div></div></div>
         </div>
         <div className="c">
           <div className="ch"><div><div className="ct">月次詳細</div></div></div>
           <div className="cb tw">
             <table>
-              <thead><tr><th>月</th><th className="tr">入金</th><th className="tr">出金</th><th className="tr">Net</th><th className="tr">残高</th><th className="tr">予算残高</th><th className="tr">差異</th></tr></thead>
+              <thead><tr><th>月</th><th className="tr">入金(PL)</th><th className="tr">出金(PL)</th><th className="tr">収支差額</th><th className="tr">BS月末残高</th><th className="tr">平均残高</th><th className="tr">月間増減</th></tr></thead>
               <tbody>
-                {CF.map((v, i) => {
-                  const n = v.入金 - v.出金, d = v.残高 - v.予算残高;
-                  return (
-                    <tr key={i}>
-                      <td className="bold">{v.m}</td>
-                      <td className="tr mono">{M(v.入金)}</td><td className="tr mono">{M(v.出金)}</td>
-                      <td className="tr mono" style={{ color: n >= 0 ? "var(--ac)" : "var(--rd)" }}>{n >= 0 ? "+" : ""}{n.toLocaleString()}万</td>
-                      <td className="tr mono">{M(v.残高)}</td><td className="tr mono">{M(v.予算残高)}</td>
-                      <td className="tr mono" style={{ color: d >= 0 ? "var(--ac)" : "var(--rd)" }}>{d >= 0 ? "+" : ""}{d.toLocaleString()}万</td>
-                    </tr>
-                  );
-                })}
+                {enriched.map((v, i) => (
+                  <tr key={i}>
+                    <td className="bold">{v.m}</td>
+                    <td className="tr mono">{M(v.入金)}</td><td className="tr mono">{M(v.出金)}</td>
+                    <td className="tr mono" style={{ color: v.収支差額 >= 0 ? "var(--ac)" : "var(--rd)" }}>{v.収支差額 >= 0 ? "+" : ""}{v.収支差額.toLocaleString()}万</td>
+                    <td className="tr mono">{M(v.残高)}</td>
+                    <td className="tr mono">{M(v.平均残高)}</td>
+                    <td className="tr mono" style={{ color: v.月間増減 >= 0 ? "var(--ac)" : "var(--rd)" }}>{v.月間増減 >= 0 ? "+" : ""}{v.月間増減.toLocaleString()}万</td>
+                  </tr>
+                ))}
               </tbody>
               {(() => {
-                const totalIn = CF.reduce((s, v) => s + v.入金, 0);
-                const totalOut = CF.reduce((s, v) => s + v.出金, 0);
+                const totalIn = enriched.reduce((s, v) => s + v.入金, 0);
+                const totalOut = enriched.reduce((s, v) => s + v.出金, 0);
                 const totalNet = totalIn - totalOut;
-                const lastBal = CF[CF.length - 1].残高;
-                const lastBudget = CF[CF.length - 1].予算残高;
-                const lastDiff = lastBal - lastBudget;
+                const lastBal = enriched[enriched.length - 1].残高;
+                const lastAvg = enriched[enriched.length - 1].平均残高;
+                const totalDelta = enriched.reduce((s, v) => s + v.月間増減, 0);
                 return (
                   <tfoot>
                     <tr className="cf-total-row">
                       <td className="bold">合計</td>
                       <td className="tr mono">{M(totalIn)}</td><td className="tr mono">{M(totalOut)}</td>
                       <td className="tr mono" style={{ color: totalNet >= 0 ? "var(--ac)" : "var(--rd)" }}>{totalNet >= 0 ? "+" : ""}{totalNet.toLocaleString()}万</td>
-                      <td className="tr mono">{M(lastBal)}</td><td className="tr mono">{M(lastBudget)}</td>
-                      <td className="tr mono" style={{ color: lastDiff >= 0 ? "var(--ac)" : "var(--rd)" }}>{lastDiff >= 0 ? "+" : ""}{lastDiff.toLocaleString()}万</td>
+                      <td className="tr mono">{M(lastBal)}</td>
+                      <td className="tr mono">{M(lastAvg)}</td>
+                      <td className="tr mono" style={{ color: totalDelta >= 0 ? "var(--ac)" : "var(--rd)" }}>{totalDelta >= 0 ? "+" : ""}{totalDelta.toLocaleString()}万</td>
                     </tr>
                   </tfoot>
                 );
