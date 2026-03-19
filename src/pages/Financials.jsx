@@ -419,6 +419,12 @@ export default function Financials({ plData, bsData, loans = [], savePL, saveBS 
         </div>
       )}
 
+      {/* ── Charts ── */}
+      <div className="g2">
+        <div className="c"><div className="ch"><div><div className="ct">売上・利益推移</div></div></div><div className="cb"><div className="chart"><canvas ref={plChartRef} /></div></div></div>
+        <div className="c"><div className="ch"><div><div className="ct">資産構成推移</div></div></div><div className="cb"><div className="chart"><canvas ref={bsChartRef} /></div></div></div>
+      </div>
+
       {/* ── Data Tables ── */}
       <div className="c"><div className="ch"><div><div className="sec-label">Profit & Loss</div><div className="ct">損益計算書</div></div><span className="p bu">PL</span></div><div className="cb tw"><CompTable rows={plRows} dataset={plData} years={years} editable onCellEdit={handlePLEdit} editedCells={editedCells} /></div></div>
       <div className="c"><div className="ch"><div><div className="sec-label">Balance Sheet</div><div className="ct">貸借対照表</div></div><span className="p gd">BS</span></div><div className="cb tw"><CompTable rows={bsRows} dataset={bsData} years={bsData.map(d=>d.y)} editable onCellEdit={handleBSEdit} editedCells={editedCells} /></div></div>
@@ -441,10 +447,6 @@ export default function Financials({ plData, bsData, loans = [], savePL, saveBS 
             </div>
           )}
         </div>
-      </div>
-      <div className="g2">
-        <div className="c"><div className="ch"><div><div className="ct">売上・利益推移</div></div></div><div className="cb"><div className="chart"><canvas ref={plChartRef} /></div></div></div>
-        <div className="c"><div className="ch"><div><div className="ct">資産構成推移</div></div></div><div className="cb"><div className="chart"><canvas ref={bsChartRef} /></div></div></div>
       </div>
     </div></div>
   );
