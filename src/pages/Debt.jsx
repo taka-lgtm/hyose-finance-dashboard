@@ -13,10 +13,12 @@ const CATEGORIES = ["長期", "短期", "当座貸越"];
 export default function Debt({ loans, addLoan, removeLoan, loading }) {
   const [view, setView] = useState("balance");
   const [bankFilter, setBankFilter] = useState("all");
+  const [catFilter, setCatFilter] = useState("all");
   const [modalOpen, setModalOpen] = useState(false);
 
   const banks = [...new Set(loans.map((l) => l.bank))];
-  const fl = bankFilter === "all" ? loans : loans.filter((l) => l.bank === bankFilter);
+  const catFiltered = catFilter === "all" ? loans : loans.filter((l) => l.category === catFilter);
+  const fl = bankFilter === "all" ? catFiltered : catFiltered.filter((l) => l.bank === bankFilter);
   const { tBal, tMon, wRate } = calcLoanDerived(loans);
   const bSum = banks.map((b) => { const ls = loans.filter((l) => l.bank === b); return { bank: b, bal: ls.reduce((s, l) => s + l.balance, 0), mon: ls.reduce((s, l) => s + l.monthly, 0), cnt: ls.length }; });
   const intCost = loans.map((l) => ({ ...l, annualInt: Math.round(l.balance * l.rate / 100) }));
@@ -45,7 +47,11 @@ export default function Debt({ loans, addLoan, removeLoan, loading }) {
           ))}
         </div>
         <div className="debt-filter">
-          <span className="df-label">絞り込み</span>
+          <div style={{ display: "flex", gap: 4, marginRight: 8 }}>
+            {["all", ...CATEGORIES].map((c) => (
+              <button key={c} className={`chip ${catFilter === c ? "on" : ""}`} style={{ fontSize: 10, padding: "3px 8px" }} onClick={() => setCatFilter(c)}>{c === "all" ? "全区分" : c}</button>
+            ))}
+          </div>
           <select className="sel" value={bankFilter} onChange={(e) => setBankFilter(e.target.value)}>
             <option value="all">全銀行</option>
             {banks.map((b) => <option key={b} value={b}>{b}</option>)}
@@ -54,7 +60,7 @@ export default function Debt({ loans, addLoan, removeLoan, loading }) {
       </div>
 
       <div className="g4">
-        <div className="k hero"><div className="k-label">借入残高 合計</div><div className="k-val">{MY(tBal)}</div><div className="k-ctx">{loans.length}本 / 加重平均 {wRate}%</div><div className="k-foot"><span>年間利息 {MY(totalInt)}</span></div></div>
+        <div className="k hero"><div className="k-label">借入残高 合計</div><div className="k-val">{MY(tBal)}</div><div className="k-ctx">{loans.length}本 / 返済月数 {tMon > 0 ? Math.round(tBal / tMon) : "-"}ヶ月</div><div className="k-foot"><span>年間利息 {MY(totalInt)}</span></div></div>
         <div className="k"><div className="k-label">月間返済 合計</div><div className="k-val">{MY(tMon)}</div><div className="k-ctx">年間 {MY(tMon * 12)}</div><div className="k-foot"><span>売上比 {(tMon / 10000 * 12 / lastPL.売上高 * 100).toFixed(1)}%</span></div></div>
         <div className="k"><div className="k-label">平均金利</div><div className="k-val">{wRate}%</div><div className="k-ctx">固定 {MY(fixedBal)} / 変動 {MY(varBal)}</div></div>
         <div className="k"><div className="k-label">借換え削減余地</div><div className="k-val" style={{ color: "var(--ac)" }}>▼{MY(refiSavings)}/年</div><div className="k-ctx">{refiTarget.length}件を1.0%に借換えた場合</div></div>
