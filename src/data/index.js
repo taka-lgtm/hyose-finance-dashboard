@@ -373,3 +373,22 @@ function downloadCSV(csv, filename) {
   a.click();
   URL.revokeObjectURL(a.href);
 }
+
+// ── XLSX Export ──
+export async function exportBalanceXLSX(loans, projData, projLabels) {
+  const XLSX = await import("xlsx");
+  const rows = projData.map((l) => {
+    const row = { 区分: l.category, 銀行: l.bank, 融資名: l.name, "金利(%)": l.rate, "月返済(円)": l.monthly, "現在残高(円)": l.balance };
+    projLabels.forEach((m, i) => { row[m] = l.balances[i]; });
+    return row;
+  });
+  // 合計行
+  const totalRow = { 区分: "", 銀行: "", 融資名: "合計", "金利(%)": "", "月返済(円)": projData.reduce((s, l) => s + l.monthly, 0), "現在残高(円)": projData.reduce((s, l) => s + l.balance, 0) };
+  projLabels.forEach((m, i) => { totalRow[m] = projData.reduce((s, l) => s + l.balances[i], 0); });
+  rows.push(totalRow);
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "返済残高推移");
+  XLSX.writeFile(wb, `返済残高推移表_${new Date().toISOString().slice(0, 10)}.xlsx`);
+}

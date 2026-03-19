@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Chart, registerables } from "chart.js";
-import { MY, lastPL, calcLoanDerived, exportBalanceCSV, exportSummaryCSV, chartFont, chartGrid, chartLegend } from "../data";
+import { MY, lastPL, calcLoanDerived, exportBalanceCSV, exportBalanceXLSX, exportSummaryCSV, chartFont, chartGrid, chartLegend } from "../data";
 import { BANK_COLORS, getBankColor } from "../data/banks";
 import { calcAllProjections } from "../lib/loanCalc";
 import LoanModal from "../components/LoanModal";
@@ -77,7 +77,7 @@ export default function Debt({ loans, addLoan, updateLoan, removeLoan, loading }
         <div className="k"><div className="k-label">借換え削減余地</div><div className="k-val" style={{ color: "var(--ac)" }}>▼{MY(refiSavings)}/年</div><div className="k-ctx">{refiTarget.length}件を1.0%に借換えた場合</div></div>
       </div>
 
-      {view === "balance" && <BalanceView proj={proj} wRate={wRate} tMon={tMon} loans={loans} bankFilter={bankFilter} />}
+      {view === "balance" && <BalanceView proj={proj} wRate={wRate} tMon={tMon} loans={loans} bankFilter={bankFilter} onEdit={openEdit} />}
       {view === "table" && <ListView loans={fl} onEdit={openEdit} />}
       {view === "schedule" && <ScheduleView loans={fl} />}
       {view === "analysis" && <AnalysisView bSum={bSum} bankInt={allBankInt} totalInt={allTotalInt} fixedBal={allFixedBal} varBal={allVarBal} loans={loans} sorted={sorted} refiTarget={refiTarget} refiSavings={refiSavings} />}
@@ -91,7 +91,7 @@ export default function Debt({ loans, addLoan, updateLoan, removeLoan, loading }
    残高推移ビュー
    ══════════════════════════════════ */
 
-function BalanceBlock({ title, badge, data, projLabels }) {
+function BalanceBlock({ title, badge, data, projLabels, onEdit }) {
   if (!data.length) return null;
   const sub = data.reduce((s, l) => s + l.balance, 0);
   const subTotals = projLabels.map((_, i) => data.reduce((s, l) => s + l.balances[i], 0));
@@ -110,7 +110,7 @@ function BalanceBlock({ title, badge, data, projLabels }) {
       {data.map((l, i) => {
         const rc = l.rate >= 1.8 ? "var(--rd)" : l.rate >= 1.5 ? "var(--am)" : "var(--ac)";
         return (
-          <tr key={i}>
+          <tr key={i} style={{ cursor: "pointer" }} onClick={() => onEdit && onEdit(l)} title="クリックで編集">
             <td className="sticky sticky-0" style={{ paddingLeft: 20 }}>{l.bank}</td>
             <td className="sticky sticky-1">{l.name}</td>
             <td className="num" style={{ color: rc }}>{l.rate}%</td>
@@ -124,7 +124,7 @@ function BalanceBlock({ title, badge, data, projLabels }) {
   );
 }
 
-function BalanceView({ proj, wRate, tMon, loans, bankFilter }) {
+function BalanceView({ proj, wRate, tMon, loans, bankFilter, onEdit }) {
   const { labels: projLabels, loanData: projData, totals: projTotals, bankData: projBankData } = proj;
   const loanChartRef = useRef(null), bankChartRef = useRef(null), totalChartRef = useRef(null);
   const loanChart = useRef(null), bankChart = useRef(null), totalChart = useRef(null);
@@ -162,9 +162,9 @@ function BalanceView({ proj, wRate, tMon, loans, bankFilter }) {
             <table className="bal-tbl">
               <thead><tr><th className="sticky sticky-0">銀行</th><th className="sticky sticky-1">融資名</th><th className="num-head">金利</th><th className="num-head">月返済</th><th className="num-head" style={{ background: "rgba(34,201,148,.06)" }}>現在</th>{projLabels.map((m) => <th key={m} className="num-head">{m}</th>)}</tr></thead>
               <tbody>
-                <BalanceBlock title="長期" badge="bu" data={longTerm} projLabels={projLabels} />
-                <BalanceBlock title="短期" badge="wr" data={shortTerm} projLabels={projLabels} />
-                <BalanceBlock title="当座貸越" badge="mt" data={overdraft} projLabels={projLabels} />
+                <BalanceBlock title="長期" badge="bu" data={longTerm} projLabels={projLabels} onEdit={onEdit} />
+                <BalanceBlock title="短期" badge="wr" data={shortTerm} projLabels={projLabels} onEdit={onEdit} />
+                <BalanceBlock title="当座貸越" badge="mt" data={overdraft} projLabels={projLabels} onEdit={onEdit} />
                 <tr className="total-row">
                   <td className="bold sticky sticky-0">総合計</td><td className="sticky sticky-1" />
                   <td className="num">{wRate}%</td><td className="num">{Math.round(tMon / 10000).toLocaleString()}</td>
@@ -194,6 +194,7 @@ function BalanceView({ proj, wRate, tMon, loans, bankFilter }) {
         </div></div></div>
       <div className="c"><div className="ch"><div><div className="ct">エクスポート</div></div></div>
         <div className="cb"><div style={{ display: "grid", gap: 10 }}>
+          <button className="btn-export" style={{ width: "100%", justifyContent: "center", padding: 12 }} onClick={() => exportBalanceXLSX(loans, projData, projLabels)}>返済残高推移表（Excel）</button>
           <button className="btn-export" style={{ width: "100%", justifyContent: "center", padding: 12 }} onClick={() => exportBalanceCSV(loans, bankFilter)}>返済残高推移表（CSV）</button>
           <button className="btn-export" style={{ width: "100%", justifyContent: "center", padding: 12 }} onClick={() => exportSummaryCSV(loans)}>融資一覧サマリー（CSV）</button>
         </div></div></div>
