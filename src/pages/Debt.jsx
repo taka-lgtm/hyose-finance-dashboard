@@ -357,48 +357,112 @@ function ScheduleView({ loans }) {
 
 function AnalysisView({ bSum, bankInt, totalInt, fixedBal, varBal, loans, sorted, refiTarget, refiSavings }) {
   const tBal = loans.reduce((s, l) => s + l.balance, 0);
+  const proparBal = loans.filter((l) => l.condition === "P").reduce((s, l) => s + l.balance, 0);
+  const guarBal = loans.filter((l) => l.condition === "保").reduce((s, l) => s + l.balance, 0);
   const r1 = useRef(null), r2 = useRef(null), r3 = useRef(null), c1 = useRef(null), c2 = useRef(null), c3 = useRef(null);
 
+  // 固定vs変動ドーナツ
   useEffect(() => {
-    [c1, c2, c3].forEach((c) => c.current?.destroy());
-    if (r1.current) c1.current = new Chart(r1.current, { type: "doughnut", data: { labels: ["固定金利", "変動金利"], datasets: [{ data: [fixedBal, varBal], backgroundColor: ["rgba(34,201,148,.6)", "rgba(229,168,58,.6)"], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: "65%", plugins: { legend: chartLegend } } });
-    if (r2.current) c2.current = new Chart(r2.current, { type: "doughnut", data: { labels: bSum.map((v) => v.bank), datasets: [{ data: bSum.map((v) => v.bal), backgroundColor: bSum.map((v) => BANK_COLORS[v.bank] || "#5b8def"), borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: "65%", plugins: { legend: chartLegend } } });
+    c1.current?.destroy();
+    if (!r1.current) return;
+    c1.current = new Chart(r1.current, { type: "doughnut", data: { labels: ["固定金利", "変動金利"], datasets: [{ data: [fixedBal, varBal], backgroundColor: ["rgba(34,201,148,.6)", "rgba(229,168,58,.6)"], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: "65%", plugins: { legend: chartLegend } } });
+    return () => c1.current?.destroy();
+  }, [fixedBal, varBal]);
+
+  // プロパーvs保証付きドーナツ
+  useEffect(() => {
+    c2.current?.destroy();
+    if (!r2.current) return;
+    c2.current = new Chart(r2.current, { type: "doughnut", data: { labels: ["プロパー", "保証付き"], datasets: [{ data: [proparBal, guarBal], backgroundColor: ["rgba(91,141,239,.6)", "rgba(155,124,246,.6)"], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: "65%", plugins: { legend: chartLegend } } });
+    return () => c2.current?.destroy();
+  }, [proparBal, guarBal]);
+
+  // 金利帯別
+  useEffect(() => {
+    c3.current?.destroy();
+    if (!r3.current) return;
     const rateBands = [{ label: "〜1.0%", min: 0, max: 1.0 }, { label: "1.0〜1.5%", min: 1.0, max: 1.5 }, { label: "1.5〜2.0%", min: 1.5, max: 2.0 }, { label: "2.0%〜", min: 2.0, max: 99 }];
-    if (r3.current) c3.current = new Chart(r3.current, { type: "bar", data: { labels: rateBands.map((b) => b.label), datasets: [{ data: rateBands.map((b) => loans.filter((l) => l.rate >= b.min && l.rate < b.max).reduce((s, l) => s + l.balance, 0)), backgroundColor: ["rgba(34,201,148,.6)", "rgba(91,141,239,.5)", "rgba(229,168,58,.5)", "rgba(229,91,91,.5)"], borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: (v) => Math.round(v / 10000) + "万", font: chartFont }, grid: chartGrid }, x: { grid: { display: false }, ticks: { font: chartFont } } } } });
-    return () => [c1, c2, c3].forEach((c) => c.current?.destroy());
-  }, [loans, fixedBal, varBal, bSum]);
+    c3.current = new Chart(r3.current, { type: "bar", data: { labels: rateBands.map((b) => b.label), datasets: [{ data: rateBands.map((b) => loans.filter((l) => l.rate >= b.min && l.rate < b.max).reduce((s, l) => s + l.balance, 0)), backgroundColor: ["rgba(34,201,148,.6)", "rgba(91,141,239,.5)", "rgba(229,168,58,.5)", "rgba(229,91,91,.5)"], borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: (v) => Math.round(v / 10000) + "万", font: chartFont }, grid: chartGrid }, x: { grid: { display: false }, ticks: { font: chartFont } } } } });
+    return () => c3.current?.destroy();
+  }, [loans]);
 
   return (<>
-    <div className="g2">
+    {/* 1段目: 銀行別融資残高（バー形式） */}
+    <div className="c">
+      <div className="ch"><div><div className="ct">銀行別融資残高</div></div></div>
+      <div className="cb">
+        {bSum.sort((a, b) => b.bal - a.bal).map((b, i) => {
+          const pv = tBal > 0 ? (b.bal / tBal * 100).toFixed(1) : 0;
+          return (
+            <div key={i} style={{ marginBottom: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 4 }}>
+                <span className="bold">{b.bank}</span>
+                <span className="mono">{MY(b.bal)} ({pv}%)</span>
+              </div>
+              <div className="int-bar"><div className="ib-fill" style={{ width: pv + "%", background: BANK_COLORS[b.bank] || "#5b8def" }} /></div>
+            </div>
+          );
+        })}
+        <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,.05)", display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 700 }}>
+          <span>合計</span><span className="mono">{MY(tBal)}</span>
+        </div>
+      </div>
+    </div>
+
+    {/* 2段目: 3ブロック並列 */}
+    <div className="g3">
+      {/* 固定 vs 変動 */}
       <div className="c"><div className="ch"><div><div className="ct">固定 vs 変動</div></div></div>
         <div className="cb">
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
-            <div style={{ textAlign: "center", padding: 16, borderRadius: "var(--rs)", background: "rgba(34,201,148,.05)", border: "1px solid rgba(34,201,148,.15)" }}>
-              <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>固定金利</div>
-              <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 28, fontWeight: 700, color: "var(--ac)", marginTop: 6 }}>{tBal > 0 ? (fixedBal / tBal * 100).toFixed(1) : 0}%</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+            <div style={{ textAlign: "center", padding: 12, borderRadius: "var(--rs)", background: "rgba(34,201,148,.05)", border: "1px solid rgba(34,201,148,.15)" }}>
+              <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>固定</div>
+              <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 22, fontWeight: 700, color: "var(--ac)", marginTop: 4 }}>{tBal > 0 ? (fixedBal / tBal * 100).toFixed(1) : 0}%</div>
             </div>
-            <div style={{ textAlign: "center", padding: 16, borderRadius: "var(--rs)", background: "rgba(229,168,58,.05)", border: "1px solid rgba(229,168,58,.15)" }}>
-              <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>変動金利</div>
-              <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 28, fontWeight: 700, color: "var(--am)", marginTop: 6 }}>{tBal > 0 ? (varBal / tBal * 100).toFixed(1) : 0}%</div>
+            <div style={{ textAlign: "center", padding: 12, borderRadius: "var(--rs)", background: "rgba(229,168,58,.05)", border: "1px solid rgba(229,168,58,.15)" }}>
+              <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>変動</div>
+              <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 22, fontWeight: 700, color: "var(--am)", marginTop: 4 }}>{tBal > 0 ? (varBal / tBal * 100).toFixed(1) : 0}%</div>
             </div>
           </div>
           <div className="chart"><canvas ref={r1} /></div>
-        </div></div>
-      <div className="c"><div className="ch"><div><div className="ct">銀行別年間利息コスト</div></div></div>
+        </div>
+      </div>
+
+      {/* プロパー vs 保証付き */}
+      <div className="c"><div className="ch"><div><div className="ct">プロパー vs 保証付き</div></div></div>
+        <div className="cb">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+            <div style={{ textAlign: "center", padding: 12, borderRadius: "var(--rs)", background: "rgba(91,141,239,.05)", border: "1px solid rgba(91,141,239,.15)" }}>
+              <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>プロパー</div>
+              <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 22, fontWeight: 700, color: "var(--bl)", marginTop: 4 }}>{tBal > 0 ? (proparBal / tBal * 100).toFixed(1) : 0}%</div>
+            </div>
+            <div style={{ textAlign: "center", padding: 12, borderRadius: "var(--rs)", background: "rgba(155,124,246,.05)", border: "1px solid rgba(155,124,246,.15)" }}>
+              <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>保証付き</div>
+              <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 22, fontWeight: 700, color: "var(--pu)", marginTop: 4 }}>{tBal > 0 ? (guarBal / tBal * 100).toFixed(1) : 0}%</div>
+            </div>
+          </div>
+          <div className="chart"><canvas ref={r2} /></div>
+        </div>
+      </div>
+
+      {/* 銀行別年間利息コスト */}
+      <div className="c"><div className="ch"><div><div className="ct">年間利息コスト</div></div></div>
         <div className="cb">
           {bankInt.map((b, i) => { const pv = totalInt > 0 ? (b.int / totalInt * 100).toFixed(1) : 0; return (
-            <div key={i} style={{ marginBottom: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 4 }}><span className="bold">{b.bank}</span><span className="mono">{MY(b.int)}/年 ({pv}%)</span></div>
+            <div key={i} style={{ marginBottom: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, marginBottom: 3 }}><span className="bold">{b.bank}</span><span className="mono">{MY(b.int)}/年</span></div>
               <div className="int-bar"><div className="ib-fill" style={{ width: pv + "%", background: BANK_COLORS[b.bank] || "#5b8def" }} /></div>
             </div>
           ); })}
-          <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,.05)", display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 700 }}><span>合計</span><span className="mono">{MY(totalInt)}/年</span></div>
-        </div></div>
+          <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,.05)", display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 700 }}><span>合計</span><span className="mono">{MY(totalInt)}/年</span></div>
+        </div>
+      </div>
     </div>
-    <div className="g2">
-      <div className="c"><div className="ch"><div><div className="ct">銀行依存度</div></div></div><div className="cb"><div className="chart"><canvas ref={r2} /></div></div></div>
-      <div className="c"><div className="ch"><div><div className="ct">金利帯別残高分布</div></div></div><div className="cb"><div className="chart"><canvas ref={r3} /></div></div></div>
-    </div>
+
+    {/* 3段目: 金利帯別 */}
+    <div className="c"><div className="ch"><div><div className="ct">金利帯別残高分布</div></div></div><div className="cb"><div className="chart"><canvas ref={r3} /></div></div></div>
+
+    {/* 借換えシミュレーション */}
     {refiTarget.length > 0 && (
       <div className="c"><div className="ch"><div><div className="ct">借換えシミュレーション</div></div><span className="p gd">▼{MY(refiSavings)}/年</span></div>
         <div className="cb tw"><table>
