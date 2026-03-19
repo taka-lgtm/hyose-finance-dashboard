@@ -312,6 +312,13 @@ tr:hover td{background:rgba(255,255,255,.015)}
   color:var(--tx2);
 }
 .bal-tbl .num-head{text-align:right}
+.bal-tbl .cat-header-row td{
+  font-weight:600;color:var(--tx);
+  border-top:1px solid rgba(255,255,255,.06);
+  background:rgba(255,255,255,.02);
+  font-size:11px;
+}
+.bal-tbl .cat-header-row td.sticky{background:rgba(25,28,39,.96)}
 .bal-tbl .total-row td{
   font-weight:700;color:var(--tx);
   border-top:2px solid rgba(255,255,255,.1);
