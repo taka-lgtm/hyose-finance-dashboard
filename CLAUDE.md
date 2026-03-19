@@ -141,3 +141,32 @@ npm run preview
 - 兵庫県三木市、役員3名・従業員18名
 - 3月決算
 - 許可ドメイン: @hyose.co.jp
+
+## マルチテナント対応設計（将来課題）
+
+### Firestoreデータ構造
+- テナント（会社）ごとにサブコレクションで分離する方式を採用予定
+  - `tenants/{tenantId}/loans`
+  - `tenants/{tenantId}/financials`
+  - `tenants/{tenantId}/users`
+  - `tenants/{tenantId}/settings`
+  - `tenants/{tenantId}/loanLogs`
+- `tenantId` は会社のドメイン名（例: `hyose-co-jp`）またはUUIDで生成
+- 既存データのマイグレーション: ルート直下の既存コレクションを `tenants/{defaultTenantId}/` 配下に移行するスクリプトを作成
+
+### URL方式
+- サブドメイン方式を推奨: `{company}.hyose-dashboard.com`
+  - 例: `hyose.hyose-dashboard.com`, `client-a.hyose-dashboard.com`
+- Vercelのカスタムドメイン機能で各テナントのサブドメインを設定
+- 代替案としてパス方式（`hyose-dashboard.com/{company}/`）も検討可能
+
+### 認証の分離
+- テナントごとに `allowedDomain` を設定で管理（settings コレクション）
+- Firebase AuthenticationのカスタムクレームにテナントIDを付与
+- Firestoreセキュリティルールでテナントをまたぐアクセスを制限
+
+### 将来課題（未実装）
+- 料金体系の設計
+- テナント管理用のスーパーアドミン画面
+- テナント間のデータ完全分離の検証
+- バックアップ・リストア戦略のテナント別対応
