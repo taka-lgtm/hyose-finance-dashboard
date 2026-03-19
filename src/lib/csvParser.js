@@ -1,8 +1,19 @@
 // ── マネーフォワード月次推移CSV パーサー ──
 // Shift-JIS エンコードの CSV をブラウザ上でパースし、資金繰りデータを生成する
 
-// 月ヘッダーの順序（3月決算: 4月〜3月）
-const MONTH_ORDER = ["4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月", "1月", "2月", "3月"];
+// 月ヘッダーの順序（デフォルト: 3月決算 = 4月〜3月）
+const DEFAULT_MONTH_ORDER = ["4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月", "1月", "2月", "3月"];
+
+/**
+ * 決算月から月順を生成する
+ */
+function getMonthOrder(fiscalMonth = 3) {
+  const start = (fiscalMonth % 12) + 1;
+  return Array.from({ length: 12 }, (_, i) => {
+    const m = ((start - 1 + i) % 12) + 1;
+    return `${m}月`;
+  });
+}
 
 /**
  * Shift-JIS の CSV ファイルを UTF-8 テキストとしてデコードする
@@ -55,11 +66,11 @@ function parseCSVRows(text) {
 /**
  * ヘッダー行から月カラムのインデックスマッピングを取得する
  */
-function getMonthColumns(headerRow) {
+function getMonthColumns(headerRow, monthOrder) {
   const map = {};
   headerRow.forEach((cell, idx) => {
     const trimmed = cell.trim();
-    if (MONTH_ORDER.includes(trimmed)) {
+    if (monthOrder.includes(trimmed)) {
       map[trimmed] = idx;
     }
   });
@@ -88,15 +99,17 @@ function extractMonthlyValues(row, monthCols) {
 /**
  * BS月次推移CSVから月末現金残高（現金+普通預金+定期預金）を抽出する
  * @param {ArrayBuffer} buffer - Shift-JIS CSV ファイルのバッファ
+ * @param {number} [fiscalMonth=3] - 決算月
  * @returns {{ months: string[], cashBalances: number[] }} 月別の現金残高（円単位）
  */
-export function parseBSMonthly(buffer) {
+export function parseBSMonthly(buffer, fiscalMonth = 3) {
   const text = decodeShiftJIS(buffer);
   const rows = parseCSVRows(text);
   if (rows.length < 2) throw new Error("BSデータが不足しています");
 
+  const monthOrder = getMonthOrder(fiscalMonth);
   const header = rows[0];
-  const monthCols = getMonthColumns(header);
+  const monthCols = getMonthColumns(header, monthOrder);
 
   // 現金・普通預金・定期預金の小計行を探す
   // CSVの構造: col[0]=セクション名, col[1]=勘定科目, col[2]=補助科目
@@ -114,7 +127,7 @@ export function parseBSMonthly(buffer) {
     }
   }
 
-  const months = MONTH_ORDER.filter((m) => monthCols[m] !== undefined);
+  const months = monthOrder.filter((m) => monthCols[m] !== undefined);
   const cashBalances = months.map((m) =>
     targets.reduce((sum, t) => sum + (found[t]?.[m] || 0), 0)
   );
@@ -126,15 +139,17 @@ export function parseBSMonthly(buffer) {
  * PL月次推移CSVから売上高合計・売上原価合計・販管費合計を抽出する
  * 販管費合計行がないため、販管費セクションの個別科目行を合算する
  * @param {ArrayBuffer} buffer - Shift-JIS CSV ファイルのバッファ
+ * @param {number} [fiscalMonth=3] - 決算月
  * @returns {{ months: string[], sales: number[], cogs: number[], sgaExpenses: number[] }}
  */
-export function parsePLMonthly(buffer) {
+export function parsePLMonthly(buffer, fiscalMonth = 3) {
   const text = decodeShiftJIS(buffer);
   const rows = parseCSVRows(text);
   if (rows.length < 2) throw new Error("PLデータが不足しています");
 
+  const monthOrder = getMonthOrder(fiscalMonth);
   const header = rows[0];
-  const monthCols = getMonthColumns(header);
+  const monthCols = getMonthColumns(header, monthOrder);
 
   // 合計行の抽出
   let salesData = null;
@@ -143,7 +158,7 @@ export function parsePLMonthly(buffer) {
   // 販管費セクションの個別科目を合算するためのフラグ
   let inSGA = false;
   const sgaMonthly = {};
-  for (const m of MONTH_ORDER) {
+  for (const m of monthOrder) {
     if (monthCols[m] !== undefined) sgaMonthly[m] = 0;
   }
 
@@ -186,7 +201,7 @@ export function parsePLMonthly(buffer) {
   if (!salesData) throw new Error("売上高合計が見つかりません");
   if (!cogsData) throw new Error("売上原価合計が見つかりません");
 
-  const months = MONTH_ORDER.filter((m) => monthCols[m] !== undefined);
+  const months = monthOrder.filter((m) => monthCols[m] !== undefined);
   const sales = months.map((m) => salesData[m] || 0);
   const cogs = months.map((m) => cogsData[m] || 0);
   const sgaExpenses = months.map((m) => sgaMonthly[m] || 0);
@@ -198,15 +213,17 @@ export function parsePLMonthly(buffer) {
  * BS・PLの月次推移CSVから資金繰りデータを生成する
  * @param {ArrayBuffer} bsBuffer - BS CSV
  * @param {ArrayBuffer} plBuffer - PL CSV
+ * @param {number} [fiscalMonth=3] - 決算月
  * @returns {Array<{m: string, 入金: number, 出金: number, 残高: number, 予算残高: number}>}
  *   金額は万円単位
  */
-export function generateCashFlowData(bsBuffer, plBuffer) {
-  const bs = parseBSMonthly(bsBuffer);
-  const pl = parsePLMonthly(plBuffer);
+export function generateCashFlowData(bsBuffer, plBuffer, fiscalMonth = 3) {
+  const bs = parseBSMonthly(bsBuffer, fiscalMonth);
+  const pl = parsePLMonthly(plBuffer, fiscalMonth);
 
   // 両方に共通する月のみ使用
-  const months = MONTH_ORDER.filter(
+  const monthOrder = getMonthOrder(fiscalMonth);
+  const months = monthOrder.filter(
     (m) => bs.months.includes(m) && pl.months.includes(m)
   );
 

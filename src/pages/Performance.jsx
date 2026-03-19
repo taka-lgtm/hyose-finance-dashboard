@@ -1,10 +1,12 @@
 import { useRef, useEffect } from "react";
 import { Chart, registerables } from "chart.js";
-import { MONTHS, BUDGET_MONTHLY as DEFAULT_BM, M, pct, sgn, chartFont, chartGrid, chartLegend } from "../data";
+import { BUDGET_MONTHLY as DEFAULT_BM, M, pct, sgn, chartFont, chartGrid, chartLegend } from "../data";
+import { useSettings } from "../contexts/SettingsContext";
 
 Chart.register(...registerables);
 
 export default function Performance({ bmData }) {
+  const { fiscalMonths } = useSettings();
   const BM = bmData || DEFAULT_BM;
   const stb = BM.reduce((s, v) => s + v.sb, 0), sta = BM.reduce((s, v) => s + v.sa, 0);
   const gtb = BM.reduce((s, v) => s + v.gb, 0), gta = BM.reduce((s, v) => s + v.ga, 0);
@@ -19,10 +21,10 @@ export default function Performance({ bmData }) {
     const opts = (color) => ({ type: "bar", options: { responsive: true, maintainAspectRatio: false, plugins: { legend: chartLegend }, scales: { y: { ticks: { callback: (v) => v + "万", font: chartFont }, grid: chartGrid }, x: { grid: { display: false }, ticks: { font: chartFont } } } } });
     if (c1.current) c1.current.destroy();
     if (c2.current) c2.current.destroy();
-    if (sRef.current) c1.current = new Chart(sRef.current, { ...opts(), data: { labels: MONTHS, datasets: [{ label: "予算", data: BM.map((v) => v.sb), backgroundColor: "rgba(255,255,255,.06)", borderRadius: 4 }, { label: "実績", data: BM.map((v) => v.sa), backgroundColor: "rgba(91,141,239,.55)", borderRadius: 4 }] } });
-    if (oRef.current) c2.current = new Chart(oRef.current, { ...opts(), data: { labels: MONTHS, datasets: [{ label: "予算", data: BM.map((v) => v.ob), backgroundColor: "rgba(255,255,255,.06)", borderRadius: 4 }, { label: "実績", data: BM.map((v) => v.oa), backgroundColor: "rgba(34,201,148,.55)", borderRadius: 4 }] } });
+    if (sRef.current) c1.current = new Chart(sRef.current, { ...opts(), data: { labels: fiscalMonths, datasets: [{ label: "予算", data: BM.map((v) => v.sb), backgroundColor: "rgba(255,255,255,.06)", borderRadius: 4 }, { label: "実績", data: BM.map((v) => v.sa), backgroundColor: "rgba(91,141,239,.55)", borderRadius: 4 }] } });
+    if (oRef.current) c2.current = new Chart(oRef.current, { ...opts(), data: { labels: fiscalMonths, datasets: [{ label: "予算", data: BM.map((v) => v.ob), backgroundColor: "rgba(255,255,255,.06)", borderRadius: 4 }, { label: "実績", data: BM.map((v) => v.oa), backgroundColor: "rgba(34,201,148,.55)", borderRadius: 4 }] } });
     return () => { c1.current?.destroy(); c2.current?.destroy(); };
-  }, []);
+  }, [BM, fiscalMonths]);
 
   return (
     <div className="page"><div className="g">

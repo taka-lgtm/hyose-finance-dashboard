@@ -2,10 +2,14 @@ import { useRef, useEffect } from "react";
 import { Chart, registerables } from "chart.js";
 import { PL as DEFAULT_PL, BS as DEFAULT_BS, CF as DEFAULT_CF, ALERTS, M, MY, pct, sgn, lvl, calcHealth, calcLoanDerived, chartFont, chartGrid, chartLegend } from "../data";
 import Sparkline from "../components/Sparkline";
+import { useSettings, getFiscalYear } from "../contexts/SettingsContext";
 
 Chart.register(...registerables);
 
 export default function Overview({ loans, navigate, plData, bsData, cfData }) {
+  const { settings } = useSettings();
+  const safetyLine = settings.safetyLine;
+  const fiscalYear = getFiscalYear(settings.fiscalMonth);
   const PLd = plData || DEFAULT_PL;
   const BSd = bsData || DEFAULT_BS;
   const CFd = cfData && cfData.length > 0 ? cfData : DEFAULT_CF;
@@ -61,7 +65,7 @@ export default function Overview({ loans, navigate, plData, bsData, cfData }) {
       </div>
 
       <div className="fy">
-        <div className="fyl">FY2025 進捗</div>
+        <div className="fyl">FY{fiscalYear} 進捗</div>
         <div className="fyt"><div className="fyf" style={{ width: "100%" }} /></div>
         <div className="fyp">100%</div>
       </div>
@@ -89,7 +93,7 @@ export default function Overview({ loans, navigate, plData, bsData, cfData }) {
             売上高<strong className="up">{M(lastPL.売上高)}</strong>で4年連続増収。営業利益率<strong>{(lastPL.営業利益 / lastPL.売上高 * 100).toFixed(1)}%</strong>と改善基調。
             予算比では売上<strong className={s < 0 ? "dn" : "up"}>{sgn(s)}</strong>、営利<strong className={o < 0 ? "dn" : "up"}>{sgn(o)}</strong>で未達。
             自己資本比率<strong className="up">{(lastBS.純資産 / lastBS.資産合計 * 100).toFixed(1)}%</strong>は着実改善。
-            <strong className="at">変動金利2件</strong>と<strong className="dn">3ヶ月後の資金余力低下</strong>（最低{M(minCF)}）が最優先課題。
+            <strong className="at">変動金利{loans.filter((l) => l.rt === "変動").length}件</strong>と<strong className="dn">3ヶ月後の資金余力低下</strong>（最低{M(minCF)}）が最優先課題。
           </div>
         </div>
       </div>
@@ -104,7 +108,7 @@ export default function Overview({ loans, navigate, plData, bsData, cfData }) {
             </div>
             <Sparkline data={BSd.map((b) => b.現預金)} color="#22c994" />
           </div>
-          <div className="k-foot"><span>安全水準 4,500万</span><span>{cr >= 200 ? "安定圏" : "注意"}</span></div>
+          <div className="k-foot"><span>安全水準 {M(safetyLine)}</span><span>{cr >= 200 ? "安定圏" : "注意"}</span></div>
         </div>
         <div className="k">
           <div className="k-row">
