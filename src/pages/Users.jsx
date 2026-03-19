@@ -2,56 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../contexts/AuthContext";
-import { reseedLoans } from "../lib/firestore";
-import { INITIAL_LOANS } from "../data";
-
-// TODO: 再シード完了後にこのコンポーネントごと削除
-function ReseedButton() {
-  const [status, setStatus] = useState("idle"); // idle | confirm | running | done | error
-  const [msg, setMsg] = useState("");
-
-  const handleClick = async () => {
-    if (status === "idle") {
-      setStatus("confirm");
-      return;
-    }
-    if (status === "confirm") {
-      setStatus("running");
-      setMsg("削除中 → 再シード中...");
-      try {
-        const result = await reseedLoans(INITIAL_LOANS);
-        setStatus("done");
-        setMsg(`完了: ${result.length}件を登録しました。ページをリロードしてください。`);
-      } catch (e) {
-        setStatus("error");
-        setMsg("エラー: " + e.message);
-      }
-    }
-  };
-
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-      <button
-        className="btn"
-        style={{
-          padding: "8px 20px",
-          borderColor: "var(--rd)", color: status === "confirm" ? "#fff" : "var(--rd)",
-          background: status === "confirm" ? "var(--rd)" : "transparent",
-          fontSize: 12,
-        }}
-        onClick={handleClick}
-        disabled={status === "running" || status === "done"}
-      >
-        {status === "idle" && "融資データを再シード"}
-        {status === "confirm" && "本当に実行する（クリックで確定）"}
-        {status === "running" && "実行中..."}
-        {status === "done" && "完了"}
-        {status === "error" && "エラー（再試行可）"}
-      </button>
-      {msg && <span style={{ fontSize: 11, color: status === "error" ? "var(--rd)" : "var(--ac)" }}>{msg}</span>}
-    </div>
-  );
-}
 
 export default function Users() {
   const { userDoc } = useAuth();
@@ -220,20 +170,6 @@ export default function Users() {
                 </tbody>
               </table>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* ── TODO: 再シード完了後にこのブロックごと削除 ── */}
-      {isAdmin && (
-        <div className="c" style={{ border: "1px solid var(--rd)", background: "rgba(229,91,91,.05)" }}>
-          <div className="ch"><div><div className="ct" style={{ color: "var(--rd)" }}>融資データ再シード（ワンタイム）</div></div></div>
-          <div className="cb">
-            <p style={{ fontSize: 12, color: "var(--tx2)", marginBottom: 12, lineHeight: 1.6 }}>
-              Firestoreの loans コレクションを全件削除し、INITIAL_LOANS（CSVベース26件）で再登録します。<br />
-              <strong style={{ color: "var(--rd)" }}>この操作は取り消せません。</strong>実行は1回だけ行ってください。
-            </p>
-            <ReseedButton />
           </div>
         </div>
       )}
