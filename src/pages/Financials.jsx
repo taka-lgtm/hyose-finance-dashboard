@@ -310,57 +310,29 @@ export default function Financials({ plData, bsData, loans = [], savePL, saveBS 
     <div className="page"><div className="g">
       <div className="ph">
         <div><h2>決算書</h2><p>PL/BS/指標を一元管理。PDF1枚でPL・BSを自動抽出。</p></div>
-      </div>
-
-      {/* ── Main PDF Upload ── */}
-      <div className="upload-hero" onClick={() => !uploading && pdfRef.current?.click()}>
-        <input ref={pdfRef} type="file" accept=".pdf" style={{ display: "none" }}
-          onChange={(e) => { handlePdfUpload(e.target.files[0]); e.target.value = ""; }} />
-        {uploading ? (
-          <div className="upload-hero-loading">
-            <div className="login-spinner" style={{ width: 28, height: 28, borderWidth: 3 }} />
-            <div className="upload-hero-text">
-              <div className="u-title">AI解析中...</div>
-              <div className="u-desc">PDFからPL・BSを自動抽出しています</div>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="upload-hero-icon">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="12" y1="18" x2="12" y2="12"/>
-                <polyline points="9 15 12 12 15 15"/>
-              </svg>
-            </div>
-            <div className="upload-hero-text">
-              <div className="u-title">決算書PDFをアップロード</div>
-              <div className="u-desc">1つのPDFからPL（損益計算書）とBS（貸借対照表）をAIが自動抽出します</div>
-            </div>
-            <div className="upload-hero-formats">
-              <span className="upload-format-tag">PDF</span>
-              <span className="upload-format-tag">AI自動読取</span>
-              <span className="upload-format-tag">PL+BS同時</span>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* ── Sub: Excel/CSV individual ── */}
-      <div className="upload-sub-row">
-        <button className="upload-sub" onClick={() => plExcelRef.current?.click()} disabled={uploading}>
-          <span className="upload-sub-icon">📊</span>
-          <span className="upload-sub-text">PL（Excel/CSV）</span>
-          <input ref={plExcelRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }}
-            onChange={(e) => { handleExcelUpload("pl", e.target.files[0]); e.target.value = ""; }} />
-        </button>
-        <button className="upload-sub" onClick={() => bsExcelRef.current?.click()} disabled={uploading}>
-          <span className="upload-sub-icon">📋</span>
-          <span className="upload-sub-text">BS（Excel/CSV）</span>
-          <input ref={bsExcelRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }}
-            onChange={(e) => { handleExcelUpload("bs", e.target.files[0]); e.target.value = ""; }} />
-        </button>
+        <div className="ph-actions">
+          {/* PDF取り込みボタン */}
+          <button className="btn pr upload-compact-btn" onClick={() => !uploading && pdfRef.current?.click()} disabled={uploading}>
+            <input ref={pdfRef} type="file" accept=".pdf" style={{ display: "none" }}
+              onChange={(e) => { handlePdfUpload(e.target.files[0]); e.target.value = ""; }} />
+            {uploading ? (
+              <><div className="login-spinner" style={{ width: 14, height: 14, borderWidth: 2 }} /><span>AI解析中...</span></>
+            ) : (
+              <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg><span>PDF取り込み</span></>
+            )}
+          </button>
+          {/* Excel/CSV取り込みボタン */}
+          <button className="btn upload-compact-btn" onClick={() => plExcelRef.current?.click()} disabled={uploading}>
+            <input ref={plExcelRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }}
+              onChange={(e) => { handleExcelUpload("pl", e.target.files[0]); e.target.value = ""; }} />
+            <span>PL Excel</span>
+          </button>
+          <button className="btn upload-compact-btn" onClick={() => bsExcelRef.current?.click()} disabled={uploading}>
+            <input ref={bsExcelRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }}
+              onChange={(e) => { handleExcelUpload("bs", e.target.files[0]); e.target.value = ""; }} />
+            <span>BS Excel</span>
+          </button>
+        </div>
       </div>
 
       {/* ── Upload message ── */}
@@ -370,6 +342,7 @@ export default function Financials({ plData, bsData, loans = [], savePL, saveBS 
           {uploadMsg.type === "success" && <span style={{ fontSize: 16 }}>✓</span>}
           {uploadMsg.type === "error" && <span style={{ fontSize: 16 }}>✕</span>}
           <span>{uploadMsg.text}</span>
+          <button className="upload-msg-close" onClick={() => setUploadMsg(null)}>&times;</button>
         </div>
       )}
 
