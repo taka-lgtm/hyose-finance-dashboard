@@ -3,11 +3,12 @@ import { Chart, registerables } from "chart.js";
 import { MY, lastPL, calcLoanDerived, exportBalanceCSV, exportBalanceXLSX, exportSummaryCSV, chartFont, chartGrid, chartLegend } from "../data";
 import { BANK_COLORS, getBankColor } from "../data/banks";
 import { calcAllProjections } from "../lib/loanCalc";
+import { fetchLoanLogs } from "../lib/firestore";
 import LoanModal from "../components/LoanModal";
 
 Chart.register(...registerables);
 
-const VIEWS = { balance: "残高推移", table: "一覧", schedule: "スケジュール", analysis: "分析" };
+const VIEWS = { balance: "残高推移", table: "一覧", schedule: "スケジュール", analysis: "分析", logs: "ログ" };
 const CATEGORIES = ["長期", "短期", "当座貸越"];
 
 export default function Debt({ loans, addLoan, updateLoan, removeLoan, loading }) {
@@ -81,6 +82,7 @@ export default function Debt({ loans, addLoan, updateLoan, removeLoan, loading }
       {view === "table" && <ListView loans={fl} onEdit={openEdit} />}
       {view === "schedule" && <ScheduleView loans={fl} />}
       {view === "analysis" && <AnalysisView bSum={bSum} bankInt={allBankInt} totalInt={allTotalInt} fixedBal={allFixedBal} varBal={allVarBal} loans={loans} sorted={sorted} refiTarget={refiTarget} refiSavings={refiSavings} />}
+      {view === "logs" && <LogView />}
 
       <LoanModal open={modalOpen} onClose={() => { setModalOpen(false); setEditingLoan(null); }} onSubmit={addLoan} onUpdate={updateLoan} onDelete={removeLoan} editing={editingLoan} loans={loans} />
     </div></div>
@@ -376,4 +378,68 @@ function AnalysisView({ bSum, bankInt, totalInt, fixedBal, varBal, loans, sorted
           ); })}</tbody></table></div></div>
     )}
   </>);
+}
+
+/* ══════════════════════════════════
+   ログビュー
+   ══════════════════════════════════ */
+
+function LogView() {
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await fetchLoanLogs(200);
+        setLogs(data);
+      } catch (e) {
+        console.error("Failed to fetch logs:", e);
+      }
+      setLoading(false);
+    })();
+  }, []);
+
+  const fmtDate = (ts) => {
+    if (!ts?.seconds) return "-";
+    return new Date(ts.seconds * 1000).toLocaleString("ja-JP", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  };
+
+  const actionBadge = (a) => {
+    if (a === "追加") return "gd";
+    if (a === "編集") return "bu";
+    if (a === "削除") return "bd";
+    return "mt";
+  };
+
+  return (
+    <div className="c">
+      <div className="ch">
+        <div><div className="ct">変更ログ</div><div className="cs">融資データの追加・編集・削除の履歴</div></div>
+        <span className="p bu">{logs.length}件</span>
+      </div>
+      <div className="cb tw">
+        {loading ? (
+          <div style={{ textAlign: "center", padding: 40, color: "var(--tx3)" }}>読み込み中...</div>
+        ) : logs.length === 0 ? (
+          <div style={{ textAlign: "center", padding: 40, color: "var(--tx3)" }}>ログがありません</div>
+        ) : (
+          <table>
+            <thead><tr><th>日時</th><th>操作</th><th>対象</th><th>ユーザー</th><th>変更内容</th></tr></thead>
+            <tbody>
+              {logs.map((log, i) => (
+                <tr key={log.id || i}>
+                  <td className="mono" style={{ fontSize: 10, whiteSpace: "nowrap" }}>{fmtDate(log.createdAt)}</td>
+                  <td><span className={`p ${actionBadge(log.action)}`} style={{ fontSize: 9 }}>{log.action}</span></td>
+                  <td className="bold" style={{ fontSize: 11 }}>{log.target}</td>
+                  <td style={{ fontSize: 11, color: "var(--tx2)" }}>{log.user}</td>
+                  <td style={{ fontSize: 10, color: "var(--tx3)", maxWidth: 300, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={log.details}>{log.details || "-"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
 }

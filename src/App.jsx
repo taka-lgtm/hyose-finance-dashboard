@@ -10,7 +10,7 @@ import Debt from "./pages/Debt";
 import Actions from "./pages/Actions";
 import Users from "./pages/Users";
 import { INITIAL_LOANS, PL as DEFAULT_PL, BS as DEFAULT_BS, BUDGET_MONTHLY as DEFAULT_BM, CF as DEFAULT_CF } from "./data";
-import { fetchLoans, addLoanDoc, updateLoanDoc, deleteLoanDoc, seedLoansIfEmpty, fetchFinancialData, saveFinancialData } from "./lib/firestore";
+import { fetchLoans, addLoanDoc, updateLoanDoc, deleteLoanDoc, seedLoansIfEmpty, fetchFinancialData, saveFinancialData, addLoanLog } from "./lib/firestore";
 
 function Dashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -59,34 +59,42 @@ function Dashboard() {
     })();
   }, [user]);
 
+  const userName = user?.displayName || user?.email || "不明";
+
   const addLoan = useCallback(async (loan) => {
     try {
       const saved = await addLoanDoc(loan);
       setLoans((prev) => [saved, ...prev]);
+      addLoanLog({ action: "追加", user: userName, target: `${loan.bank} / ${loan.name}`, details: "" }).catch(() => {});
     } catch (e) {
       console.error("Failed to add loan:", e);
-      // Fallback: add to local state anyway
       setLoans((prev) => [{ id: Date.now().toString(), ...loan }, ...prev]);
     }
-  }, []);
+  }, [userName]);
 
   const updateLoan = useCallback(async (id, data) => {
     try {
+      const prev = loans.find((l) => l.id === id);
       await updateLoanDoc(id, data);
-      setLoans((prev) => prev.map((l) => l.id === id ? { ...l, ...data } : l));
+      setLoans((p) => p.map((l) => l.id === id ? { ...l, ...data } : l));
+      // 変更箇所をログに記録
+      const changes = prev ? Object.keys(data).filter((k) => k !== "updatedAt" && String(data[k]) !== String(prev[k])).map((k) => `${k}: ${prev[k]} → ${data[k]}`).join(", ") : "";
+      addLoanLog({ action: "編集", user: userName, target: `${data.bank || prev?.bank} / ${data.name || prev?.name}`, details: changes }).catch(() => {});
     } catch (e) {
       console.error("Failed to update loan:", e);
     }
-  }, []);
+  }, [userName, loans]);
 
   const removeLoan = useCallback(async (id) => {
     try {
+      const target = loans.find((l) => l.id === id);
       await deleteLoanDoc(id);
       setLoans((prev) => prev.filter((l) => l.id !== id));
+      if (target) addLoanLog({ action: "削除", user: userName, target: `${target.bank} / ${target.name}`, details: "" }).catch(() => {});
     } catch (e) {
       console.error("Failed to delete loan:", e);
     }
-  }, []);
+  }, [userName, loans]);
 
   const savePL = useCallback(async (data) => {
     setPlData(data);

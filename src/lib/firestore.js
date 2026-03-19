@@ -56,6 +56,24 @@ export async function saveFinancialData(type, payload) {
 }
 
 // ═══════════════════════════════
+// LOAN LOGS
+// ═══════════════════════════════
+
+const LOGS_COL = "loanLogs";
+
+export async function addLoanLog(entry) {
+  await addDoc(collection(db, LOGS_COL), {
+    ...entry,
+    createdAt: serverTimestamp(),
+  });
+}
+
+export async function fetchLoanLogs(limit = 100) {
+  const snap = await getDocs(query(collection(db, LOGS_COL), orderBy("createdAt", "desc")));
+  return snap.docs.slice(0, limit).map((d) => ({ id: d.id, ...d.data() }));
+}
+
+// ═══════════════════════════════
 // SEED: Initialize Firestore with default data
 // ═══════════════════════════════
 
