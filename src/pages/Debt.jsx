@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Chart, registerables } from "chart.js";
-import { MY, lastPL, calcLoanDerived, exportBalanceCSV, exportBalanceXLSX, exportSummaryCSV, chartFont, chartGrid, chartLegend } from "../data";
+import { MY, calcLoanDerived, exportBalanceCSV, exportBalanceXLSX, exportSummaryCSV, chartFont, chartGrid, chartLegend } from "../data";
 import { BANK_COLORS, getBankColor } from "../data/banks";
 import { calcAllProjections } from "../lib/loanCalc";
 import { fetchLoanLogs } from "../lib/firestore";
@@ -11,7 +11,7 @@ Chart.register(...registerables);
 const VIEWS = { balance: "残高推移", table: "一覧", schedule: "スケジュール", analysis: "分析", logs: "ログ" };
 const CATEGORIES = ["長期", "短期", "当座貸越"];
 
-export default function Debt({ loans, addLoan, updateLoan, removeLoan, loading }) {
+export default function Debt({ loans, addLoan, updateLoan, removeLoan, loading, plData }) {
   const [view, setView] = useState("balance");
   const [bankFilter, setBankFilter] = useState("all");
   const [catFilter, setCatFilter] = useState("all");
@@ -73,7 +73,7 @@ export default function Debt({ loans, addLoan, updateLoan, removeLoan, loading }
 
       <div className="g4">
         <div className="k hero"><div className="k-label">借入残高 合計</div><div className="k-val">{MY(tBal)}</div><div className="k-ctx">{fl.length}本 / 返済月数 {tMon > 0 ? Math.round(tBal / tMon) : "-"}ヶ月</div><div className="k-foot"><span>年間利息 {MY(totalInt)}</span></div></div>
-        <div className="k"><div className="k-label">月間返済 合計</div><div className="k-val">{MY(tMon)}</div><div className="k-ctx">年間 {MY(tMon * 12)}</div><div className="k-foot"><span>売上比 {(tMon / 10000 * 12 / lastPL.売上高 * 100).toFixed(1)}%</span></div></div>
+        <div className="k"><div className="k-label">月間返済 合計</div><div className="k-val">{MY(tMon)}</div><div className="k-ctx">年間 {MY(tMon * 12)}</div><div className="k-foot"><span>{plData && plData.length > 0 ? `売上比 ${(tMon / 10000 * 12 / plData[plData.length - 1].売上高 * 100).toFixed(1)}%` : "売上比 -"}</span></div></div>
         <div className="k"><div className="k-label">平均金利</div><div className="k-val">{wRate}%</div><div className="k-ctx">固定 {MY(fixedBal)} / 変動 {MY(varBal)}</div></div>
         <div className="k"><div className="k-label">借換え削減余地</div><div className="k-val" style={{ color: "var(--ac)" }}>▼{MY(refiSavings)}/年</div><div className="k-ctx">{refiTarget.length}件を1.0%に借換えた場合</div></div>
       </div>

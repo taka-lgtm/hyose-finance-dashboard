@@ -22,9 +22,9 @@ function Dashboard() {
   const [loans, setLoans] = useState([]);
   const [loansLoading, setLoansLoading] = useState(true);
 
-  // ── Financial data state (Firestore-backed with defaults) ──
-  const [plData, setPlData] = useState(DEFAULT_PL);
-  const [bsData, setBsData] = useState(DEFAULT_BS);
+  // ── Financial data state (Firestoreから取得、未取得時はnull) ──
+  const [plData, setPlData] = useState(null);
+  const [bsData, setBsData] = useState(null);
   const [bmData, setBmData] = useState(DEFAULT_BM);
   const [cfData, setCfData] = useState(DEFAULT_CF);
   const [finLoading, setFinLoading] = useState(true);
@@ -149,14 +149,14 @@ function Dashboard() {
     performance: <Performance bmData={bmData} />,
     financials: <Financials plData={plData} bsData={bsData} loans={loans} savePL={savePL} saveBS={saveBS} />,
     cashflow: <CashFlow cfData={cfData} saveCF={saveCF} />,
-    debt: <Debt loans={loans} addLoan={addLoan} updateLoan={updateLoan} removeLoan={removeLoan} loading={loansLoading} />,
+    debt: <Debt loans={loans} addLoan={addLoan} updateLoan={updateLoan} removeLoan={removeLoan} loading={loansLoading} plData={plData} />,
     actions: <Actions />,
     users: <Users />,
     settings: <Settings />,
   };
 
   return (
-    <Layout page={page} navigate={navigate} loans={loans}>
+    <Layout page={page} navigate={navigate} loans={loans} plData={plData}>
       {dataLoading && (
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 0", fontSize: 12, color: "var(--tx3)" }}>
           <div className="login-spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />

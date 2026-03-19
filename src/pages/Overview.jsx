@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
 import { Chart, registerables } from "chart.js";
-import { PL as DEFAULT_PL, BS as DEFAULT_BS, CF as DEFAULT_CF, ALERTS, M, MY, pct, sgn, lvl, calcHealth, calcLoanDerived, chartFont, chartGrid, chartLegend } from "../data";
+import { CF as DEFAULT_CF, ALERTS, M, MY, pct, sgn, lvl, calcHealth, calcLoanDerived, chartFont, chartGrid, chartLegend } from "../data";
 import Sparkline from "../components/Sparkline";
 import { useSettings, getFiscalYear } from "../contexts/SettingsContext";
 
@@ -10,17 +10,24 @@ export default function Overview({ loans, navigate, plData, bsData, cfData }) {
   const { settings } = useSettings();
   const safetyLine = settings.safetyLine;
   const fiscalYear = getFiscalYear(settings.fiscalMonth);
-  const PLd = plData || DEFAULT_PL;
-  const BSd = bsData || DEFAULT_BS;
+  const PLd = plData && plData.length > 0 ? plData : null;
+  const BSd = bsData && bsData.length > 0 ? bsData : null;
   const CFd = cfData && cfData.length > 0 ? cfData : DEFAULT_CF;
-  const lastPL = PLd[PLd.length - 1], prevPL = PLd[PLd.length - 2] || lastPL;
-  const lastBS = BSd[BSd.length - 1], prevBS = BSd[BSd.length - 2] || lastBS;
-  const h = calcHealth(loans);
+  const hasPL = !!PLd;
+  const hasBS = !!BSd;
+  const hasFinancials = hasPL && hasBS;
+  const lastPL = hasPL ? PLd[PLd.length - 1] : null;
+  const prevPL = hasPL && PLd.length >= 2 ? PLd[PLd.length - 2] : lastPL;
+  const lastBS = hasBS ? BSd[BSd.length - 1] : null;
+  const prevBS = hasBS && BSd.length >= 2 ? BSd[BSd.length - 2] : lastBS;
+  const h = calcHealth(loans, PLd, BSd);
   const { tBal, tMon, wRate } = calcLoanDerived(loans);
-  const s = pct(lastPL.売上高, lastPL.予算売上), o = pct(lastPL.営業利益, lastPL.予算営業利益);
-  const gm = lastPL.売上総利益 / lastPL.売上高 * 100, pgm = prevPL.売上総利益 / prevPL.売上高 * 100;
-  const cr = lastBS.流動資産 / lastBS.流動負債 * 100;
-  const dy = (lastBS.固定負債 + lastBS.流動負債 - lastBS.流動資産 * 0.3) / (lastPL.経常利益 + 300);
+  const s = hasFinancials ? pct(lastPL.売上高, lastPL.予算売上) : 0;
+  const o = hasFinancials ? pct(lastPL.営業利益, lastPL.予算営業利益) : 0;
+  const gm = hasFinancials ? lastPL.売上総利益 / lastPL.売上高 * 100 : 0;
+  const pgm = hasFinancials ? prevPL.売上総利益 / prevPL.売上高 * 100 : 0;
+  const cr = hasFinancials ? lastBS.流動資産 / lastBS.流動負債 * 100 : 0;
+  const dy = hasFinancials ? (lastBS.固定負債 + lastBS.流動負債 - lastBS.流動資産 * 0.3) / (lastPL.経常利益 + 300) : 0;
   const minCF = CFd.length > 0 ? Math.min(...CFd.map((v) => v.残高)) : 0;
   const topL = [...loans].sort((a, b) => b.rate - a.rate);
   const trendRef = useRef(null);
@@ -28,7 +35,7 @@ export default function Overview({ loans, navigate, plData, bsData, cfData }) {
 
   useEffect(() => {
     if (chartRef.current) chartRef.current.destroy();
-    if (!trendRef.current) return;
+    if (!trendRef.current || !hasPL) return;
     Chart.defaults.color = "rgba(139,146,168,.7)";
     Chart.defaults.borderColor = "rgba(255,255,255,.04)";
     chartRef.current = new Chart(trendRef.current, {
@@ -52,7 +59,7 @@ export default function Overview({ loans, navigate, plData, bsData, cfData }) {
       },
     });
     return () => { if (chartRef.current) chartRef.current.destroy(); };
-  }, []);
+  }, [PLd, hasPL]);
 
   return (
     <div className="page"><div className="g">
@@ -74,7 +81,7 @@ export default function Overview({ loans, navigate, plData, bsData, cfData }) {
         <div className="hh">
           <div className="hs">
             <div className="hl">経営健全度</div>
-            <div className="hn">{h.total}</div>
+            <div className="hn">{h.total != null ? h.total : "-"}</div>
             <div className="hg">Grade {h.grade}</div>
           </div>
           <div className="hd">
@@ -90,10 +97,14 @@ export default function Overview({ loans, navigate, plData, bsData, cfData }) {
         <div className="dig">
           <div className="dl">Executive Digest</div>
           <div className="dt">
-            売上高<strong className="up">{M(lastPL.売上高)}</strong>で4年連続増収。営業利益率<strong>{(lastPL.営業利益 / lastPL.売上高 * 100).toFixed(1)}%</strong>と改善基調。
-            予算比では売上<strong className={s < 0 ? "dn" : "up"}>{sgn(s)}</strong>、営利<strong className={o < 0 ? "dn" : "up"}>{sgn(o)}</strong>で未達。
-            自己資本比率<strong className="up">{(lastBS.純資産 / lastBS.資産合計 * 100).toFixed(1)}%</strong>は着実改善。
-            <strong className="at">変動金利{loans.filter((l) => l.rt === "変動").length}件</strong>と<strong className="dn">3ヶ月後の資金余力低下</strong>（最低{M(minCF)}）が最優先課題。
+            {hasFinancials ? (<>
+              売上高<strong className="up">{M(lastPL.売上高)}</strong>。営業利益率<strong>{(lastPL.営業利益 / lastPL.売上高 * 100).toFixed(1)}%</strong>。
+              予算比では売上<strong className={s < 0 ? "dn" : "up"}>{sgn(s)}</strong>、営利<strong className={o < 0 ? "dn" : "up"}>{sgn(o)}</strong>。
+              自己資本比率<strong className="up">{(lastBS.純資産 / lastBS.資産合計 * 100).toFixed(1)}%</strong>。
+            </>) : (
+              <span style={{ color: "var(--tx3)" }}>決算書データを取り込むと、ここに経営サマリーが表示されます。</span>
+            )}
+            <strong className="at">変動金利{loans.filter((l) => l.rt === "変動").length}件</strong>と<strong className="dn">資金余力</strong>（最低{M(minCF)}）が要注意。
           </div>
         </div>
       </div>
@@ -103,34 +114,34 @@ export default function Overview({ loans, navigate, plData, bsData, cfData }) {
           <div className="k-row">
             <div>
               <div className="k-label">現金残高</div>
-              <div className="k-val">{M(lastBS.現預金)}</div>
-              <div className="k-ctx">流動比率 {cr.toFixed(0)}% / 最低 {M(minCF)}</div>
+              <div className="k-val">{hasBS ? M(lastBS.現預金) : "-"}</div>
+              <div className="k-ctx">{hasBS ? `流動比率 ${cr.toFixed(0)}%` : ""} / 最低 {M(minCF)}</div>
             </div>
-            <Sparkline data={BSd.map((b) => b.現預金)} color="#22c994" />
+            {hasBS && <Sparkline data={BSd.map((b) => b.現預金)} color="#22c994" />}
           </div>
-          <div className="k-foot"><span>安全水準 {M(safetyLine)}</span><span>{cr >= 200 ? "安定圏" : "注意"}</span></div>
+          <div className="k-foot"><span>安全水準 {M(safetyLine)}</span><span>{hasBS ? (cr >= 200 ? "安定圏" : "注意") : "-"}</span></div>
         </div>
         <div className="k">
           <div className="k-row">
             <div>
               <div className="k-label">売上高</div>
-              <div className="k-val">{M(lastPL.売上高)}</div>
-              <div className="k-ctx">前年 {sgn(pct(lastPL.売上高, prevPL.売上高))} / 予算 {sgn(s)}</div>
+              <div className="k-val">{hasPL ? M(lastPL.売上高) : "-"}</div>
+              <div className="k-ctx">{hasPL ? `前年 ${sgn(pct(lastPL.売上高, prevPL.売上高))} / 予算 ${sgn(s)}` : "データなし"}</div>
             </div>
-            <Sparkline data={PLd.map((p) => p.売上高)} color="#5b8def" />
+            {hasPL && <Sparkline data={PLd.map((p) => p.売上高)} color="#5b8def" />}
           </div>
-          <div className="k-foot"><span>予算 {M(lastPL.予算売上)}</span></div>
+          <div className="k-foot"><span>{hasPL ? `予算 ${M(lastPL.予算売上)}` : ""}</span></div>
         </div>
         <div className="k">
           <div className="k-row">
             <div>
               <div className="k-label">営業利益</div>
-              <div className="k-val">{M(lastPL.営業利益)}</div>
-              <div className="k-ctx">前年 {sgn(pct(lastPL.営業利益, prevPL.営業利益))} / 予算 {sgn(o)}</div>
+              <div className="k-val">{hasPL ? M(lastPL.営業利益) : "-"}</div>
+              <div className="k-ctx">{hasPL ? `前年 ${sgn(pct(lastPL.営業利益, prevPL.営業利益))} / 予算 ${sgn(o)}` : "データなし"}</div>
             </div>
-            <Sparkline data={PLd.map((p) => p.営業利益)} color="#9b7cf6" />
+            {hasPL && <Sparkline data={PLd.map((p) => p.営業利益)} color="#9b7cf6" />}
           </div>
-          <div className="k-foot"><span>利益率 {(lastPL.営業利益 / lastPL.売上高 * 100).toFixed(1)}%</span></div>
+          <div className="k-foot"><span>{hasPL ? `利益率 ${(lastPL.営業利益 / lastPL.売上高 * 100).toFixed(1)}%` : ""}</span></div>
         </div>
         <div className="k">
           <div className="k-row">
@@ -151,7 +162,7 @@ export default function Overview({ loans, navigate, plData, bsData, cfData }) {
             <div><div className="ct">5年トレンド</div><div className="cs">売上高・営業利益・予算</div></div>
             <span className="p bu">重点</span>
           </div>
-          <div className="cb"><div className="chart tall"><canvas ref={trendRef} /></div></div>
+          <div className="cb">{hasPL ? <div className="chart tall"><canvas ref={trendRef} /></div> : <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--tx3)", fontSize: 12 }}>決算書データを取り込むとトレンドチャートが表示されます</div>}</div>
         </div>
         <div className="c">
           <div className="ch">
@@ -176,9 +187,13 @@ export default function Overview({ loans, navigate, plData, bsData, cfData }) {
         <div className="ch"><div><div className="ct">今月の論点</div></div></div>
         <div className="cb">
           <div className="ms">
-            <div className="ms-r"><div className="ms-l">粗利率</div><div className="ms-v">{gm.toFixed(1)}%</div><div className={`ms-c ${gm >= pgm ? "up" : "dn"}`}>{gm - pgm >= 0 ? "+" : ""}{(gm - pgm).toFixed(1)}pt</div><div className="ms-n">在庫回転が鍵。棚卸 {M(lastBS.棚卸資産)}</div></div>
-            <div className="ms-r"><div className="ms-l">自己資本比率</div><div className="ms-v">{(lastBS.純資産 / lastBS.資産合計 * 100).toFixed(1)}%</div><div className="ms-c up">{sgn((lastBS.純資産 / lastBS.資産合計 * 100) - (prevBS.純資産 / prevBS.資産合計 * 100))}</div><div className="ms-n">4年連続改善。借入交渉の材料</div></div>
-            <div className="ms-r"><div className="ms-l">債務償還年数</div><div className="ms-v">{dy.toFixed(1)}年</div><div className={`ms-c ${dy > 8 ? "dn" : "up"}`}>{dy > 8 ? "要注意" : "許容"}</div><div className="ms-n">10年以下を維持</div></div>
+            {hasFinancials ? (<>
+              <div className="ms-r"><div className="ms-l">粗利率</div><div className="ms-v">{gm.toFixed(1)}%</div><div className={`ms-c ${gm >= pgm ? "up" : "dn"}`}>{gm - pgm >= 0 ? "+" : ""}{(gm - pgm).toFixed(1)}pt</div><div className="ms-n">在庫回転が鍵。棚卸 {M(lastBS.棚卸資産)}</div></div>
+              <div className="ms-r"><div className="ms-l">自己資本比率</div><div className="ms-v">{(lastBS.純資産 / lastBS.資産合計 * 100).toFixed(1)}%</div><div className="ms-c up">{sgn((lastBS.純資産 / lastBS.資産合計 * 100) - (prevBS.純資産 / prevBS.資産合計 * 100))}</div><div className="ms-n">借入交渉の材料</div></div>
+              <div className="ms-r"><div className="ms-l">債務償還年数</div><div className="ms-v">{dy.toFixed(1)}年</div><div className={`ms-c ${dy > 8 ? "dn" : "up"}`}>{dy > 8 ? "要注意" : "許容"}</div><div className="ms-n">10年以下を維持</div></div>
+            </>) : (
+              <div className="ms-r"><div className="ms-l" style={{ color: "var(--tx3)" }}>決算書データを取り込むとPL/BS指標が表示されます</div></div>
+            )}
             <div className="ms-r"><div className="ms-l">借換え優先</div><div className="ms-v">{topL[0]?.rate}%</div><div className="ms-c dn">最高金利</div><div className="ms-n">{topL[0]?.bank} {topL[0]?.name}</div></div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { lastPL, pct, sgn } from "../data";
+import { pct, sgn } from "../data";
 import { useAuth } from "../contexts/AuthContext";
 import { useSettings } from "../contexts/SettingsContext";
 
@@ -22,12 +22,13 @@ function NavIcon({ d }) {
   );
 }
 
-export default function Layout({ page, navigate, loans, children }) {
+export default function Layout({ page, navigate, loans, plData, children }) {
   const { userDoc, logout } = useAuth();
   const { settings } = useSettings();
   const [menuOpen, setMenuOpen] = useState(false);
-  const sg = pct(lastPL.売上高, lastPL.予算売上);
-  const og = pct(lastPL.営業利益, lastPL.予算営業利益);
+  const lastPL = plData && plData.length > 0 ? plData[plData.length - 1] : null;
+  const sg = lastPL ? pct(lastPL.売上高, lastPL.予算売上) : 0;
+  const og = lastPL ? pct(lastPL.営業利益, lastPL.予算営業利益) : 0;
 
   // Close menu on page change
   useEffect(() => { setMenuOpen(false); }, [page]);

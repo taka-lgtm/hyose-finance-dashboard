@@ -289,11 +289,7 @@ export const REPORTS = [
   { group: "資金繰り", title: "資金ショート対策メモ", desc: "運転資金不足時の打ち手と影響額を整理。", tag: "判断", status: "下書き" },
 ];
 
-// ── Derived Values ──
-export const lastPL = PL[PL.length - 1];
-export const prevPL = PL[PL.length - 2];
-export const lastBS = BS[BS.length - 1];
-export const prevBS = BS[BS.length - 2];
+// ── Derived Values（後方互換用、新規コードでは使用しないこと） ──
 
 // ── Helper Functions ──
 // PL/BS用（万円入力）
@@ -313,10 +309,25 @@ export function calcLoanDerived(loans) {
 }
 
 // 経営ヘルススコア（PL/BSは万円、融資は円）
-export function calcHealth(loans) {
+// plArr: PL配列、bsArr: BS配列（Firestoreから取得した実データ）
+export function calcHealth(loans, plArr, bsArr) {
+  // データが不足している場合はスコア算出不可
+  if (!plArr || plArr.length === 0 || !bsArr || bsArr.length === 0) {
+    return {
+      total: null, grade: "-",
+      dims: [
+        { label: "収益性", val: 0, color: "var(--ac)" },
+        { label: "安全性", val: 0, color: "var(--bl)" },
+        { label: "成長性", val: 0, color: "var(--pu)" },
+        { label: "資金力", val: 0, color: "var(--am)" },
+      ],
+    };
+  }
   const { tMon } = calcLoanDerived(loans);
   const tMonMan = tMon / 10000; // 円→万円
-  const L = lastPL, B = lastBS, P = prevPL;
+  const L = plArr[plArr.length - 1];
+  const P = plArr.length >= 2 ? plArr[plArr.length - 2] : L;
+  const B = bsArr[bsArr.length - 1];
   const pS = Math.min(100, Math.max(0, (L.営業利益 / L.売上高 * 100) / 15 * 100));
   const sS = Math.min(100, Math.max(0, (B.純資産 / B.資産合計 * 100) / 50 * 100));
   const gS = Math.min(100, Math.max(0, (pct(L.売上高, P.売上高) + 5) / 15 * 100));
