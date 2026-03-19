@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Chart, registerables } from "chart.js";
-import { MONTHS, BANK_COLORS, M, lastPL, calcLoanDerived, exportBalanceCSV, exportSummaryCSV, chartFont, chartGrid, chartLegend } from "../data";
+import { MONTHS, M, MY, lastPL, calcLoanDerived, exportBalanceCSV, exportSummaryCSV, chartFont, chartGrid, chartLegend } from "../data";
+import { BANK_COLORS } from "../data/banks";
 import LoanModal from "../components/LoanModal";
 
 Chart.register(...registerables);
