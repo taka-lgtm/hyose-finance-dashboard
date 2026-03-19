@@ -153,10 +153,16 @@ function BalanceView({ proj, wRate, tMon, loans, bankFilter, onEdit }) {
     <div className="c">
       <div className="ch">
         <div><div className="ct">返済残高推移表<span className="unit-badge">単位: 万円</span></div><div className="cs">据置中は残高が水平推移 / 区分別に表示</div></div>
-        <button className="btn-export" onClick={() => exportBalanceCSV(loans, bankFilter)}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
-          CSV
-        </button>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button className="btn-export" onClick={() => exportBalanceXLSX(loans, projData, projLabels)}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+            Excel
+          </button>
+          <button className="btn-export" onClick={() => exportBalanceCSV(loans, bankFilter)}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+            CSV
+          </button>
+        </div>
       </div>
       <div className="cb" style={{ padding: 0 }}>
         <div className="scroll-table-wrap" ref={wrapRef}>
