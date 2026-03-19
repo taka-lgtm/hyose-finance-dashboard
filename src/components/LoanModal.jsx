@@ -1,20 +1,23 @@
 import { useState, useEffect, useRef } from "react";
+import { BANK_COLORS } from "../data/banks";
 
+// 新規登録時のデフォルト値（金額は円単位）
 const EMPTY = {
-  name: "", num: "", bank: "", start: "2026-04-01",
-  principal: "", balance: "", rate: "", rt: "固定",
-  monthly: "", method: "元金均等", term: "", grace: "0",
-  collateral: "無担保",
+  category: "長期", purpose: "運転", name: "", num: "",
+  bank: "", bankSeq: "", start: "2026-04-01", endDate: "",
+  debitDay: "", principal: "", balance: "", rate: "", rt: "固定",
+  baseRate: "", guaranteeFee: "0", monthly: "", method: "元金均等",
+  term: "", grace: "0",
+  condition: "P", guaranteeOrg: "", guaranteeType: "", guaranteeSec: "", guaranteePlan: "",
+  collateral: "プロパー", notes: "",
 };
-
-const EXISTING_BANKS = ["三井住友銀行", "みなと銀行", "日本政策金融公庫", "但馬銀行"];
 
 export default function LoanModal({ open, onClose, onSubmit, loans }) {
   const [form, setForm] = useState(EMPTY);
   const overlayRef = useRef(null);
 
-  // Collect all unique banks including dynamically added ones
-  const allBanks = [...new Set([...EXISTING_BANKS, ...loans.map((l) => l.bank)])];
+  // 既存融資の銀行名 + BANK_COLORSのキーから候補を生成
+  const allBanks = [...new Set([...Object.keys(BANK_COLORS), ...loans.map((l) => l.bank)])];
 
   useEffect(() => {
     if (open) setForm(EMPTY);
@@ -42,24 +45,40 @@ export default function LoanModal({ open, onClose, onSubmit, loans }) {
     if (!form.bank) return alert("銀行名を入力してください");
     if (!form.principal) return alert("借入金額を入力してください");
     if (!form.rate) return alert("金利を入力してください");
-    if (!form.monthly) return alert("月返済額を入力してください");
+    if (form.category !== "当座貸越" && !form.monthly) return alert("月返済額を入力してください");
 
     const balance = Number(form.balance) || Number(form.principal);
-    const monthly = Number(form.monthly);
+    const monthly = Number(form.monthly) || 0;
+    const baseRate = parseFloat(form.baseRate) || parseFloat(form.rate);
+    const guaranteeFee = parseFloat(form.guaranteeFee) || 0;
     onSubmit({
+      category: form.category,
+      purpose: form.purpose,
       bank: form.bank,
+      bankSeq: Number(form.bankSeq) || 0,
       name: form.name,
       num: form.num || `NEW-${Date.now().toString(36).toUpperCase().slice(-6)}`,
+      start: form.start || new Date().toISOString().slice(0, 10),
+      endDate: form.endDate || "",
+      debitDay: Number(form.debitDay) || null,
       principal: Number(form.principal),
       rate: parseFloat(form.rate),
+      baseRate,
+      guaranteeFee,
       rt: form.rt,
       method: form.method,
-      term: Number(form.term) || Math.ceil(balance / monthly),
+      term: Number(form.term) || (monthly > 0 ? Math.ceil(balance / monthly) : 0),
       grace: Number(form.grace) || 0,
-      start: form.start || new Date().toISOString().slice(0, 10),
+      condition: form.condition,
+      guaranteeOrg: form.guaranteeOrg,
+      guaranteeType: form.guaranteeType,
+      guaranteeSec: form.guaranteeSec,
+      guaranteePlan: form.guaranteePlan,
       collateral: form.collateral,
       balance,
       monthly,
+      projections: [],
+      notes: form.notes,
     });
     onClose();
   };
@@ -81,8 +100,10 @@ export default function LoanModal({ open, onClose, onSubmit, loans }) {
         <div className="modal-body">
           <div className="form-grid">
             <div className="form-section-label">基本情報</div>
-            <Field label="融資名" req value={form.name} onChange={(v) => set("name", v)} placeholder="例: 設備資金③" />
-            <Field label="管理番号" value={form.num} onChange={(v) => set("num", v)} placeholder="例: SM-2026-003" />
+            <Select label="融資区分" req value={form.category} onChange={(v) => set("category", v)} options={["長期", "短期", "当座貸越"]} />
+            <Select label="資金使途" value={form.purpose} onChange={(v) => set("purpose", v)} options={["運転", "設備", ""]} />
+            <Field label="融資名" req value={form.name} onChange={(v) => set("name", v)} placeholder="例: 運転資金①" />
+            <Field label="管理番号" value={form.num} onChange={(v) => set("num", v)} placeholder="例: 103155" />
             <div className="form-group">
               <label className="form-label">銀行名<span className="req">*</span></label>
               <input className="form-input" list="bankList" value={form.bank} onChange={(e) => set("bank", e.target.value)} placeholder="銀行名を入力または選択" />
@@ -91,25 +112,38 @@ export default function LoanModal({ open, onClose, onSubmit, loans }) {
               </datalist>
             </div>
             <Field label="借入日" req type="date" value={form.start} onChange={(v) => set("start", v)} />
+            <Field label="最終期限" type="date" value={form.endDate} onChange={(v) => set("endDate", v)} />
+            <Field label="引落日" type="number" value={form.debitDay} onChange={(v) => set("debitDay", v)} placeholder="例: 15" />
 
             <div className="form-divider" />
             <div className="form-section-label">金額・金利</div>
-            <Field label="借入金額（万円）" req type="number" value={form.principal} onChange={(v) => set("principal", v)} placeholder="例: 3000" />
-            <Field label="現在残高（万円）" req type="number" value={form.balance} onChange={(v) => set("balance", v)} placeholder="借入金額と同額が初期値" />
-            <Field label="金利（%）" req type="number" step="0.1" value={form.rate} onChange={(v) => set("rate", v)} placeholder="例: 1.2" />
+            <Field label="借入金額（円）" req type="number" value={form.principal} onChange={(v) => set("principal", v)} placeholder="例: 30000000" />
+            <Field label="現在残高（円）" req type="number" value={form.balance} onChange={(v) => set("balance", v)} placeholder="借入金額と同額が初期値" />
+            <Field label="実効金利（%）" req type="number" step="0.01" value={form.rate} onChange={(v) => set("rate", v)} placeholder="例: 1.25" />
+            <Field label="基本金利（%）" type="number" step="0.01" value={form.baseRate} onChange={(v) => set("baseRate", v)} placeholder="実効金利と同じなら空欄可" />
+            <Field label="保証料率（%）" type="number" step="0.01" value={form.guaranteeFee} onChange={(v) => set("guaranteeFee", v)} placeholder="0" />
             <Select label="金利種別" req value={form.rt} onChange={(v) => set("rt", v)} options={["固定", "変動"]} />
 
             <div className="form-divider" />
             <div className="form-section-label">返済条件</div>
-            <Field label="月返済額（万円）" req type="number" value={form.monthly} onChange={(v) => set("monthly", v)} placeholder="例: 42" />
-            <Select label="返済方式" value={form.method} onChange={(v) => set("method", v)} options={["元金均等", "元利均等"]} />
+            <Field label="月返済額（円）" req={form.category !== "当座貸越"} type="number" value={form.monthly} onChange={(v) => set("monthly", v)} placeholder="例: 500000" />
+            <Select label="返済方式" value={form.method} onChange={(v) => set("method", v)} options={["元金均等", "元利均等", "一括返済", ""]} />
             <Field label="返済期間（ヶ月）" type="number" value={form.term} onChange={(v) => set("term", v)} placeholder="例: 60" />
             <Field label="据置期間（ヶ月）" type="number" value={form.grace} onChange={(v) => set("grace", v)} placeholder="0" />
 
             <div className="form-divider" />
             <div className="form-section-label">担保・保証</div>
+            <Select label="条件" value={form.condition} onChange={(v) => set("condition", v)} options={["P", "保"]} />
+            <Select label="担保区分" value={form.collateral} onChange={(v) => set("collateral", v)} options={["プロパー", "保証協会", "土地担保", "不動産担保", "無担保"]} />
+            <Field label="保証協会" value={form.guaranteeOrg} onChange={(v) => set("guaranteeOrg", v)} placeholder="例: 国、県" />
+            <Field label="保証枠/種類" value={form.guaranteeType} onChange={(v) => set("guaranteeType", v)} placeholder="例: 一般、セーフティ" />
+            <Field label="保証枠/担保" value={form.guaranteeSec} onChange={(v) => set("guaranteeSec", v)} placeholder="例: 無担保、有担保" />
+            <Field label="保証制度" value={form.guaranteePlan} onChange={(v) => set("guaranteePlan", v)} placeholder="例: 伴走特別一般" />
+
+            <div className="form-divider" />
+            <div className="form-section-label">備考</div>
             <div className="form-group full">
-              <Select label="担保区分" value={form.collateral} onChange={(v) => set("collateral", v)} options={["無担保", "保証協会", "不動産担保", "その他"]} />
+              <Field label="備考" value={form.notes} onChange={(v) => set("notes", v)} placeholder="特記事項があれば入力" />
             </div>
           </div>
         </div>
