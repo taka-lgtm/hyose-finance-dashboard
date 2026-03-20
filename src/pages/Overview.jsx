@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Chart, registerables } from "chart.js";
 import { CF as DEFAULT_CF, ALERTS, M, MY, pct, sgn, lvl, calcHealth, calcLoanDerived, chartFont, chartGrid, chartLegend } from "../data";
 import Sparkline from "../components/Sparkline";
@@ -22,6 +22,23 @@ export default function Overview({ loans, navigate, plData, bsData, cfData }) {
   const prevBS = hasBS && BSd.length >= 2 ? BSd[BSd.length - 2] : lastBS;
   const h = calcHealth(loans, PLd, BSd);
   const { tBal, tMon, wRate } = calcLoanDerived(loans);
+
+  // ツールチップ用の計算値
+  const healthTooltips = (() => {
+    if (!hasFinancials) return {};
+    const tMonMan = tMon / 10000;
+    const opMargin = lastPL.営業利益 / lastPL.売上高 * 100;
+    const eqRatio = lastBS.純資産 / lastBS.資産合計 * 100;
+    const growthRate = prevPL ? pct(lastPL.売上高, prevPL.売上高) : 0;
+    const monthlyFixed = tMonMan + lastPL.販管費 / 12;
+    const cashMonths = monthlyFixed > 0 ? lastBS.現預金 / monthlyFixed : 0;
+    return {
+      "収益性": `営業利益率（営業利益÷売上高）を15%基準で正規化。15%以上で100点\n現在値: 営業利益率 ${opMargin.toFixed(1)}% → スコア ${h.dims[0].val}`,
+      "安全性": `自己資本比率（純資産÷総資産）を50%基準で正規化。50%以上で100点\n現在値: 自己資本比率 ${eqRatio.toFixed(1)}% → スコア ${h.dims[1].val}`,
+      "成長性": `前年比売上成長率を-5%〜+10%の範囲で正規化。成長率10%以上で100点\n現在値: 売上成長率 ${growthRate >= 0 ? "+" : ""}${growthRate.toFixed(1)}% → スコア ${h.dims[2].val}`,
+      "資金力": `手元資金÷月次固定支出（融資返済+販管費）を4ヶ月基準で正規化。4ヶ月以上で100点\n現在値: ${cashMonths.toFixed(1)}ヶ月分 → スコア ${h.dims[3].val}`,
+    };
+  })();
   const s = hasFinancials ? pct(lastPL.売上高, lastPL.予算売上) : 0;
   const o = hasFinancials ? pct(lastPL.営業利益, lastPL.予算営業利益) : 0;
   const gm = hasFinancials ? lastPL.売上総利益 / lastPL.売上高 * 100 : 0;
@@ -86,10 +103,13 @@ export default function Overview({ loans, navigate, plData, bsData, cfData }) {
           </div>
           <div className="hd">
             {h.dims.map((d) => (
-              <div key={d.label} className="hr">
+              <div key={d.label} className="hr tooltip-wrap">
                 <div className="hrl">{d.label}</div>
                 <div className="hrb"><span style={{ width: d.val + "%", background: d.color }} /></div>
                 <div className="hrv" style={{ color: d.color }}>{d.val}</div>
+                {healthTooltips[d.label] && (
+                  <div className="tooltip-box">{healthTooltips[d.label]}</div>
+                )}
               </div>
             ))}
           </div>

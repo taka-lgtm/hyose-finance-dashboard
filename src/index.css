@@ -115,6 +115,11 @@ button,input,select{font:inherit;color:inherit}
 .hr .hrb span{display:block;height:100%;border-radius:99px;transition:.4s var(--e)}
 .hr .hrv{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;text-align:right}
 
+/* ツールチップ */
+.tooltip-wrap{position:relative;cursor:help}
+.tooltip-box{display:none;position:absolute;left:0;top:100%;z-index:100;min-width:260px;max-width:340px;padding:10px 14px;border-radius:8px;background:var(--sf2);border:1px solid var(--bd);box-shadow:0 8px 24px rgba(0,0,0,.45);font-size:11px;line-height:1.6;color:var(--tx2);white-space:pre-line;pointer-events:none}
+.tooltip-wrap:hover .tooltip-box{display:block}
+
 /* Digest */
 .dig{padding:18px 20px;border-radius:var(--r);background:linear-gradient(135deg,var(--sf2),var(--sf));border:1px solid var(--bd);position:relative;overflow:hidden}
 .dig::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(180deg,var(--ac),var(--bl));border-radius:0 3px 3px 0}
