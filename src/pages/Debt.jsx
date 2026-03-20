@@ -4,22 +4,73 @@ import { MY, calcLoanDerived, exportBalanceCSV, exportBalanceXLSX, exportSummary
 import { BANK_COLORS, getBankColor } from "../data/banks";
 import { calcAllProjections } from "../lib/loanCalc";
 import { fetchLoanLogs } from "../lib/firestore";
+import { useSettings } from "../contexts/SettingsContext";
+import { getFiscalYear } from "../contexts/SettingsContext";
 import LoanModal from "../components/LoanModal";
 
 Chart.register(...registerables);
 
 const VIEWS = { balance: "残高推移", table: "一覧", schedule: "スケジュール", analysis: "分析", logs: "ログ" };
 const CATEGORIES = ["長期", "短期", "当座貸越"];
+const PERIOD_FILTERS = { thisMonth: "今月", thisPeriod: "今期", last2: "直近2期", last3: "直近3期" };
+
+// 期間フィルタのロジック
+function filterLoansByPeriod(loans, periodKey, fiscalMonth) {
+  // 今月：残高がある融資のみ
+  if (periodKey === "thisMonth") {
+    return loans.filter((l) => l.balance > 0);
+  }
+
+  const now = new Date();
+  const currentFY = getFiscalYear(fiscalMonth, now);
+  const startMonth = (fiscalMonth % 12) + 1; // 期首月
+
+  // 期間の開始日を算出
+  let periodsBack = 0;
+  if (periodKey === "thisPeriod") periodsBack = 0;
+  else if (periodKey === "last2") periodsBack = 1;
+  else if (periodKey === "last3") periodsBack = 2;
+
+  const periodStart = new Date(currentFY - periodsBack, startMonth - 1, 1);
+  // 期末日：決算月の末日
+  const endYear = currentFY + (startMonth > 1 ? 1 : 0);
+  const periodEnd = new Date(endYear, fiscalMonth, 0); // 決算月末日
+
+  return loans.filter((l) => {
+    // ローンの開始日
+    const loanStart = l.start ? new Date(l.start) : new Date(2000, 0, 1);
+    // ローンの終了日（推定）
+    let loanEnd;
+    if (l.endDate) {
+      loanEnd = new Date(l.endDate);
+    } else if (l.start && l.term) {
+      const s = new Date(l.start);
+      loanEnd = new Date(s.getFullYear(), s.getMonth() + l.term, s.getDate());
+    } else if (l.balance > 0 && l.monthly > 0) {
+      const remainMonths = Math.ceil(l.balance / l.monthly);
+      loanEnd = new Date(now.getFullYear(), now.getMonth() + remainMonths, now.getDate());
+    } else if (l.balance > 0) {
+      loanEnd = new Date(2099, 11, 31); // 返済なし → 遠い将来
+    } else {
+      loanEnd = now; // 残高0 → すでに完済
+    }
+    // ローンの活動期間と対象期間が重なるか判定
+    return loanStart <= periodEnd && loanEnd >= periodStart;
+  });
+}
 
 export default function Debt({ loans, addLoan, updateLoan, removeLoan, loading, plData }) {
+  const { settings } = useSettings();
   const [view, setView] = useState("balance");
   const [bankFilter, setBankFilter] = useState("all");
   const [catFilter, setCatFilter] = useState("all");
+  const [periodFilter, setPeriodFilter] = useState("thisMonth");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingLoan, setEditingLoan] = useState(null);
 
-  const banks = [...new Set(loans.map((l) => l.bank))];
-  const catFiltered = catFilter === "all" ? loans : loans.filter((l) => l.category === catFilter);
+  const periodFiltered = filterLoansByPeriod(loans, periodFilter, settings.fiscalMonth);
+  const banks = [...new Set(periodFiltered.map((l) => l.bank))];
+  const catFiltered = catFilter === "all" ? periodFiltered : periodFiltered.filter((l) => l.category === catFilter);
   const fl = bankFilter === "all" ? catFiltered : catFiltered.filter((l) => l.bank === bankFilter);
 
   // KPIはフィルタ後のデータで計算
@@ -32,13 +83,13 @@ export default function Debt({ loans, addLoan, updateLoan, removeLoan, loading, 
   const refiTarget = sorted.filter((l) => l.rate >= 1.5);
   const refiSavings = refiTarget.reduce((s, l) => s + Math.round(l.balance * (l.rate - 1.0) / 100), 0);
 
-  // 分析用（全件ベース）
-  const allBanks = [...new Set(loans.map((l) => l.bank))];
-  const bSum = allBanks.map((b) => { const ls = loans.filter((l) => l.bank === b); return { bank: b, bal: ls.reduce((s, l) => s + l.balance, 0), mon: ls.reduce((s, l) => s + l.monthly, 0), cnt: ls.length }; });
-  const allBankInt = allBanks.map((b) => ({ bank: b, int: loans.filter((l) => l.bank === b).reduce((s, l) => s + Math.round(l.balance * l.rate / 100), 0) })).sort((a, b) => b.int - a.int);
-  const allTotalInt = loans.reduce((s, l) => s + Math.round(l.balance * l.rate / 100), 0);
-  const allFixedBal = loans.filter((l) => l.rt === "固定").reduce((s, l) => s + l.balance, 0);
-  const allVarBal = loans.filter((l) => l.rt === "変動").reduce((s, l) => s + l.balance, 0);
+  // 分析用（期間フィルタ後のデータで計算）
+  const allBanks = [...new Set(periodFiltered.map((l) => l.bank))];
+  const bSum = allBanks.map((b) => { const ls = periodFiltered.filter((l) => l.bank === b); return { bank: b, bal: ls.reduce((s, l) => s + l.balance, 0), mon: ls.reduce((s, l) => s + l.monthly, 0), cnt: ls.length }; });
+  const allBankInt = allBanks.map((b) => ({ bank: b, int: periodFiltered.filter((l) => l.bank === b).reduce((s, l) => s + Math.round(l.balance * l.rate / 100), 0) })).sort((a, b) => b.int - a.int);
+  const allTotalInt = periodFiltered.reduce((s, l) => s + Math.round(l.balance * l.rate / 100), 0);
+  const allFixedBal = periodFiltered.filter((l) => l.rt === "固定").reduce((s, l) => s + l.balance, 0);
+  const allVarBal = periodFiltered.filter((l) => l.rt === "変動").reduce((s, l) => s + l.balance, 0);
 
   const proj = calcAllProjections(fl);
 
@@ -68,6 +119,9 @@ export default function Debt({ loans, addLoan, updateLoan, removeLoan, loading, 
             <option value="all">全銀行</option>
             {banks.map((b) => <option key={b} value={b}>{b}</option>)}
           </select>
+          <select className="sel" value={periodFilter} onChange={(e) => setPeriodFilter(e.target.value)} style={{ marginLeft: 6 }}>
+            {Object.entries(PERIOD_FILTERS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select>
         </div>
       </div>
 
@@ -81,7 +135,7 @@ export default function Debt({ loans, addLoan, updateLoan, removeLoan, loading, 
       {view === "balance" && <BalanceView proj={proj} wRate={wRate} tMon={tMon} loans={loans} bankFilter={bankFilter} onEdit={openEdit} />}
       {view === "table" && <ListView loans={fl} onEdit={openEdit} />}
       {view === "schedule" && <ScheduleView loans={fl} />}
-      {view === "analysis" && <AnalysisView bSum={bSum} bankInt={allBankInt} totalInt={allTotalInt} fixedBal={allFixedBal} varBal={allVarBal} loans={loans} sorted={sorted} refiTarget={refiTarget} refiSavings={refiSavings} />}
+      {view === "analysis" && <AnalysisView bSum={bSum} bankInt={allBankInt} totalInt={allTotalInt} fixedBal={allFixedBal} varBal={allVarBal} loans={periodFiltered} sorted={sorted} refiTarget={refiTarget} refiSavings={refiSavings} />}
       {view === "logs" && <LogView />}
 
       <LoanModal open={modalOpen} onClose={() => { setModalOpen(false); setEditingLoan(null); }} onSubmit={addLoan} onUpdate={updateLoan} onDelete={removeLoan} editing={editingLoan} loans={loans} />
