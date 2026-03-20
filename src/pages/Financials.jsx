@@ -152,7 +152,7 @@ function RatioTable({ groups, dataset, years }) {
             <tr className="rat-group-row"><td colSpan={displayYears.length + 1}>{g.label}</td></tr>
             {g.rows.map((r, ri) => (
               <tr key={ri}>
-                <td className="bold">{r.label}{r.note && <span className="rat-note">※</span>}</td>
+                <td className="bold tooltip-wrap">{r.label}{r.note && <span className="rat-note">※</span>}{r.tip && <div className="tooltip-box">{r.tip}</div>}</td>
                 {dataset.map((item, i) => {
                   const v = r.fn(item, i);
                   const prev = i === 0 ? null : r.fn(dataset[i - 1], i - 1);
@@ -253,21 +253,21 @@ export default function Financials({ plData, bsData, loans = [], savePL, saveBS 
     {
       label: "収益力",
       rows: [
-        { label: "売上成長率", fn: (r, i) => i === 0 ? null : pct(r.売上高, plData[i - 1]?.売上高), fmt: v => v == null ? "-" : sgn(v), dir: "up" },
-        { label: "売上総利益率", fn: r => r.売上総利益 / r.売上高 * 100, fmt: fmtPct, dir: "up" },
-        { label: "営業利益率", fn: r => r.営業利益 / r.売上高 * 100, fmt: fmtPct, dir: "up" },
-        { label: "EBITDA", fn: r => getEBITDA(r), fmt: v => v == null ? "-" : M(v), dir: "up", note: !hasDepreciation },
-        { label: "EBITDAマージン", fn: r => { const e = getEBITDA(r); return e == null ? null : e / r.売上高 * 100; }, fmt: fmtPct, dir: "up", note: !hasDepreciation },
+        { label: "売上成長率", tip: "前年売上高との比較。売上の伸び率を示す", fn: (r, i) => i === 0 ? null : pct(r.売上高, plData[i - 1]?.売上高), fmt: v => v == null ? "-" : sgn(v), dir: "up" },
+        { label: "売上総利益率", tip: "売上総利益 ÷ 売上高。原価管理の効率性を示す", fn: r => r.売上総利益 / r.売上高 * 100, fmt: fmtPct, dir: "up" },
+        { label: "営業利益率", tip: "営業利益 ÷ 売上高。本業の収益力を示す", fn: r => r.営業利益 / r.売上高 * 100, fmt: fmtPct, dir: "up" },
+        { label: "EBITDA", tip: "営業利益 + 減価償却費。本業の実質的な稼ぐ力を示す", fn: r => getEBITDA(r), fmt: v => v == null ? "-" : M(v), dir: "up", note: !hasDepreciation },
+        { label: "EBITDAマージン", tip: "EBITDA ÷ 売上高。設備投資の影響を除いた収益力", fn: r => { const e = getEBITDA(r); return e == null ? null : e / r.売上高 * 100; }, fmt: fmtPct, dir: "up", note: !hasDepreciation },
       ],
     },
     {
       label: "効率性",
       rows: [
-        { label: "総資産回転率", fn: (r, i) => bsData[i] ? r.売上高 / bsData[i].資産合計 : null, fmt: fmtTurn, dir: "up" },
-        { label: "在庫回転期間", fn: (r, i) => bsData[i]?.棚卸資産 ? bsData[i].棚卸資産 / r.売上原価 * 365 : null, fmt: fmtDays, dir: "down" },
-        { label: "ROE", fn: (r, i) => i === 0 || !bsData[i] || !bsData[i - 1] ? null : r.当期純利益 / ((bsData[i].純資産 + bsData[i - 1].純資産) / 2) * 100, fmt: fmtPct, dir: "up" },
-        { label: "ROA", fn: (r, i) => i === 0 || !bsData[i] || !bsData[i - 1] ? null : r.当期純利益 / ((bsData[i].資産合計 + bsData[i - 1].資産合計) / 2) * 100, fmt: fmtPct, dir: "up" },
-        { label: "ROIC", fn: (r, i) => {
+        { label: "総資産回転率", tip: "売上高 ÷ 総資産。資産をどれだけ効率的に活用しているか", fn: (r, i) => bsData[i] ? r.売上高 / bsData[i].資産合計 : null, fmt: fmtTurn, dir: "up" },
+        { label: "在庫回転期間", tip: "棚卸資産 ÷ 売上原価 × 365日。在庫が売れるまでの日数", fn: (r, i) => bsData[i]?.棚卸資産 ? bsData[i].棚卸資産 / r.売上原価 * 365 : null, fmt: fmtDays, dir: "down" },
+        { label: "ROE", tip: "当期純利益 ÷ 平均自己資本。株主資本に対する利益率", fn: (r, i) => i === 0 || !bsData[i] || !bsData[i - 1] ? null : r.当期純利益 / ((bsData[i].純資産 + bsData[i - 1].純資産) / 2) * 100, fmt: fmtPct, dir: "up" },
+        { label: "ROA", tip: "当期純利益 ÷ 平均総資産。総資産に対する利益率", fn: (r, i) => i === 0 || !bsData[i] || !bsData[i - 1] ? null : r.当期純利益 / ((bsData[i].資産合計 + bsData[i - 1].資産合計) / 2) * 100, fmt: fmtPct, dir: "up" },
+        { label: "ROIC", tip: "税引後営業利益 ÷ 投下資本。事業に投じた資本のリターン", fn: (r, i) => {
           const debt = getDebt(i);
           if (debt == null || !bsData[i]) return null;
           const ic = bsData[i].純資産 + debt;
@@ -278,26 +278,26 @@ export default function Financials({ plData, bsData, loans = [], savePL, saveBS 
     {
       label: "キャッシュ",
       rows: [
-        { label: "現金残高", fn: (r, i) => bsData[i]?.現預金 ?? null, fmt: v => v == null ? "-" : M(v), dir: "up" },
-        { label: "月商倍率", fn: (r, i) => bsData[i]?.現預金 ? bsData[i].現預金 / (r.売上高 / 12) : null, fmt: fmtMonths, dir: "up" },
-        { label: "フリーCF（簡易）", fn: (r, i) => getFCF(r, i), fmt: v => v == null ? "-" : M(v), dir: "up" },
+        { label: "現金残高", tip: "BS上の現預金。手元流動性の絶対額", fn: (r, i) => bsData[i]?.現預金 ?? null, fmt: v => v == null ? "-" : M(v), dir: "up" },
+        { label: "月商倍率", tip: "現預金 ÷ 月商。手元資金が月商の何ヶ月分あるか。2ヶ月以上が目安", fn: (r, i) => bsData[i]?.現預金 ? bsData[i].現預金 / (r.売上高 / 12) : null, fmt: fmtMonths, dir: "up" },
+        { label: "フリーCF（簡易）", tip: "当期純利益 − 固定資産増減。事業が生む自由なキャッシュ", fn: (r, i) => getFCF(r, i), fmt: v => v == null ? "-" : M(v), dir: "up" },
       ],
     },
     {
       label: "安全性",
       rows: [
-        { label: "自己資本比率", fn: (r, i) => bsData[i] ? bsData[i].純資産 / bsData[i].資産合計 * 100 : null, fmt: fmtPct, dir: "up" },
-        { label: "流動比率", fn: (r, i) => bsData[i] ? bsData[i].流動資産 / bsData[i].流動負債 * 100 : null, fmt: v => v == null ? "-" : v.toFixed(0) + "%", dir: "up" },
-        { label: "D/Eレシオ", fn: (r, i) => {
+        { label: "自己資本比率", tip: "純資産 ÷ 総資産。財務の安定性を示す。30%以上が目安", fn: (r, i) => bsData[i] ? bsData[i].純資産 / bsData[i].資産合計 * 100 : null, fmt: fmtPct, dir: "up" },
+        { label: "流動比率", tip: "流動資産 ÷ 流動負債。短期的な支払能力。200%以上が安定", fn: (r, i) => bsData[i] ? bsData[i].流動資産 / bsData[i].流動負債 * 100 : null, fmt: v => v == null ? "-" : v.toFixed(0) + "%", dir: "up" },
+        { label: "D/Eレシオ", tip: "有利子負債 ÷ 自己資本。1.0以下が健全の目安", fn: (r, i) => {
           const debt = getDebt(i);
           return debt == null || !bsData[i]?.純資産 ? null : debt / bsData[i].純資産;
         }, fmt: fmtTimes, dir: "down" },
-        { label: "ICR", fn: (r, i) => {
+        { label: "ICR", tip: "営業利益 ÷ 支払利息。利息の支払余力。2.0倍以上が目安", fn: (r, i) => {
           const pl = plData[i];
           if (!pl?.支払利息) return null;
           return pl.営業利益 / pl.支払利息;
         }, fmt: v => v == null ? "-" : v.toFixed(1) + "倍", dir: "up", note: !hasInterest },
-        { label: "債務償還年数", fn: (r, i) => {
+        { label: "債務償還年数", tip: "有利子負債 ÷ EBITDA。借入金を返済するのに必要な年数。10年以下が目安", fn: (r, i) => {
           const debt = getDebt(i);
           const ebitda = getEBITDA(r);
           if (debt == null || ebitda == null || ebitda <= 0) return null;
