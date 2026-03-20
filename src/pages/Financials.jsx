@@ -175,7 +175,7 @@ function RatioTable({ groups, dataset, years }) {
   );
 }
 
-export default function Financials({ plData, bsData, loans = [], savePL, saveBS }) {
+export default function Financials({ plData, bsData, loans = [], savePL, saveBS, canEdit = true }) {
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState(null);
@@ -385,7 +385,7 @@ export default function Financials({ plData, bsData, loans = [], savePL, saveBS 
     <div className="page"><div className="g">
       <div className="ph">
         <div><h2>決算書</h2><p>PL/BS/指標を一元管理。PDF1枚でPL・BSを自動抽出。</p></div>
-        <div className="ph-actions">
+        {canEdit && <div className="ph-actions">
           {/* PDF取り込みボタン */}
           <button className="btn pr upload-compact-btn" onClick={() => !uploading && pdfRef.current?.click()} disabled={uploading}>
             <input ref={pdfRef} type="file" accept=".pdf" style={{ display: "none" }}
@@ -407,7 +407,7 @@ export default function Financials({ plData, bsData, loans = [], savePL, saveBS 
               onChange={(e) => { handleExcelUpload("bs", e.target.files[0]); e.target.value = ""; }} />
             <span>BS Excel</span>
           </button>
-        </div>
+        </div>}
       </div>
 
       {/* ── Upload message ── */}
@@ -428,8 +428,8 @@ export default function Financials({ plData, bsData, loans = [], savePL, saveBS 
       </div>
 
       {/* ── Data Tables ── */}
-      <div className="c"><div className="ch"><div><div className="sec-label">Profit & Loss</div><div className="ct">損益計算書</div></div><span className="p bu">PL</span></div><div className="cb tw"><CompTable rows={plRows} dataset={plData} years={years} editable onCellEdit={handlePLEdit} editedCells={editedCells} /></div></div>
-      <div className="c"><div className="ch"><div><div className="sec-label">Balance Sheet</div><div className="ct">貸借対照表</div></div><span className="p gd">BS</span></div><div className="cb tw"><CompTable rows={bsRows} dataset={bsData} years={bsData.map(d=>d.y)} editable onCellEdit={handleBSEdit} editedCells={editedCells} /></div></div>
+      <div className="c"><div className="ch"><div><div className="sec-label">Profit & Loss</div><div className="ct">損益計算書</div></div><span className="p bu">PL</span></div><div className="cb tw"><CompTable rows={plRows} dataset={plData} years={years} editable={canEdit} onCellEdit={handlePLEdit} editedCells={editedCells} /></div></div>
+      <div className="c"><div className="ch"><div><div className="sec-label">Balance Sheet</div><div className="ct">貸借対照表</div></div><span className="p gd">BS</span></div><div className="cb tw"><CompTable rows={bsRows} dataset={bsData} years={bsData.map(d=>d.y)} editable={canEdit} onCellEdit={handleBSEdit} editedCells={editedCells} /></div></div>
       <div className="c">
         <div className="ch">
           <div><div className="sec-label">Key Ratios</div><div className="ct">主要経営指標</div></div>

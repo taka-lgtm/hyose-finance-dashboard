@@ -14,8 +14,11 @@ import Settings from "./pages/Settings";
 import { INITIAL_LOANS, PL as DEFAULT_PL, BS as DEFAULT_BS, BUDGET_MONTHLY as DEFAULT_BM, CF as DEFAULT_CF } from "./data";
 import { fetchLoans, addLoanDoc, updateLoanDoc, deleteLoanDoc, seedLoansIfEmpty, fetchFinancialData, saveFinancialData, addLoanLog } from "./lib/firestore";
 
+// ページアクセス権限チェック用のページID一覧
+const RESTRICTED_PAGES = ["overview", "performance", "cashflow", "debt", "financials", "actions"];
+
 function Dashboard() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, userDoc, loading: authLoading } = useAuth();
   const [page, setPage] = useState("overview");
 
   // ── Loans state (Firestore-backed) ──
@@ -144,26 +147,36 @@ function Dashboard() {
 
   const dataLoading = loansLoading || finLoading;
 
+  // 権限チェック: adminは全権限、それ以外はuserDocのpermission/allowedPagesに従う
+  const isAdmin = userDoc?.role === "admin";
+  const canEdit = isAdmin || userDoc?.permission !== "閲覧";
+  const allowedPages = isAdmin ? null : (userDoc?.allowedPages || RESTRICTED_PAGES);
+
+  // アクセス不可のページに遷移しようとした場合、最初の許可ページにリダイレクト
+  const activePage = (!isAdmin && allowedPages && RESTRICTED_PAGES.includes(page) && !allowedPages.includes(page))
+    ? (allowedPages[0] || "overview")
+    : page;
+
   const pages = {
     overview: <Overview loans={loans} navigate={navigate} plData={plData} bsData={bsData} cfData={cfData} loading={dataLoading} />,
     performance: <Performance bmData={bmData} />,
-    financials: <Financials plData={plData} bsData={bsData} loans={loans} savePL={savePL} saveBS={saveBS} />,
-    cashflow: <CashFlow cfData={cfData} saveCF={saveCF} />,
-    debt: <Debt loans={loans} addLoan={addLoan} updateLoan={updateLoan} removeLoan={removeLoan} loading={loansLoading} plData={plData} />,
+    financials: <Financials plData={plData} bsData={bsData} loans={loans} savePL={canEdit ? savePL : null} saveBS={canEdit ? saveBS : null} canEdit={canEdit} />,
+    cashflow: <CashFlow cfData={cfData} saveCF={canEdit ? saveCF : null} canEdit={canEdit} />,
+    debt: <Debt loans={loans} addLoan={canEdit ? addLoan : null} updateLoan={canEdit ? updateLoan : null} removeLoan={canEdit ? removeLoan : null} loading={loansLoading} plData={plData} canEdit={canEdit} />,
     actions: <Actions />,
     users: <Users />,
     settings: <Settings />,
   };
 
   return (
-    <Layout page={page} navigate={navigate} loans={loans} plData={plData}>
+    <Layout page={activePage} navigate={navigate} loans={loans} plData={plData}>
       {dataLoading && (
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 0", fontSize: 12, color: "var(--tx3)" }}>
           <div className="login-spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
           データを読み込み中...
         </div>
       )}
-      {pages[page] || pages.overview}
+      {pages[activePage] || pages.overview}
     </Layout>
   );
 }

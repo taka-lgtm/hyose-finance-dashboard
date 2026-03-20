@@ -59,7 +59,7 @@ function filterLoansByPeriod(loans, periodKey, fiscalMonth) {
   });
 }
 
-export default function Debt({ loans, addLoan, updateLoan, removeLoan, loading, plData }) {
+export default function Debt({ loans, addLoan, updateLoan, removeLoan, loading, plData, canEdit = true }) {
   const { settings } = useSettings();
   const [view, setView] = useState("balance");
   const [bankFilter, setBankFilter] = useState("all");
@@ -100,7 +100,7 @@ export default function Debt({ loans, addLoan, updateLoan, removeLoan, loading, 
     <div className="page"><div className="g">
       <div className="ph">
         <div><h2>融資管理</h2><p>融資ポートフォリオの全体像。返済管理から借換え戦略まで。</p></div>
-        <div className="pa"><button className="btn pr" onClick={openNew}>＋ 新規登録</button></div>
+        {canEdit && <div className="pa"><button className="btn pr" onClick={openNew}>＋ 新規登録</button></div>}
       </div>
 
       <div className="debt-toolbar">
@@ -132,13 +132,13 @@ export default function Debt({ loans, addLoan, updateLoan, removeLoan, loading, 
         <div className="k"><div className="k-label">借換え削減余地</div><div className="k-val" style={{ color: "var(--ac)" }}>▼{MY(refiSavings)}/年</div><div className="k-ctx">{refiTarget.length}件を1.0%に借換えた場合</div></div>
       </div>
 
-      {view === "balance" && <BalanceView proj={proj} wRate={wRate} tMon={tMon} loans={loans} bankFilter={bankFilter} onEdit={openEdit} />}
-      {view === "table" && <ListView loans={fl} onEdit={openEdit} />}
+      {view === "balance" && <BalanceView proj={proj} wRate={wRate} tMon={tMon} loans={loans} bankFilter={bankFilter} onEdit={canEdit ? openEdit : null} />}
+      {view === "table" && <ListView loans={fl} onEdit={canEdit ? openEdit : null} />}
       {view === "schedule" && <ScheduleView loans={fl} />}
       {view === "analysis" && <AnalysisView bSum={bSum} bankInt={allBankInt} totalInt={allTotalInt} fixedBal={allFixedBal} varBal={allVarBal} loans={periodFiltered} sorted={sorted} refiTarget={refiTarget} refiSavings={refiSavings} />}
       {view === "logs" && <LogView />}
 
-      <LoanModal open={modalOpen} onClose={() => { setModalOpen(false); setEditingLoan(null); }} onSubmit={addLoan} onUpdate={updateLoan} onDelete={removeLoan} editing={editingLoan} loans={loans} />
+      {canEdit && <LoanModal open={modalOpen} onClose={() => { setModalOpen(false); setEditingLoan(null); }} onSubmit={addLoan} onUpdate={updateLoan} onDelete={removeLoan} editing={editingLoan} loans={loans} />}
     </div></div>
   );
 }
@@ -307,7 +307,7 @@ function ListView({ loans, onEdit }) {
             <SH k="rt">種別</SH>
             <SH k="condition">条件</SH>
             <SH k="endDate" cls="tr">最終期限</SH>
-            <th></th>
+            {onEdit && <th></th>}
           </tr></thead>
           <tbody>
             {sorted.map((l, i) => {
@@ -324,11 +324,11 @@ function ListView({ loans, onEdit }) {
                   <td><span className={`p ${l.rt === "変動" ? "wr" : "mt"}`} style={{ fontSize: 9 }}>{l.rt}</span></td>
                   <td style={{ fontSize: 10 }}>{l.condition === "P" ? "プロパー" : l.condition === "保" ? "保証付き" : "-"}</td>
                   <td className="tr mono" style={{ fontSize: 10 }}>{l.endDate || "-"}</td>
-                  <td>
+                  {onEdit && <td>
                     <button onClick={() => onEdit(l)} style={{ background: "none", border: "1px solid var(--bd)", cursor: "pointer", color: "var(--tx2)", fontSize: 10, padding: "3px 10px", borderRadius: 4 }} onMouseOver={(e) => { e.target.style.borderColor = "var(--ac)"; e.target.style.color = "var(--ac)"; }} onMouseOut={(e) => { e.target.style.borderColor = "var(--bd)"; e.target.style.color = "var(--tx2)"; }}>
                       編集
                     </button>
-                  </td>
+                  </td>}
                 </tr>
               );
             })}

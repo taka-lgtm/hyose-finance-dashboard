@@ -3,17 +3,29 @@ import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../contexts/AuthContext";
 
+// アクセス可能なページの選択肢
+const PAGE_OPTIONS = [
+  { id: "overview", label: "経営概況" },
+  { id: "performance", label: "予実管理" },
+  { id: "cashflow", label: "資金繰り" },
+  { id: "debt", label: "融資管理" },
+  { id: "financials", label: "決算推移" },
+  { id: "actions", label: "アクション" },
+];
+
+const ALL_PAGE_IDS = PAGE_OPTIONS.map((p) => p.id);
+
 export default function Users() {
   const { userDoc } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [editingPerms, setEditingPerms] = useState(null); // 権限編集中のユーザーID
   const isAdmin = userDoc?.role === "admin";
 
   const fetchUsers = useCallback(async () => {
     try {
       const snap = await getDocs(collection(db, "users"));
       const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      // Sort: admin first, then by last login
       list.sort((a, b) => {
         if (a.role === "admin" && b.role !== "admin") return -1;
         if (b.role === "admin" && a.role !== "admin") return 1;
@@ -48,6 +60,32 @@ export default function Users() {
     try {
       await updateDoc(doc(db, "users", userId), { role: newRole });
       setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, role: newRole } : u));
+    } catch (e) {
+      alert("更新に失敗しました: " + e.message);
+    }
+  };
+
+  // 権限レベルを更新する
+  const updatePermission = async (userId, permission) => {
+    if (!isAdmin) return;
+    try {
+      await updateDoc(doc(db, "users", userId), { permission });
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, permission } : u));
+    } catch (e) {
+      alert("更新に失敗しました: " + e.message);
+    }
+  };
+
+  // アクセス可能ページを更新する
+  const togglePageAccess = async (userId, pageId, currentPages) => {
+    if (!isAdmin) return;
+    const pages = currentPages || ALL_PAGE_IDS;
+    const newPages = pages.includes(pageId)
+      ? pages.filter((p) => p !== pageId)
+      : [...pages, pageId];
+    try {
+      await updateDoc(doc(db, "users", userId), { allowedPages: newPages });
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, allowedPages: newPages } : u));
     } catch (e) {
       alert("更新に失敗しました: " + e.message);
     }
@@ -109,64 +147,132 @@ export default function Users() {
                     <th>ユーザー</th>
                     <th>メールアドレス</th>
                     <th>ロール</th>
+                    <th>権限</th>
                     <th>ステータス</th>
                     <th>最終ログイン</th>
-                    <th>登録日</th>
                     {isAdmin && <th>操作</th>}
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((u) => (
-                    <tr key={u.id} style={u.disabled ? { opacity: 0.5 } : {}}>
-                      <td>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          {u.photoURL ? (
-                            <img src={u.photoURL} alt="" style={{ width: 28, height: 28, borderRadius: "50%", border: "1px solid var(--bd)" }} />
-                          ) : (
-                            <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--acB)", display: "grid", placeItems: "center", fontSize: 11, fontWeight: 700, color: "var(--ac)" }}>
-                              {(u.displayName || u.email || "?")[0]}
-                            </div>
-                          )}
-                          <span className="bold">{u.displayName || "-"}</span>
-                        </div>
-                      </td>
-                      <td className="mono" style={{ fontSize: 11 }}>{u.email}</td>
-                      <td>
-                        <span className={`p ${u.role === "admin" ? "pp" : "mt"}`}>
-                          {u.role === "admin" ? "管理者" : "メンバー"}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`p ${u.disabled ? "bd" : "gd"}`}>
-                          {u.disabled ? "無効" : "有効"}
-                        </span>
-                      </td>
-                      <td className="mono" style={{ fontSize: 11 }}>{formatDate(u.lastLogin)}</td>
-                      <td className="mono" style={{ fontSize: 11 }}>{formatDate(u.createdAt)}</td>
-                      {isAdmin && (
+                  {users.map((u) => {
+                    const isAdminUser = u.role === "admin";
+                    const userPermission = isAdminUser ? "編集" : (u.permission || "編集");
+                    const userPages = isAdminUser ? ALL_PAGE_IDS : (u.allowedPages || ALL_PAGE_IDS);
+                    const isExpanded = editingPerms === u.id;
+
+                    return (
+                      <tr key={u.id} style={u.disabled ? { opacity: 0.5 } : {}}>
                         <td>
-                          <div style={{ display: "flex", gap: 6 }}>
-                            <button
-                              className="btn"
-                              style={{ padding: "4px 10px", fontSize: 10 }}
-                              onClick={() => toggleRole(u.id, u.role)}
-                              disabled={u.id === userDoc.id}
-                            >
-                              {u.role === "admin" ? "→ メンバー" : "→ 管理者"}
-                            </button>
-                            <button
-                              className="btn"
-                              style={{ padding: "4px 10px", fontSize: 10, borderColor: u.disabled ? "var(--ac)" : "var(--rd)", color: u.disabled ? "var(--ac)" : "var(--rd)" }}
-                              onClick={() => toggleUser(u.id, u.disabled)}
-                              disabled={u.id === userDoc.id}
-                            >
-                              {u.disabled ? "有効化" : "無効化"}
-                            </button>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            {u.photoURL ? (
+                              <img src={u.photoURL} alt="" style={{ width: 28, height: 28, borderRadius: "50%", border: "1px solid var(--bd)" }} />
+                            ) : (
+                              <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--acB)", display: "grid", placeItems: "center", fontSize: 11, fontWeight: 700, color: "var(--ac)" }}>
+                                {(u.displayName || u.email || "?")[0]}
+                              </div>
+                            )}
+                            <span className="bold">{u.displayName || "-"}</span>
                           </div>
                         </td>
-                      )}
-                    </tr>
-                  ))}
+                        <td className="mono" style={{ fontSize: 11 }}>{u.email}</td>
+                        <td>
+                          <span className={`p ${isAdminUser ? "pp" : "mt"}`}>
+                            {isAdminUser ? "管理者" : "メンバー"}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                            <span className={`p ${userPermission === "編集" ? "gd" : "wr"}`} style={{ fontSize: 9 }}>
+                              {userPermission}
+                            </span>
+                            {!isAdminUser && (
+                              <span style={{ fontSize: 9, color: "var(--tx3)" }}>
+                                {userPages.length === ALL_PAGE_IDS.length ? "全ページ" : `${userPages.length}ページ`}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`p ${u.disabled ? "bd" : "gd"}`}>
+                            {u.disabled ? "無効" : "有効"}
+                          </span>
+                        </td>
+                        <td className="mono" style={{ fontSize: 11 }}>{formatDate(u.lastLogin)}</td>
+                        {isAdmin && (
+                          <td>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                              <div style={{ display: "flex", gap: 6 }}>
+                                <button
+                                  className="btn"
+                                  style={{ padding: "4px 10px", fontSize: 10 }}
+                                  onClick={() => toggleRole(u.id, u.role)}
+                                  disabled={u.id === userDoc.id}
+                                >
+                                  {isAdminUser ? "→ メンバー" : "→ 管理者"}
+                                </button>
+                                <button
+                                  className="btn"
+                                  style={{ padding: "4px 10px", fontSize: 10, borderColor: u.disabled ? "var(--ac)" : "var(--rd)", color: u.disabled ? "var(--ac)" : "var(--rd)" }}
+                                  onClick={() => toggleUser(u.id, u.disabled)}
+                                  disabled={u.id === userDoc.id}
+                                >
+                                  {u.disabled ? "有効化" : "無効化"}
+                                </button>
+                                {!isAdminUser && (
+                                  <button
+                                    className="btn"
+                                    style={{ padding: "4px 10px", fontSize: 10, borderColor: "var(--bl)", color: "var(--bl)" }}
+                                    onClick={() => setEditingPerms(isExpanded ? null : u.id)}
+                                  >
+                                    {isExpanded ? "閉じる" : "権限設定"}
+                                  </button>
+                                )}
+                              </div>
+                              {/* 権限設定の展開エリア */}
+                              {isExpanded && !isAdminUser && (
+                                <div style={{ padding: "10px 0 4px", borderTop: "1px solid var(--bd)", display: "flex", flexDirection: "column", gap: 10 }}>
+                                  <div>
+                                    <div style={{ fontSize: 10, color: "var(--tx3)", marginBottom: 4, fontWeight: 600 }}>権限レベル</div>
+                                    <div style={{ display: "flex", gap: 4 }}>
+                                      {["編集", "閲覧"].map((perm) => (
+                                        <button
+                                          key={perm}
+                                          className={`chip ${userPermission === perm ? "on" : ""}`}
+                                          style={{ fontSize: 10, padding: "3px 10px" }}
+                                          onClick={() => updatePermission(u.id, perm)}
+                                        >
+                                          {perm}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <div style={{ fontSize: 10, color: "var(--tx3)", marginBottom: 4, fontWeight: 600 }}>アクセス可能ページ</div>
+                                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                                      {PAGE_OPTIONS.map((pg) => {
+                                        const checked = userPages.includes(pg.id);
+                                        return (
+                                          <label key={pg.id} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, padding: "3px 8px", borderRadius: 4, border: "1px solid var(--bd)", cursor: "pointer", background: checked ? "rgba(34,201,148,.08)" : "transparent", color: checked ? "var(--ac)" : "var(--tx3)" }}>
+                                            <input
+                                              type="checkbox"
+                                              checked={checked}
+                                              onChange={() => togglePageAccess(u.id, pg.id, userPages)}
+                                              style={{ width: 12, height: 12, accentColor: "var(--ac)" }}
+                                            />
+                                            {pg.label}
+                                          </label>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}

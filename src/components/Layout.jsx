@@ -41,6 +41,18 @@ export default function Layout({ page, navigate, loans, plData, children }) {
 
   const handleNav = (id) => { navigate(id); setMenuOpen(false); };
 
+  // ページアクセス制限: adminは全ページ表示、それ以外はallowedPagesに従う
+  const isAdmin = userDoc?.role === "admin";
+  const allowedPages = userDoc?.allowedPages;
+  const RESTRICTED_IDS = ["overview", "performance", "cashflow", "debt", "financials", "actions"];
+  const filteredNav = NAV.filter((n) => {
+    // admin、設定、ユーザー管理は常に表示
+    if (isAdmin || !RESTRICTED_IDS.includes(n.id)) return true;
+    // allowedPagesが未設定の場合は全ページ表示
+    if (!allowedPages) return true;
+    return allowedPages.includes(n.id);
+  });
+
   return (
     <div className="shell">
       {/* ── Desktop Sidebar ── */}
@@ -59,7 +71,7 @@ export default function Layout({ page, navigate, loans, plData, children }) {
         </div>
         <div className="nl-wrap">
           <div className="ng">メニュー</div>
-          {NAV.map((n) => {
+          {filteredNav.map((n) => {
             const badge = n.badgeFn ? String(loans.length) : n.badge;
             return (
               <div key={n.id} className={`ni ${page===n.id?"on":""}`} onClick={() => handleNav(n.id)}>
@@ -123,7 +135,7 @@ export default function Layout({ page, navigate, loans, plData, children }) {
           <div className="nh-i"><div className="nl">営利予算比</div><div className={`nv ${og<0?"dn":"up"}`}>{sgn(og)}</div></div>
         </div>
         <div className="mob-drawer-nav">
-          {NAV.map((n) => {
+          {filteredNav.map((n) => {
             const badge = n.badgeFn ? String(loans.length) : n.badge;
             return (
               <div key={n.id} className={`mob-nav-item ${page===n.id?"on":""}`} onClick={() => handleNav(n.id)}>
