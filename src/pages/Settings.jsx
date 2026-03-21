@@ -178,6 +178,20 @@ export default function Settings() {
           </div>
         </div>
       </div>
+      {/* セットアップウィザード再実行 */}
+      {isAdmin && (
+        <div className="c">
+          <div className="ch"><div><div className="ct">セットアップ</div><div className="cs">初回セットアップウィザードを再実行できます</div></div></div>
+          <div className="cb">
+            <button className="btn" onClick={async () => {
+              await saveSettings({ onboardingCompleted: false });
+              window.location.reload();
+            }}>
+              セットアップウィザードを再実行
+            </button>
+          </div>
+        </div>
+      )}
     </div></div>
   );
 }

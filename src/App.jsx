@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import { SettingsProvider } from "./contexts/SettingsContext";
+import { SettingsProvider, useSettings } from "./contexts/SettingsContext";
 import Login from "./pages/Login";
 import Layout from "./components/Layout";
 import Overview from "./pages/Overview";
@@ -12,6 +12,7 @@ import Actions from "./pages/Actions";
 import Users from "./pages/Users";
 import Settings from "./pages/Settings";
 import Guide from "./pages/Guide";
+import Onboarding from "./pages/Onboarding";
 import { INITIAL_LOANS, PL as DEFAULT_PL, BS as DEFAULT_BS, CF as DEFAULT_CF } from "./data";
 import { fetchLoans, addLoanDoc, updateLoanDoc, deleteLoanDoc, seedLoansIfEmpty, fetchFinancialData, saveFinancialData, saveBudget as saveBudgetDoc, saveMonthlyPL as saveMonthlyPLDoc, addLoanLog } from "./lib/firestore";
 
@@ -20,6 +21,7 @@ const RESTRICTED_PAGES = ["overview", "performance", "cashflow", "debt", "financ
 
 function Dashboard() {
   const { user, userDoc, loading: authLoading } = useAuth();
+  const { settings, settingsLoading } = useSettings();
   const [page, setPage] = useState("overview");
 
   // ── Loans state (Firestore-backed) ──
@@ -33,6 +35,9 @@ function Dashboard() {
   const [monthlyPLData, setMonthlyPLData] = useState(null);
   const [cfData, setCfData] = useState(DEFAULT_CF);
   const [finLoading, setFinLoading] = useState(true);
+
+  // ── Onboarding state ──
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Load loans from Firestore on mount
   useEffect(() => {
@@ -159,6 +164,16 @@ function Dashboard() {
   if (!user) return <Login />;
 
   const dataLoading = loansLoading || finLoading;
+
+  // オンボーディング: settings読み込み完了後、onboardingCompleted未設定かつadminなら表示
+  const shouldShowOnboarding = !settingsLoading && !settings.onboardingCompleted && userDoc?.role === "admin";
+  if ((shouldShowOnboarding || showOnboarding) && !dataLoading) {
+    return <Onboarding
+      navigate={(p) => { setShowOnboarding(false); navigate(p); }}
+      onComplete={() => { setShowOnboarding(false); window.location.reload(); }}
+      loans={loans} plData={plData} bsData={bsData} monthlyPLData={monthlyPLData} bmData={bmData}
+    />;
+  }
 
   // 権限チェック: adminは全権限、それ以外はuserDocのpermission/allowedPagesに従う
   const isAdmin = userDoc?.role === "admin";
