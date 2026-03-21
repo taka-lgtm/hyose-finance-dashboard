@@ -4,15 +4,18 @@ import { useAuth } from "../contexts/AuthContext";
 import { useSettings } from "../contexts/SettingsContext";
 
 const NAV = [
-  { id: "overview", label: "経営概況", icon: "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z|M9 22V12h6v10" },
-  { id: "performance", label: "予実管理", icon: "M18 20V10|M12 20V4|M6 20V14" },
-  { id: "cashflow", label: "資金繰り", badge: "!", icon: "M12 2v20|M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" },
-  { id: "debt", label: "融資管理", badgeFn: true, icon: "M2 5h20v14H2z|M2 10h20" },
+  { id: "overview", label: "経営概況", shortLabel: "概況", icon: "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z|M9 22V12h6v10", bottom: true },
+  { id: "performance", label: "予実管理", shortLabel: "予実", icon: "M18 20V10|M12 20V4|M6 20V14", bottom: true },
+  { id: "cashflow", label: "資金繰り", shortLabel: "資金", badge: "!", icon: "M12 2v20|M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6", bottom: true },
+  { id: "debt", label: "融資管理", shortLabel: "融資", badgeFn: true, icon: "M2 5h20v14H2z|M2 10h20", bottom: true },
   { id: "financials", label: "決算推移", icon: "M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z|M14 2v6h6|M16 13H8|M16 17H8" },
   { id: "actions", label: "アクション", badge: "4", icon: "M10.268 21a2 2 0 0 0 3.464 0|M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" },
   { id: "users", label: "ユーザー管理", icon: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2|M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8|M23 21v-2a4 4 0 0 0-3-3.87|M16 3.13a4 4 0 0 1 0 7.75" },
   { id: "settings", label: "設定", icon: "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z|M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" },
 ];
+
+// 「その他」メニュー用アイコン
+const MORE_ICON = "M12 5v.01|M12 12v.01|M12 19v.01";
 
 function NavIcon({ d }) {
   return (
@@ -46,12 +49,15 @@ export default function Layout({ page, navigate, loans, plData, children }) {
   const allowedPages = userDoc?.allowedPages;
   const RESTRICTED_IDS = ["overview", "performance", "cashflow", "debt", "financials", "actions"];
   const filteredNav = NAV.filter((n) => {
-    // admin、設定、ユーザー管理は常に表示
     if (isAdmin || !RESTRICTED_IDS.includes(n.id)) return true;
-    // allowedPagesが未設定の場合は全ページ表示
     if (!allowedPages) return true;
     return allowedPages.includes(n.id);
   });
+
+  // ボトムナビに表示するアイテム（bottom: true のもの）
+  const bottomNavItems = filteredNav.filter((n) => n.bottom);
+  // 「その他」メニューでボトムナビ以外のページがアクティブか判定
+  const isOtherActive = !bottomNavItems.some((n) => n.id === page);
 
   return (
     <div className="shell">
@@ -101,11 +107,6 @@ export default function Layout({ page, navigate, loans, plData, children }) {
 
       {/* ── Mobile Header ── */}
       <header className="mob-header">
-        <button className="mob-hamburger" onClick={() => setMenuOpen(!menuOpen)} aria-label="メニュー">
-          <span className={`mob-hamburger-line ${menuOpen?"open":""}`} />
-          <span className={`mob-hamburger-line ${menuOpen?"open":""}`} />
-          <span className={`mob-hamburger-line ${menuOpen?"open":""}`} />
-        </button>
         <div className="mob-header-brand">
           {settings.logoUrl
             ? <img src={settings.logoUrl} alt="" className="mob-logo-img" />
@@ -119,7 +120,7 @@ export default function Layout({ page, navigate, loans, plData, children }) {
         </div>
       </header>
 
-      {/* ── Mobile Drawer ── */}
+      {/* ── Mobile Drawer（その他メニューから開く） ── */}
       <div className={`mob-overlay ${menuOpen?"open":""}`} onClick={() => setMenuOpen(false)} />
       <nav className={`mob-drawer ${menuOpen?"open":""}`}>
         <div className="mob-drawer-head">
@@ -162,6 +163,20 @@ export default function Layout({ page, navigate, loans, plData, children }) {
       <main className="main">
         {children}
       </main>
+
+      {/* ── Bottom Navigation（モバイルのみ表示） ── */}
+      <nav className="bottom-nav">
+        {bottomNavItems.map((n) => (
+          <button key={n.id} className={`bottom-nav-item ${page===n.id?"on":""}`} onClick={() => handleNav(n.id)}>
+            <NavIcon d={n.icon} />
+            <span>{n.shortLabel}</span>
+          </button>
+        ))}
+        <button className={`bottom-nav-item ${isOtherActive?"on":""}`} onClick={() => setMenuOpen(true)}>
+          <NavIcon d={MORE_ICON} />
+          <span>その他</span>
+        </button>
+      </nav>
     </div>
   );
 }

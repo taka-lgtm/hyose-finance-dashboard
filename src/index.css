@@ -488,7 +488,37 @@ select.form-input option{background:var(--sf);color:var(--tx)}
 /* Responsive */
 @media(max-width:1400px){.g4,.cal-grid{grid-template-columns:repeat(2,1fr)}.rpt-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:1100px){.shell{grid-template-columns:1fr}.nav{position:relative;height:auto}.gs,.g2,.g3{grid-template-columns:1fr}.hh{grid-template-columns:1fr}.hs{border-right:none;border-bottom:1px solid var(--bd);padding:20px}.ms-r{grid-template-columns:1fr 90px 80px}.ms-n{grid-column:1/-1}}
-@media(max-width:768px){.main{padding:16px}.g4,.cal-grid,.rpt-grid{grid-template-columns:1fr}.ph{flex-direction:column;align-items:flex-start}.ph h2{font-size:20px}}
+@media(max-width:768px){.main{padding:16px 12px 100px}.g4,.cal-grid,.rpt-grid{grid-template-columns:1fr}.ph{flex-direction:column;align-items:flex-start}.ph h2{font-size:20px}}
+
+/* ── ボトムナビゲーション ── */
+.bottom-nav{display:none}
+
+@media(max-width:1100px){
+  .bottom-nav{
+    display:flex;position:fixed;bottom:0;left:0;right:0;z-index:80;
+    height:64px;
+    background:rgba(8,9,13,.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    border-top:1px solid var(--bd);
+    justify-content:space-around;align-items:center;
+    padding:0 4px;padding-bottom:env(safe-area-inset-bottom,0);
+  }
+  .bottom-nav-item{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:3px;padding:6px 0;flex:1;
+    background:none;border:none;cursor:pointer;
+    color:var(--tx3);transition:.15s var(--e);
+    -webkit-tap-highlight-color:transparent;
+    min-width:0;
+  }
+  .bottom-nav-item:active{transform:scale(.92)}
+  .bottom-nav-item svg{width:22px;height:22px;flex-shrink:0}
+  .bottom-nav-item span{font-size:10px;font-weight:600;letter-spacing:.02em;line-height:1}
+  .bottom-nav-item.on{color:var(--ac)}
+  .bottom-nav-item.on svg{filter:drop-shadow(0 0 6px rgba(34,201,148,.4))}
+
+  /* mainにボトムバー分の余白 */
+  .main{padding-bottom:80px !important}
+}
 
 /* ── Login Page ── */
 .login-page{
@@ -649,21 +679,11 @@ select.form-input option{background:var(--sf);color:var(--tx)}
   .mob-header{
     display:flex;align-items:center;justify-content:space-between;
     position:sticky;top:0;z-index:50;
-    padding:0 14px;height:52px;
+    padding:0 16px;height:52px;
     background:rgba(8,9,13,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
     border-bottom:1px solid var(--bd);
   }
-  .mob-hamburger{
-    width:40px;height:40px;border:none;background:none;cursor:pointer;
-    display:flex;flex-direction:column;justify-content:center;gap:5px;padding:10px;
-  }
-  .mob-hamburger-line{
-    display:block;width:18px;height:2px;background:var(--tx2);border-radius:2px;
-    transition:.25s var(--e);transform-origin:center;
-  }
-  .mob-hamburger-line.open:nth-child(1){transform:translateY(7px) rotate(45deg)}
-  .mob-hamburger-line.open:nth-child(2){opacity:0;transform:scaleX(0)}
-  .mob-hamburger-line.open:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+  .mob-hamburger{display:none}
   .mob-header-brand{display:flex;align-items:center;gap:8px}
   .mob-logo{
     width:28px;height:28px;border-radius:7px;
@@ -745,6 +765,9 @@ select.form-input option{background:var(--sf);color:var(--tx)}
   .ph{flex-direction:column;align-items:flex-start;gap:8px;padding-bottom:12px;margin-bottom:8px}
   .ph h2{font-size:20px}
   .ph p{font-size:12px}
+  .ph-actions{width:100%;flex-wrap:wrap}
+  .ph-actions .fy-select{flex:1;min-width:0;font-size:13px;padding:8px 10px}
+  .ph-actions .btn,.ph-actions .upload-compact-btn{font-size:12px;padding:8px 12px}
   .pa{width:100%;display:flex;gap:6px}
   .pa .btn,.pa .btn.pr{flex:1;text-align:center;font-size:12px;padding:10px 10px}
 
@@ -775,12 +798,12 @@ select.form-input option{background:var(--sf);color:var(--tx)}
   .k-foot{gap:8px}
   .k-foot span{font-size:11px}
 
-  .ch{padding:12px 14px}
+  .ch{padding:12px 14px;flex-wrap:wrap;gap:8px}
   .ct{font-size:13px}
   .cb{padding:12px 14px 14px}
 
-  .chart{height:180px}
-  .chart.tall{height:200px}
+  .chart{height:200px}
+  .chart.tall{height:220px}
 
   .p{font-size:11px}
 
@@ -801,8 +824,12 @@ select.form-input option{background:var(--sf);color:var(--tx)}
   .debt-toolbar{flex-direction:column;gap:10px;padding:10px 12px}
   .debt-tabs{width:100%;overflow-x:auto;display:flex;gap:4px;-webkit-overflow-scrolling:touch}
   .debt-tabs .chip{flex-shrink:0;font-size:11px;padding:7px 12px}
-  .debt-filter{width:100%;justify-content:space-between}
-  .sel{flex:1;font-size:12px}
+  .debt-filter{width:100%;justify-content:space-between;flex-wrap:wrap;gap:6px}
+  .sel{flex:1;font-size:13px;padding:8px 10px}
+
+  /* 予実タブ（スマホ横スクロール対応） */
+  .perf-chart-tabs,.perf-table-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap}
+  .perf-chart-tabs .chip,.perf-table-tabs .chip{flex-shrink:0;font-size:11px;padding:6px 10px}
 
   /* Loan cards */
   .loan-card{padding:14px}
@@ -845,18 +872,33 @@ select.form-input option{background:var(--sf);color:var(--tx)}
   .nav-user-role{font-size:11px}
   .nav-user-avatar{width:32px;height:32px;font-size:13px}
 
-  /* Modal */
-  .modal{width:calc(100vw - 16px);max-height:calc(100vh - 32px);margin:16px auto}
+  /* テーブル横スクロール改善 */
+  .tw{-webkit-overflow-scrolling:touch;overflow-x:auto}
+  .tw table{min-width:600px}
+
+  /* モーダル: フルスクリーン */
+  .modal{
+    width:100vw;max-width:100vw;max-height:100vh;
+    height:100vh;border-radius:0;margin:0;
+    border:none;
+  }
   .modal-head{padding:16px 18px 12px}
-  .modal-head h3{font-size:16px}
+  .modal-head h3{font-size:17px}
   .modal-head p{font-size:12px}
-  .modal-body{padding:14px 18px}
-  .modal-foot{padding:12px 18px}
+  .modal-close{width:40px;height:40px;font-size:20px}
+  .modal-body{padding:16px 18px;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .modal-foot{
+    padding:14px 18px;
+    padding-bottom:calc(14px + env(safe-area-inset-bottom,0));
+  }
+
+  /* フォーム: iOS自動ズーム防止（16px以上） */
   .form-grid{grid-template-columns:1fr}
   .form-grid.col3{grid-template-columns:1fr}
   .form-group.full{grid-column:1}
-  .form-label{font-size:11px}
-  .form-input{font-size:14px;padding:10px 12px}
+  .form-label{font-size:12px}
+  .form-input{font-size:16px;padding:12px 14px}
+  select.form-input{font-size:16px;padding:12px 14px}
   .form-section-label{font-size:10px}
 
   /* Login */
@@ -864,12 +906,12 @@ select.form-input option{background:var(--sf);color:var(--tx)}
   .login-title{font-size:24px}
   .login-logo{width:48px;height:48px;font-size:20px;border-radius:12px}
   .login-desc{font-size:13px}
-  .login-btn{font-size:14px;padding:14px}
+  .login-btn{font-size:16px;padding:14px}
   .login-footer{font-size:11px}
 
   /* Balance table */
-  .bal-tbl .sticky-0{min-width:100px}
-  .bal-tbl .sticky-1{left:100px;min-width:80px}
+  .bal-tbl .sticky-0{min-width:90px}
+  .bal-tbl .sticky-1{left:90px;min-width:70px}
   .bal-tbl th,.bal-tbl td{padding:8px 10px;font-size:11px}
   .scroll-hint{font-size:11px}
 
@@ -885,6 +927,15 @@ select.form-input option{background:var(--sf);color:var(--tx)}
   .rpt h4{font-size:14px}
   .rpt p{font-size:12px}
   .rpt .rpt-type{font-size:10px}
+
+  /* カード間隔調整 */
+  .g3[style]{grid-template-columns:1fr !important}
+
+  /* アップロードメッセージ */
+  .upload-msg{font-size:13px}
+
+  /* セル編集入力のiOSズーム防止 */
+  .cell-edit-input{font-size:16px !important}
 }
 
 @media(max-width:380px){
@@ -894,6 +945,10 @@ select.form-input option{background:var(--sf);color:var(--tx)}
   .mob-header{height:48px;padding:0 12px}
   .mob-logo{width:24px;height:24px;font-size:10px;border-radius:6px}
   .mob-brand-text{font-size:13px}
+  .bottom-nav{height:56px}
+  .bottom-nav-item svg{width:20px;height:20px}
+  .bottom-nav-item span{font-size:9px}
+  .g4{grid-template-columns:1fr;gap:8px}
 }
 
 /* ── 設定画面 ── */
