@@ -144,13 +144,16 @@ export default function Debt({ loans, addLoan, updateLoan, removeLoan, loading, 
    残高推移ビュー
    ══════════════════════════════════ */
 
-function BalanceBlock({ title, badge, data, projLabels, onEdit }) {
+function BalanceBlock({ title, badge, data, projLabels, onEdit, isFirst }) {
   if (!data.length) return null;
   const sub = data.reduce((s, l) => s + l.balance, 0);
   const subTotals = projLabels.map((_, i) => data.reduce((s, l) => s + l.balances[i], 0));
   const subMon = data.reduce((s, l) => s + l.monthly, 0);
+  const colCount = 5 + projLabels.length;
   return (
     <>
+      {/* ブロック間のスペーサー（最初のブロック以外） */}
+      {!isFirst && <tr className="cat-spacer-row"><td colSpan={colCount} /></tr>}
       <tr className="cat-header-row">
         <td className="bold sticky sticky-0" colSpan={2}>
           <span className={`p ${badge}`} style={{ fontSize: 9, marginRight: 6 }}>{title}</span>
@@ -221,9 +224,9 @@ function BalanceView({ proj, wRate, tMon, loans, bankFilter, onEdit }) {
             <table className="bal-tbl">
               <thead><tr><th className="sticky sticky-0">銀行</th><th className="sticky sticky-1">融資名</th><th className="num-head">金利</th><th className="num-head">月返済</th><th className="num-head" style={{ background: "rgba(34,201,148,.06)" }}>現在</th>{projLabels.map((m) => <th key={m} className="num-head">{m}</th>)}</tr></thead>
               <tbody>
-                <BalanceBlock title="長期" badge="bu" data={longTerm} projLabels={projLabels} onEdit={onEdit} />
-                <BalanceBlock title="短期" badge="wr" data={shortTerm} projLabels={projLabels} onEdit={onEdit} />
-                <BalanceBlock title="当座貸越" badge="mt" data={overdraft} projLabels={projLabels} onEdit={onEdit} />
+                <BalanceBlock title="長期借入金" badge="bu" data={longTerm} projLabels={projLabels} onEdit={onEdit} isFirst={true} />
+                <BalanceBlock title="短期借入金" badge="wr" data={shortTerm} projLabels={projLabels} onEdit={onEdit} isFirst={!longTerm.length} />
+                <BalanceBlock title="当座貸越" badge="mt" data={overdraft} projLabels={projLabels} onEdit={onEdit} isFirst={!longTerm.length && !shortTerm.length} />
                 <tr className="total-row">
                   <td className="bold sticky sticky-0">総合計</td><td className="sticky sticky-1" />
                   <td className="num">{wRate}%</td><td className="num">{Math.round(tMon / 10000).toLocaleString()}</td>
