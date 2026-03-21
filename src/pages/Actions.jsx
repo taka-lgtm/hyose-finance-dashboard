@@ -28,9 +28,13 @@ function generateAutoActions(loans, plData, bsData, monthlyPLData, fiscalMonth) 
   const monthlySales = latestMonth?.sales || (lastPL ? Math.round(lastPL.売上高 / 12) : 0);
   const monthlySGA = latestMonth?.sgaExpenses || (lastPL ? Math.round(lastPL.販管費 / 12) : 0);
 
-  // 1. 在庫圧縮
+  // tMon/tBalは円単位なので万円に変換
+  const tMonMan = Math.round(tMon / 10000);
+  const tBalMan = Math.round(tBal / 10000);
+
+  // 1. 在庫圧縮（BS値は万円単位で格納済み）
   if (lastBS?.棚卸資産 && monthlySales > 0) {
-    const inventory = Math.round(lastBS.棚卸資産 / 10000);
+    const inventory = lastBS.棚卸資産;
     const turnDays = Math.round(inventory / monthlySales * 30);
     const proper = monthlySales; // 適正在庫 = 月商 × 30日分（万円）
     if (turnDays >= 45 && inventory > proper) {
@@ -61,10 +65,10 @@ function generateAutoActions(loans, plData, bsData, monthlyPLData, fiscalMonth) 
     });
   }
 
-  // 3. 資金調達
+  // 3. 資金調達（BS値は万円単位で格納済み）
   if (lastBS?.現預金 && monthlySGA > 0) {
-    const cashBalance = Math.round(lastBS.現預金 / 10000);
-    const monthlyFixed = Math.round(tMon / 10000) + monthlySGA;
+    const cashBalance = lastBS.現預金;
+    const monthlyFixed = tMonMan + monthlySGA;
     const cashMonths = monthlyFixed > 0 ? cashBalance / monthlyFixed : 99;
     if (cashMonths < 4) {
       const safeLevel = monthlyFixed * 6;
@@ -156,8 +160,9 @@ function detectRisks(loans, plData, bsData, monthlyPLData, fiscalMonth) {
   const { tMon } = calcLoanDerived(loans || []);
   const monthlySGA = lastPL ? Math.round(lastPL.販管費 / 12) : 0;
 
+  // BS値は万円単位、loansは円単位
   if (lastBS?.現預金) {
-    const cash = Math.round(lastBS.現預金 / 10000);
+    const cash = lastBS.現預金;
     const fixed = Math.round(tMon / 10000) + monthlySGA;
     const months = fixed > 0 ? cash / fixed : 99;
     if (months < 4) {
@@ -167,7 +172,7 @@ function detectRisks(loans, plData, bsData, monthlyPLData, fiscalMonth) {
   if (lastBS?.棚卸資産 && prevBS?.棚卸資産 && prevBS.棚卸資産 > 0) {
     const change = (lastBS.棚卸資産 - prevBS.棚卸資産) / prevBS.棚卸資産 * 100;
     if (change >= 10) {
-      risks.push({ name: "在庫増加", impact: Math.round((lastBS.棚卸資産 - prevBS.棚卸資産) / 10000), urgency: "medium", condition: `前期比 +${change.toFixed(0)}% 増加`, rule: "inventory" });
+      risks.push({ name: "在庫増加", impact: lastBS.棚卸資産 - prevBS.棚卸資産, urgency: "medium", condition: `前期比 +${change.toFixed(0)}% 増加`, rule: "inventory" });
     }
   }
   const varLoans = (loans || []).filter((l) => l.rt === "変動" && l.balance > 0);
@@ -178,7 +183,7 @@ function detectRisks(loans, plData, bsData, monthlyPLData, fiscalMonth) {
   if (lastPL && prevPL && prevPL.売上高 > 0) {
     const pct = (lastPL.売上高 - prevPL.売上高) / prevPL.売上高 * 100;
     if (pct <= -10) {
-      risks.push({ name: "売上減少", impact: Math.round((prevPL.売上高 - lastPL.売上高) / 10000), urgency: "high", condition: `前年比 ${pct.toFixed(0)}% 減少`, rule: "salesRecovery" });
+      risks.push({ name: "売上減少", impact: prevPL.売上高 - lastPL.売上高, urgency: "high", condition: `前年比 ${pct.toFixed(0)}% 減少`, rule: "salesRecovery" });
     }
   }
   return risks;
