@@ -4,7 +4,7 @@
 [data-theme="dark"],:root{
   --bg:#08090d;--bg2:#0e1018;--sf:#13151d;--sf2:#191c27;
   --bd:rgba(255,255,255,.06);--bdh:rgba(255,255,255,.12);
-  --tx:#e4e8f1;--tx2:#8b92a8;--tx3:#6b7389;
+  --tx:#f0f0f5;--tx2:#a0a0b8;--tx3:#6b7389;
   --ac:#22c994;--acB:rgba(34,201,148,.10);--acG:rgba(34,201,148,.25);
   --bl:#5b8def;--blB:rgba(91,141,239,.10);
   --am:#e5a83a;--amB:rgba(229,168,58,.10);
@@ -15,7 +15,7 @@
   --scrollbar-thumb:rgba(255,255,255,.08);
   --overlay:rgba(0,0,0,.6);
   --hover-bg:rgba(255,255,255,.03);
-  --stripe:rgba(255,255,255,.02);
+  --stripe:rgba(255,255,255,.05);
   --logo-text:#08090d;
 }
 
@@ -34,7 +34,7 @@
   --scrollbar-thumb:rgba(0,0,0,.12);
   --overlay:rgba(0,0,0,.3);
   --hover-bg:rgba(0,0,0,.03);
-  --stripe:rgba(0,0,0,.02);
+  --stripe:rgba(0,0,0,.04);
   --logo-text:#fff;
 }
 [data-theme="light"] .k-label{font-weight:600}
@@ -111,7 +111,7 @@ button,input,select{font:inherit;color:inherit}
 .chip.on{background:var(--acB);border-color:var(--ac);color:var(--ac);font-weight:600}
 
 /* Grid */
-.g{display:grid;gap:16px}
+.g{display:grid;gap:24px}
 .g2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
 .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
@@ -126,14 +126,14 @@ button,input,select{font:inherit;color:inherit}
 .cb{padding:16px 20px 20px}
 
 /* KPI */
-.k{padding:20px;border-radius:12px;background:var(--sf);border:1px solid var(--bd);transition:.18s var(--e);position:relative;overflow:hidden;box-shadow:var(--card-shadow)}
+.k{padding:24px;border-radius:12px;background:var(--sf);border:1px solid var(--bd);transition:.18s var(--e);position:relative;overflow:hidden;box-shadow:var(--card-shadow)}
 .k:hover{border-color:var(--bdh);transform:translateY(-1px)}
 .k.hero{background:linear-gradient(135deg,var(--acB),var(--blB));border-color:var(--ac)}
 .k-row{display:flex;justify-content:space-between;align-items:flex-start}
-.k-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3)}
-.k-val{font-family:'IBM Plex Mono','DM Sans',monospace;font-size:28px;font-weight:700;letter-spacing:-.03em;line-height:1;margin-top:8px}
-.k.hero .k-val{color:var(--ac)}
-.k-ctx{font-size:12px;color:var(--tx3);margin-top:6px;line-height:1.4}
+.k-label{font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3)}
+.k-val{font-family:'IBM Plex Mono','DM Sans',monospace;font-size:28px;font-weight:700;letter-spacing:-.03em;line-height:1;margin-top:8px;color:var(--tx)}
+.k.hero .k-val{color:var(--ac);font-size:36px}
+.k-ctx{font-size:12px;color:var(--tx2);margin-top:6px;line-height:1.5}
 .k-spark{width:72px;height:32px}
 .k-foot{margin-top:12px;padding-top:10px;border-top:1px solid var(--bd);display:flex;gap:14px}
 .k-foot span{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--tx3)}
@@ -187,10 +187,11 @@ button,input,select{font:inherit;color:inherit}
 /* Tables */
 .tw{overflow-x:auto}
 table{width:100%;border-collapse:collapse}
-th{text-align:left;padding:10px 12px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);background:var(--stripe);border-bottom:1px solid var(--bd);white-space:nowrap}
-td{padding:10px 12px;font-size:13px;border-bottom:1px solid var(--bd);vertical-align:middle;line-height:1.4}
-tr:hover td{background:rgba(255,255,255,.015)}
-.tr{text-align:right}.mono{font-family:'IBM Plex Mono',monospace;font-size:11px}.bold{font-weight:600}
+th{text-align:left;padding:12px 16px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--tx2);background:var(--stripe);border-bottom:2px solid var(--bd);white-space:nowrap}
+td{padding:12px 16px;font-size:14px;border-bottom:1px solid var(--bd);vertical-align:middle;line-height:1.5}
+tr:nth-child(even) td{background:var(--stripe)}
+tr:hover td{background:var(--hover-bg)}
+.tr{text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600}.mono{font-family:'IBM Plex Mono',monospace;font-weight:600}.bold{font-weight:600}
 .ct-tbl{width:100%;table-layout:fixed}
 .ct-tbl th:first-child,.ct-tbl td:first-child{width:130px;text-align:left}
 .ct-tbl th:not(:first-child),.ct-tbl td:not(:first-child){text-align:center}
