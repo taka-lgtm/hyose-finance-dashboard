@@ -83,10 +83,11 @@ button,input,select{font:inherit;color:inherit}
 .pa{display:flex;gap:6px;flex-wrap:wrap}
 
 /* Btns */
-.btn{padding:8px 16px;border-radius:99px;border:1px solid var(--bd);background:rgba(255,255,255,.03);font-size:11px;font-weight:500;cursor:pointer;transition:.15s var(--e);white-space:nowrap;color:var(--tx2)}
-.btn:hover{border-color:var(--bdh);color:var(--tx);background:rgba(255,255,255,.06)}
-.btn.pr{background:linear-gradient(135deg,var(--ac),#1ba87a);border:none;color:var(--logo-text);font-weight:600;box-shadow:0 0 20px var(--acG)}
-.btn.pr:hover{box-shadow:0 0 28px rgba(34,201,148,.35);transform:translateY(-1px)}
+.btn{padding:8px 16px;border-radius:8px;border:1px solid var(--bd);background:var(--hover-bg);font-size:14px;font-weight:500;cursor:pointer;transition:.15s var(--e);white-space:nowrap;color:var(--tx2)}
+.btn:hover{border-color:var(--bdh);color:var(--tx);background:var(--sf2)}
+.btn.pr{background:var(--ac);border:none;color:var(--logo-text);font-weight:600;box-shadow:0 0 20px var(--acG)}
+.btn.pr:hover{opacity:.9;transform:translateY(-1px)}
+.btn.danger{background:var(--rd);border:none;color:#fff;font-weight:600}
 .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
 
 /* コンパクトアップロードボタン */
@@ -100,9 +101,9 @@ button,input,select{font:inherit;color:inherit}
   font-size:16px;cursor:pointer;opacity:.6;padding:0 2px;line-height:1;
 }
 .upload-msg-close:hover{opacity:1}
-.chip{padding:6px 12px;border-radius:99px;border:1px solid var(--bd);background:transparent;font-size:10.5px;font-weight:500;cursor:pointer;transition:.15s var(--e);color:var(--tx3)}
+.chip{padding:6px 12px;border-radius:8px;border:1px solid var(--bd);background:transparent;font-size:12px;font-weight:500;cursor:pointer;transition:.15s var(--e);color:var(--tx3)}
 .chip:hover{border-color:var(--bdh);color:var(--tx2)}
-.chip.on{background:var(--acB);border-color:rgba(34,201,148,.2);color:var(--ac)}
+.chip.on{background:var(--acB);border-color:var(--ac);color:var(--ac);font-weight:600}
 
 /* Grid */
 .g{display:grid;gap:14px}
@@ -316,8 +317,8 @@ td.cell-edited .ctv{color:var(--ac)}
 
 /* Dropdown select */
 .sel{
-  padding:7px 32px 7px 12px;border-radius:var(--rs);border:1px solid var(--bd);
-  background:var(--sf);font-size:11px;font-weight:500;color:var(--tx2);
+  padding:8px 32px 8px 12px;border-radius:8px;border:1px solid var(--bd);
+  background:var(--sf);font-size:13px;font-weight:500;color:var(--tx2);
   cursor:pointer;transition:.15s var(--e);
   appearance:none;-webkit-appearance:none;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b92a8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
