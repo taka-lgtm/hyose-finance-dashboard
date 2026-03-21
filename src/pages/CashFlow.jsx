@@ -1,12 +1,13 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 import { Chart, registerables } from "chart.js";
 import { CF as DEFAULT_CF, M, chartFont, chartGrid, chartLegend } from "../data";
-import { generateCashFlowData, readFileAsArrayBuffer } from "../lib/csvParser";
+import { generateCashFlowData, generateMonthlyPLData, readFileAsArrayBuffer } from "../lib/csvParser";
 import { useSettings } from "../contexts/SettingsContext";
+import { getFiscalYear } from "../contexts/SettingsContext";
 
 Chart.register(...registerables);
 
-export default function CashFlow({ cfData, saveCF, canEdit = true }) {
+export default function CashFlow({ cfData, saveCF, saveMonthlyPL, monthlyPLData, canEdit = true }) {
   const { settings, fiscalMonths } = useSettings();
   const safetyLine = settings.safetyLine;
   // 決算月の順序に並び替え
@@ -62,14 +63,28 @@ export default function CashFlow({ cfData, saveCF, canEdit = true }) {
       const cfResult = generateCashFlowData(bsBuffer, plBuffer, settings.fiscalMonth);
       if (!cfResult.length) throw new Error("データを抽出できませんでした");
       await saveCF(cfResult);
-      setUploadMsg({ type: "success", text: `${cfResult.length}ヶ月分の資金繰りデータを登録しました` });
+      // 月次PL実績も同時に生成・保存（予実管理用）
+      let plMsg = "";
+      if (saveMonthlyPL) {
+        try {
+          const plBuffer2 = await readFileAsArrayBuffer(plFile);
+          const monthlyResult = generateMonthlyPLData(plBuffer2, settings.fiscalMonth);
+          if (monthlyResult.length > 0) {
+            const fy = String(getFiscalYear(settings.fiscalMonth));
+            const newData = { ...(monthlyPLData || {}), [fy]: monthlyResult };
+            await saveMonthlyPL(newData);
+            plMsg = ` + 予実管理の実績データも更新`;
+          }
+        } catch (_) { /* 月次PL生成失敗は無視（資金繰りは成功） */ }
+      }
+      setUploadMsg({ type: "success", text: `${cfResult.length}ヶ月分の資金繰りデータを登録しました${plMsg}` });
       setBsFile(null);
       setPlFile(null);
     } catch (e) {
       setUploadMsg({ type: "error", text: typeof e === "string" ? e : e.message || "CSVの解析に失敗しました" });
     }
     setUploading(false);
-  }, [bsFile, plFile, saveCF]);
+  }, [bsFile, plFile, saveCF, saveMonthlyPL, monthlyPLData, settings.fiscalMonth]);
 
   // チャート描画
   useEffect(() => {
