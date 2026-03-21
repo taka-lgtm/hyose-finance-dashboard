@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useSettings, getFiscalPeriodLabel } from "../contexts/SettingsContext";
 import { useAuth } from "../contexts/AuthContext";
 
-export default function Settings() {
+export default function Settings({ navigate, loans, plData, monthlyPLData, bmData }) {
   const { settings, saveSettings } = useSettings();
   const { userDoc } = useAuth();
   const isAdmin = userDoc?.role === "admin";
@@ -178,20 +178,45 @@ export default function Settings() {
           </div>
         </div>
       </div>
-      {/* セットアップウィザード再実行 */}
-      {isAdmin && (
-        <div className="c">
-          <div className="ch"><div><div className="ct">セットアップ</div><div className="cs">初回セットアップウィザードを再実行できます</div></div></div>
-          <div className="cb">
-            <button className="btn" onClick={async () => {
-              await saveSettings({ onboardingCompleted: false });
-              window.location.reload();
-            }}>
-              セットアップウィザードを再実行
-            </button>
+      {/* セットアップ進捗 */}
+      {isAdmin && (() => {
+        const items = [
+          { label: "会社情報", done: !!(settings.companyName && settings.companyName !== "株式会社ヒョーセ"), page: "settings" },
+          { label: "決算書", done: plData && plData.length > 0, detail: plData?.length ? `${plData.length}年分` : null, page: "financials" },
+          { label: "月次データ", done: monthlyPLData && Object.keys(monthlyPLData).length > 0, page: "cashflow" },
+          { label: "融資データ", done: loans && loans.length > 0, detail: loans?.length ? `${loans.length}件` : null, page: "debt" },
+          { label: "予算設定", done: bmData && Object.keys(bmData).length > 0, page: "performance" },
+        ];
+        const doneCount = items.filter((i) => i.done).length;
+        return (
+          <div className="c">
+            <div className="ch"><div><div className="ct">セットアップ進捗 ({doneCount}/{items.length}完了)</div></div></div>
+            <div className="cb">
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+                {items.map((it) => (
+                  <div key={it.label} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ width: 20, height: 20, borderRadius: "50%", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", background: it.done ? "var(--acB)" : "var(--sf2)", color: it.done ? "var(--ac)" : "var(--tx3)" }}>
+                      {it.done ? "✓" : ""}
+                    </span>
+                    <span style={{ flex: 1, fontSize: 13, color: it.done ? "var(--tx)" : "var(--tx3)" }}>{it.label}</span>
+                    {it.done ? (
+                      <span style={{ fontSize: 12, color: "var(--ac)" }}>{it.detail || "設定済み"}</span>
+                    ) : (
+                      navigate && <button style={{ background: "none", border: "none", color: "var(--bl)", fontSize: 12, cursor: "pointer", textDecoration: "underline" }} onClick={() => navigate(it.page)}>今すぐ登録</button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <button className="btn" onClick={async () => {
+                await saveSettings({ onboardingCompleted: false });
+                window.location.reload();
+              }}>
+                セットアップウィザードを再実行
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div></div>
   );
 }

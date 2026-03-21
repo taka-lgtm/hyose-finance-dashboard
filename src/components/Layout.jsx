@@ -79,7 +79,7 @@ export default function Layout({ page, navigate, loans, plData, children }) {
         <div className="nl-wrap">
           <div className="ng">メニュー</div>
           {filteredNav.map((n) => {
-            const badge = n.badgeFn ? String(loans.length) : n.badge;
+            const badge = n.badgeFn ? String(loans.length) : (n.id === "settings" && !settings.onboardingCompleted ? "!" : n.badge);
             return (
               <div key={n.id} className={`ni ${page===n.id?"on":""}`} onClick={() => handleNav(n.id)}>
                 <NavIcon d={n.icon} /><span className="nil">{n.label}</span>
@@ -138,7 +138,7 @@ export default function Layout({ page, navigate, loans, plData, children }) {
         </div>
         <div className="mob-drawer-nav">
           {filteredNav.map((n) => {
-            const badge = n.badgeFn ? String(loans.length) : n.badge;
+            const badge = n.badgeFn ? String(loans.length) : (n.id === "settings" && !settings.onboardingCompleted ? "!" : n.badge);
             return (
               <div key={n.id} className={`mob-nav-item ${page===n.id?"on":""}`} onClick={() => handleNav(n.id)}>
                 <NavIcon d={n.icon} /><span>{n.label}</span>

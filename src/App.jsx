@@ -193,7 +193,7 @@ function Dashboard() {
     debt: <Debt loans={loans} addLoan={canEdit ? addLoan : null} updateLoan={canEdit ? updateLoan : null} removeLoan={canEdit ? removeLoan : null} loading={loansLoading} plData={plData} canEdit={canEdit} />,
     actions: <Actions />,
     users: <Users />,
-    settings: <Settings />,
+    settings: <Settings navigate={navigate} loans={loans} plData={plData} monthlyPLData={monthlyPLData} bmData={bmData} />,
     guide: <Guide />,
   };
 
