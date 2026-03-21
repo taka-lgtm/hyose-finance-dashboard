@@ -11,8 +11,8 @@ import Debt from "./pages/Debt";
 import Actions from "./pages/Actions";
 import Users from "./pages/Users";
 import Settings from "./pages/Settings";
-import { INITIAL_LOANS, PL as DEFAULT_PL, BS as DEFAULT_BS, BUDGET_MONTHLY as DEFAULT_BM, CF as DEFAULT_CF } from "./data";
-import { fetchLoans, addLoanDoc, updateLoanDoc, deleteLoanDoc, seedLoansIfEmpty, fetchFinancialData, saveFinancialData, addLoanLog } from "./lib/firestore";
+import { INITIAL_LOANS, PL as DEFAULT_PL, BS as DEFAULT_BS, CF as DEFAULT_CF } from "./data";
+import { fetchLoans, addLoanDoc, updateLoanDoc, deleteLoanDoc, seedLoansIfEmpty, fetchFinancialData, saveFinancialData, saveBudget as saveBudgetDoc, saveMonthlyPL as saveMonthlyPLDoc, addLoanLog } from "./lib/firestore";
 
 // ページアクセス権限チェック用のページID一覧
 const RESTRICTED_PAGES = ["overview", "performance", "cashflow", "debt", "financials", "actions"];
@@ -28,7 +28,8 @@ function Dashboard() {
   // ── Financial data state (Firestoreから取得、未取得時はnull) ──
   const [plData, setPlData] = useState(null);
   const [bsData, setBsData] = useState(null);
-  const [bmData, setBmData] = useState(DEFAULT_BM);
+  const [bmData, setBmData] = useState(null);
+  const [monthlyPLData, setMonthlyPLData] = useState(null);
   const [cfData, setCfData] = useState(DEFAULT_CF);
   const [finLoading, setFinLoading] = useState(true);
 
@@ -56,6 +57,7 @@ function Dashboard() {
         if (all?.pl?.data) setPlData(all.pl.data);
         if (all?.bs?.data) setBsData(all.bs.data);
         if (all?.budget?.data) setBmData(all.budget.data);
+        if (all?.monthlyPL?.data) setMonthlyPLData(all.monthlyPL.data);
         if (all?.cf?.data) setCfData(all.cf.data);
       } catch (e) {
         console.error("Failed to load financial data:", e);
@@ -127,6 +129,16 @@ function Dashboard() {
     saveFinancialData("cf", { data: incoming }).catch(console.error);
   }, []);
 
+  const saveBudget = useCallback(async (incoming) => {
+    setBmData(incoming);
+    saveBudgetDoc(incoming).catch(console.error);
+  }, []);
+
+  const saveMonthlyPL = useCallback(async (incoming) => {
+    setMonthlyPLData(incoming);
+    saveMonthlyPLDoc(incoming).catch(console.error);
+  }, []);
+
   const navigate = useCallback((id) => {
     setPage(id);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -159,7 +171,7 @@ function Dashboard() {
 
   const pages = {
     overview: <Overview loans={loans} navigate={navigate} plData={plData} bsData={bsData} cfData={cfData} loading={dataLoading} />,
-    performance: <Performance bmData={bmData} />,
+    performance: <Performance bmData={bmData} monthlyPLData={monthlyPLData} saveBudget={canEdit ? saveBudget : null} saveMonthlyPL={canEdit ? saveMonthlyPL : null} canEdit={canEdit} />,
     financials: <Financials plData={plData} bsData={bsData} loans={loans} savePL={canEdit ? savePL : null} saveBS={canEdit ? saveBS : null} canEdit={canEdit} />,
     cashflow: <CashFlow cfData={cfData} saveCF={canEdit ? saveCF : null} canEdit={canEdit} />,
     debt: <Debt loans={loans} addLoan={canEdit ? addLoan : null} updateLoan={canEdit ? updateLoan : null} removeLoan={canEdit ? removeLoan : null} loading={loansLoading} plData={plData} canEdit={canEdit} />,
