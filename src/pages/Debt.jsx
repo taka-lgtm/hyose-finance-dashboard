@@ -103,28 +103,26 @@ export default function Debt({ loans, addLoan, updateLoan, removeLoan, loading, 
     <div className="page"><div className="g">
       <div className="ph">
         <div><h2>融資管理</h2><p>融資ポートフォリオの全体像。返済管理から借換え戦略まで。</p></div>
-        {canEdit && <div className="pa"><button className="btn pr" onClick={openNew}>＋ 新規登録</button></div>}
-      </div>
-
-      <div className="debt-toolbar">
-        <div className="debt-tabs">
-          {Object.entries(VIEWS).map(([k, v]) => (
-            <button key={k} className={`chip ${view === k ? "on" : ""}`} onClick={() => setView(k)}>{v}</button>
-          ))}
-        </div>
-        <div className="debt-filter">
-          <div style={{ display: "flex", gap: 4, marginRight: 8 }}>
-            {["all", ...CATEGORIES].map((c) => (
-              <button key={c} className={`chip ${catFilter === c ? "on" : ""}`} style={{ fontSize: 10, padding: "3px 8px" }} onClick={() => setCatFilter(c)}>{c === "all" ? "全区分" : c}</button>
-            ))}
-          </div>
+        <div className="ph-actions">
           <select className="sel" value={bankFilter} onChange={(e) => setBankFilter(e.target.value)}>
             <option value="all">全銀行</option>
             {banks.map((b) => <option key={b} value={b}>{b}</option>)}
           </select>
-          <select className="sel" value={periodFilter} onChange={(e) => setPeriodFilter(e.target.value)} style={{ marginLeft: 6 }}>
+          <select className="sel" value={periodFilter} onChange={(e) => setPeriodFilter(e.target.value)}>
             {Object.entries(PERIOD_FILTERS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
+          {canEdit && <button className="btn pr" onClick={openNew}>＋ 新規登録</button>}
+        </div>
+      </div>
+
+      <div className="ph-tabs">
+        {Object.entries(VIEWS).map(([k, v]) => (
+          <button key={k} className={`chip ${view === k ? "on" : ""}`} onClick={() => setView(k)}>{v}</button>
+        ))}
+        <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
+          {["all", ...CATEGORIES].map((c) => (
+            <button key={c} className={`chip ${catFilter === c ? "on" : ""}`} style={{ fontSize: 10, padding: "3px 8px" }} onClick={() => setCatFilter(c)}>{c === "all" ? "全区分" : c}</button>
+          ))}
         </div>
       </div>
 

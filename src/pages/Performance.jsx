@@ -354,7 +354,7 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
           <p>月次予算と実績を比較し、差異分析と着地見込みを確認する。</p>
         </div>
         <div className="ph-actions" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <select className="fy-select" value={selectedFY} onChange={(e) => setSelectedFY(Number(e.target.value))}>
+          <select className="sel" value={selectedFY} onChange={(e) => setSelectedFY(Number(e.target.value))}>
             {fyOptions.map((y) => (
               <option key={y} value={y}>{getFiscalYearLabel(fiscalMonth, y)}</option>
             ))}

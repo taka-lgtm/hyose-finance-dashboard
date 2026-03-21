@@ -77,9 +77,9 @@ button,input,select{font:inherit;color:inherit}
 /* ── Main ── */
 .main{padding:24px 28px 48px;min-width:0}
 .page{max-width:1260px;margin:0 auto}
-.ph{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--bd)}
-.ph h2{font-family:'DM Sans';font-size:24px;font-weight:800;letter-spacing:-.03em;line-height:1}
-.ph p{font-size:11px;color:var(--tx3);margin-top:5px}
+.ph{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--bd);flex-wrap:wrap}
+.ph h2{font-family:'DM Sans';font-size:24px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.ph p{font-size:14px;color:var(--tx3);margin-top:5px}
 .pa{display:flex;gap:6px;flex-wrap:wrap}
 
 /* Btns */
@@ -91,6 +91,7 @@ button,input,select{font:inherit;color:inherit}
 
 /* コンパクトアップロードボタン */
 .ph-actions{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.ph-tabs{display:flex;gap:4px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
 .upload-compact-btn{display:inline-flex;align-items:center;gap:6px;position:relative}
 .fy-select{background:var(--bg3,var(--sf));color:var(--tx1);border:1px solid var(--bd);border-radius:6px;padding:6px 10px;font-size:12px;cursor:pointer;font-family:inherit}
 .upload-compact-btn .login-spinner{border-color:rgba(8,9,13,.2);border-top-color:var(--logo-text)}
