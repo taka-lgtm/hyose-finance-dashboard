@@ -210,6 +210,25 @@ export function parsePLMonthly(buffer, fiscalMonth = 3) {
 }
 
 /**
+ * PL月次推移CSVから月次PL実績データを生成する（予実管理用）
+ * @param {ArrayBuffer} plBuffer - PL CSV
+ * @param {number} [fiscalMonth=3] - 決算月
+ * @returns {Array<{m: string, sales: number, cogs: number, grossProfit: number, sgaExpenses: number, operatingProfit: number}>}
+ *   金額は万円単位
+ */
+export function generateMonthlyPLData(plBuffer, fiscalMonth = 3) {
+  const pl = parsePLMonthly(plBuffer, fiscalMonth);
+  return pl.months.map((m, i) => {
+    const sales = Math.round(pl.sales[i] / 10000);
+    const cogs = Math.round(pl.cogs[i] / 10000);
+    const grossProfit = sales - cogs;
+    const sgaExpenses = Math.round(pl.sgaExpenses[i] / 10000);
+    const operatingProfit = grossProfit - sgaExpenses;
+    return { m, sales, cogs, grossProfit, sgaExpenses, operatingProfit };
+  });
+}
+
+/**
  * BS・PLの月次推移CSVから資金繰りデータを生成する
  * @param {ArrayBuffer} bsBuffer - BS CSV
  * @param {ArrayBuffer} plBuffer - PL CSV

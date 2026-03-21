@@ -95,6 +95,20 @@ export async function saveSettings(data) {
 }
 
 // ═══════════════════════════════
+// BUDGET / MONTHLY PL（予実管理用）
+// ═══════════════════════════════
+
+// 月次予算の保存
+export async function saveBudget(data) {
+  await saveFinancialData("budget", { data });
+}
+
+// 月次PL実績の保存
+export async function saveMonthlyPL(data) {
+  await saveFinancialData("monthlyPL", { data });
+}
+
+// ═══════════════════════════════
 // SEED: Initialize Firestore with default data
 // ═══════════════════════════════
 
