@@ -133,7 +133,7 @@ function StepMonthly({ csvState, setCsvState, fiscalMonth }) {
       <p className="ob-step-desc">マネーフォワードクラウド会計から月次データを取り込みます。</p>
       <div className="ob-mf-steps">
         <div className="ob-mf-step"><span className="ob-mf-num">1</span>マネーフォワードにログイン</div>
-        <div className="ob-mf-step"><span className="ob-mf-num">2</span>会計帳簿 → 残高試算表 → 月次推移</div>
+        <div className="ob-mf-step"><span className="ob-mf-num">2</span>会計帳簿 → 推移表を選択</div>
         <div className="ob-mf-step"><span className="ob-mf-num">3</span>貸借対照表と損益計算書をそれぞれCSV出力</div>
       </div>
       <div className="ob-form" style={{ marginTop: 16 }}>

@@ -38,7 +38,7 @@ export default function Guide() {
                 <div className="guide-step-title">マネーフォワードからCSVを出力</div>
                 <ol className="guide-ol">
                   <li>マネーフォワードにログイン</li>
-                  <li>会計帳簿 → 残高試算表 → 月次推移を選択</li>
+                  <li>会計帳簿 → 推移表を選択</li>
                   <li>「貸借対照表」のCSVをダウンロード</li>
                   <li>「損益計算書」のCSVをダウンロード</li>
                 </ol>
