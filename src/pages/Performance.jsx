@@ -47,6 +47,16 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState(null);
 
+  // アクションメニュー
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef(null);
+  useEffect(() => {
+    if (!showMenu) return;
+    const close = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setShowMenu(false); };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [showMenu]);
+
   // テーブル表示モード（単月 / 累積）
   const [tableMode, setTableMode] = useState("monthly");
 
@@ -268,7 +278,7 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: legend ? chartLegend : { display: false } },
       scales: {
-        y: { ticks: { callback: (v) => v + "万", font: chartFont }, grid: chartGrid },
+        y: { ticks: { callback: (v) => v.toLocaleString() + "万", font: chartFont }, grid: chartGrid },
         x: { grid: { display: false }, ticks: { font: chartFont } },
       },
     });
@@ -348,35 +358,44 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
           <h2>予実管理</h2>
           <p>月次予算と実績を比較し、差異分析と着地見込みを確認する。</p>
         </div>
-        <div className="ph-actions">
-          {/* 年度切り替え */}
+        <div className="ph-actions" style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <select className="fy-select" value={selectedFY} onChange={(e) => setSelectedFY(Number(e.target.value))}>
             {fyOptions.map((y) => (
               <option key={y} value={y}>{getFiscalYearLabel(fiscalMonth, y)}</option>
             ))}
           </select>
-          {canEdit && <>
-            <button className="btn upload-compact-btn" onClick={() => plFileRef.current?.click()} disabled={uploading}>
-              <input ref={plFileRef} type="file" accept=".csv" style={{ display: "none" }}
-                onChange={(e) => { handleUpload(e.target.files[0]); e.target.value = ""; }} />
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              <span>{uploading ? "解析中..." : "PL CSV取り込み"}</span>
-            </button>
-            <button className="btn upload-compact-btn" onClick={() => { setShowBudgetInput(!showBudgetInput); setShowGrowthInput(false); }}>
-              <span>予算入力</span>
-            </button>
-            <button className="btn upload-compact-btn" onClick={() => { setShowGrowthInput(!showGrowthInput); setShowBudgetInput(false); }}>
-              <span>前年実績から予算生成</span>
-            </button>
-            {hasData && (
-              <button className="btn upload-compact-btn" onClick={() => {
-                const target = prompt(`「${getFiscalYearLabel(fiscalMonth, selectedFY)}」のデータを移動する先の年度を入力してください（例: ${selectedFY - 1}）`);
-                if (target && !isNaN(Number(target))) moveDataToFY(Number(target));
-              }}>
-                <span>年度修正</span>
+          {canEdit && (
+            <div ref={menuRef} style={{ position: "relative" }}>
+              <button className="btn pr" onClick={() => setShowMenu(!showMenu)} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, padding: "6px 12px" }}>
+                <span>操作</span>
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M2 3.5L5 7l3-3.5H2z"/></svg>
               </button>
-            )}
-          </>}
+              {showMenu && (
+                <div style={{ position: "absolute", right: 0, top: "calc(100% + 4px)", background: "var(--bg2)", border: "1px solid var(--br)", borderRadius: 8, padding: "4px 0", minWidth: 200, zIndex: 100, boxShadow: "0 8px 24px rgba(0,0,0,.4)" }}>
+                  <button className="perf-menu-item" onClick={() => { plFileRef.current?.click(); setShowMenu(false); }} disabled={uploading}>
+                    <input ref={plFileRef} type="file" accept=".csv" style={{ display: "none" }}
+                      onChange={(e) => { handleUpload(e.target.files[0]); e.target.value = ""; }} />
+                    PL CSV取り込み
+                  </button>
+                  <button className="perf-menu-item" onClick={() => { setShowBudgetInput(!showBudgetInput); setShowGrowthInput(false); setShowMenu(false); }}>
+                    予算入力（年間金額）
+                  </button>
+                  <button className="perf-menu-item" onClick={() => { setShowGrowthInput(!showGrowthInput); setShowBudgetInput(false); setShowMenu(false); }}>
+                    前年実績から予算生成
+                  </button>
+                  {hasData && (
+                    <button className="perf-menu-item" onClick={() => {
+                      setShowMenu(false);
+                      const target = prompt(`「${getFiscalYearLabel(fiscalMonth, selectedFY)}」のデータを移動する先の年度を入力してください（例: ${selectedFY - 1}）`);
+                      if (target && !isNaN(Number(target))) moveDataToFY(Number(target));
+                    }}>
+                      年度修正
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
