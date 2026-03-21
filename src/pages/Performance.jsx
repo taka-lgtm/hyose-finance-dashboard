@@ -36,6 +36,12 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
   const [growthRate, setGrowthRate] = useState(5);
   const [showGrowthInput, setShowGrowthInput] = useState(false);
 
+  // 年間予算直接入力
+  const [showBudgetInput, setShowBudgetInput] = useState(false);
+  const [annualSales, setAnnualSales] = useState("");
+  const [annualGross, setAnnualGross] = useState("");
+  const [annualOp, setAnnualOp] = useState("");
+
   // CSVアップロード
   const plFileRef = useRef(null);
   const [uploading, setUploading] = useState(false);
@@ -208,6 +214,26 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
     setUploadMsg({ type: "success", text: `${getFiscalYearLabel(fiscalMonth, selectedFY)}のデータを${getFiscalYearLabel(fiscalMonth, targetFY)}に移動しました` });
   }, [selectedFY, monthlyPLData, bmData, saveMonthlyPL, saveBudget, fiscalMonth]);
 
+  // 年間予算金額から月次予算を均等配分で生成
+  const generateFromAnnual = useCallback(() => {
+    if (!saveBudget) return;
+    const sales = Number(annualSales) || 0;
+    const gross = Number(annualGross) || 0;
+    const op = Number(annualOp) || 0;
+    if (!sales && !gross && !op) return;
+
+    const generated = fiscalMonths.map((m) => ({
+      m,
+      sb: Math.round(sales / 12),
+      gb: Math.round(gross / 12),
+      ob: Math.round(op / 12),
+    }));
+    const newBmData = { ...(bmData || {}), [fyKey]: generated };
+    saveBudget(newBmData);
+    setShowBudgetInput(false);
+    setUploadMsg({ type: "success", text: `年間予算（売上${sales}万/粗利${gross}万/営利${op}万）を12ヶ月に配分しました` });
+  }, [annualSales, annualGross, annualOp, fiscalMonths, bmData, fyKey, saveBudget]);
+
   // 前年実績から予算自動生成
   const generateFromPrevYear = useCallback(() => {
     if (!saveMonthlyPL) return;
@@ -336,7 +362,10 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               <span>{uploading ? "解析中..." : "PL CSV取り込み"}</span>
             </button>
-            <button className="btn upload-compact-btn" onClick={() => setShowGrowthInput(!showGrowthInput)}>
+            <button className="btn upload-compact-btn" onClick={() => { setShowBudgetInput(!showBudgetInput); setShowGrowthInput(false); }}>
+              <span>予算入力</span>
+            </button>
+            <button className="btn upload-compact-btn" onClick={() => { setShowGrowthInput(!showGrowthInput); setShowBudgetInput(false); }}>
               <span>前年実績から予算生成</span>
             </button>
             {hasData && (
@@ -363,6 +392,30 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
               {getFiscalYearLabel(fiscalMonth, selectedFY - 1)}実績 × {growthRate}% で生成
             </button>
             <button className="btn" onClick={() => setShowGrowthInput(false)} style={{ fontSize: 12, padding: "4px 12px" }}>
+              キャンセル
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 年間予算入力パネル */}
+      {showBudgetInput && (
+        <div className="c" style={{ padding: "12px 16px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 13, color: "var(--tx2)" }}>売上:</span>
+            <input type="number" value={annualSales} onChange={(e) => setAnnualSales(e.target.value)} placeholder="年間売上"
+              style={{ width: 100, padding: "4px 8px", background: "var(--bg3)", border: "1px solid var(--br)", borderRadius: 4, color: "var(--tx1)", fontSize: 13, textAlign: "right" }} />
+            <span style={{ fontSize: 13, color: "var(--tx2)" }}>粗利:</span>
+            <input type="number" value={annualGross} onChange={(e) => setAnnualGross(e.target.value)} placeholder="年間粗利"
+              style={{ width: 100, padding: "4px 8px", background: "var(--bg3)", border: "1px solid var(--br)", borderRadius: 4, color: "var(--tx1)", fontSize: 13, textAlign: "right" }} />
+            <span style={{ fontSize: 13, color: "var(--tx2)" }}>営利:</span>
+            <input type="number" value={annualOp} onChange={(e) => setAnnualOp(e.target.value)} placeholder="年間営利"
+              style={{ width: 100, padding: "4px 8px", background: "var(--bg3)", border: "1px solid var(--br)", borderRadius: 4, color: "var(--tx1)", fontSize: 13, textAlign: "right" }} />
+            <span style={{ fontSize: 11, color: "var(--tx3)" }}>万円</span>
+            <button className="btn pr" onClick={generateFromAnnual} style={{ fontSize: 12, padding: "4px 12px" }}>
+              12ヶ月に配分
+            </button>
+            <button className="btn" onClick={() => setShowBudgetInput(false)} style={{ fontSize: 12, padding: "4px 12px" }}>
               キャンセル
             </button>
           </div>
