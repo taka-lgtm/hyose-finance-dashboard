@@ -21,16 +21,6 @@ export const BS = [
 // CFデータはCSVアップロードにより生成される（ダミーデータなし）
 export const CF = [];
 
-export const BUDGET_MONTHLY = MONTHS.map((m, i) => {
-  const sb = 1540 + (i * 32) + (i % 3) * 18;
-  const sa = sb + ((i % 4) - 1) * 55 + (i > 7 ? 35 : 0);
-  const gb = Math.round(sb * 0.25);
-  const ga = Math.round(sa * (0.245 + (i % 3) * 0.004));
-  const ob = Math.round(sb * 0.13);
-  const oa = Math.round(sa * (0.118 + ((i + 1) % 4) * 0.004));
-  return { m, sb, sa, gb, ga, ob, oa };
-});
-
 // ── 融資データ（円単位・CSVベースの実データ） ──
 
 export const INITIAL_LOANS = [
