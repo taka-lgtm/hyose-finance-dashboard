@@ -462,6 +462,15 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
         </div>
       )}
 
+      {!hasData && (
+        <div className="c">
+          <div className="cb" style={{ padding: "28px 20px", textAlign: "center" }}>
+            <div style={{ fontSize: 14, color: "var(--tx)", fontWeight: 600, marginBottom: 8 }}>予算を設定してください</div>
+            <div style={{ fontSize: 13, color: "var(--tx3)", marginBottom: 16, lineHeight: 1.6 }}>右上の「操作」メニューから「予算入力」または「前年実績から予算生成」を選択してください。</div>
+          </div>
+        </div>
+      )}
+
       {hasData && <>
         {/* KPIカード */}
         <div className="g4">

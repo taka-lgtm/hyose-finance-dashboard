@@ -281,6 +281,20 @@ export default function Overview({ loans, navigate, plData, bsData, cfData, mont
         <div className="fyp">{fyProgress}%</div>
       </div>
 
+      {/* データなし案内 */}
+      {!hasFinancials && !hasMonthly && (
+        <div className="c">
+          <div className="cb" style={{ padding: "28px 20px", textAlign: "center" }}>
+            <div style={{ fontSize: 14, color: "var(--tx)", fontWeight: 600, marginBottom: 8 }}>まずはデータを登録してください</div>
+            <div style={{ fontSize: 13, color: "var(--tx3)", marginBottom: 16, lineHeight: 1.6 }}>決算書PDFまたはマネフォCSVをアップロードすると、経営指標が自動表示されます。</div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+              <button className="btn pr" onClick={() => navigate("financials")}>決算書を登録</button>
+              <button className="btn" onClick={() => navigate("cashflow")}>月次CSVを取り込む</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ══ 最上段: 意思決定レイヤー ══ */}
       <div className="g2">
         {/* 3ヶ月キャッシュ予測 */}

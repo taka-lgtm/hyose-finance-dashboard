@@ -128,6 +128,16 @@ export default function Debt({ loans, addLoan, updateLoan, removeLoan, loading, 
         </div>
       </div>
 
+      {loans.length === 0 && (
+        <div className="c">
+          <div className="cb" style={{ padding: "28px 20px", textAlign: "center" }}>
+            <div style={{ fontSize: 14, color: "var(--tx)", fontWeight: 600, marginBottom: 8 }}>融資データを登録してください</div>
+            <div style={{ fontSize: 13, color: "var(--tx3)", marginBottom: 16 }}>「新規登録」ボタンから1件ずつ追加できます。</div>
+            {canEdit && <button className="btn pr" onClick={openNew}>＋ 新規登録</button>}
+          </div>
+        </div>
+      )}
+
       <div className="g4">
         <div className="k hero"><div className="k-label">借入残高 合計</div><div className="k-val">{MY(tBal)}</div><div className="k-ctx">{fl.length}本 / 返済月数 {tMon > 0 ? Math.round(tBal / tMon) : "-"}ヶ月</div><div className="k-foot"><span>年間利息 {MY(totalInt)}</span></div></div>
         <div className="k"><div className="k-label">月間返済 合計</div><div className="k-val">{MY(tMon)}</div><div className="k-ctx">年間 {MY(tMon * 12)}</div><div className="k-foot"><span>{plData && plData.length > 0 ? `売上比 ${(tMon / 10000 * 12 / plData[plData.length - 1].売上高 * 100).toFixed(1)}%` : "売上比 -"}</span></div></div>
