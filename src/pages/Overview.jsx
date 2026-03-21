@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
 import { Chart, registerables } from "chart.js";
-import { M, MY, pct, sgn, calcHealth, calcLoanDerived, chartFont, chartGrid, chartLegend } from "../data";
+import { M, MY, pct, sgn, calcHealth, calcLoanDerived, chartFont, chartGrid, chartLegend, getChartTheme } from "../data";
 import Sparkline from "../components/Sparkline";
 import { useSettings, getFiscalYear, getFiscalYearLabel } from "../contexts/SettingsContext";
 
@@ -185,8 +185,9 @@ export default function Overview({ loans, navigate, plData, bsData, cfData, mont
   useEffect(() => {
     chartInstRef.current?.destroy();
     if (!trendRef.current || !hasMonthly) return;
-    Chart.defaults.color = "rgba(139,146,168,.7)";
-    Chart.defaults.borderColor = "rgba(255,255,255,.04)";
+    const ct = getChartTheme(settings.theme);
+    Chart.defaults.color = ct.textColor;
+    Chart.defaults.borderColor = ct.gridColor;
 
     const labels = monthlyActuals.map((a) => a.m);
     chartInstRef.current = new Chart(trendRef.current, {
@@ -203,13 +204,13 @@ export default function Overview({ loans, navigate, plData, bsData, cfData, mont
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: chartLegend },
         scales: {
-          y: { ticks: { callback: (v) => v + "万", font: chartFont }, grid: chartGrid },
+          y: { ticks: { callback: (v) => v + "万", font: chartFont }, grid: { color: ct.gridColor } },
           x: { grid: { display: false }, ticks: { font: chartFont } },
         },
       },
     });
     return () => { chartInstRef.current?.destroy(); };
-  }, [monthlyActuals, hasMonthly]);
+  }, [monthlyActuals, hasMonthly, settings.theme]);
 
   // 現預金推移（BSまたはCFデータ）
   useEffect(() => {
@@ -237,7 +238,7 @@ export default function Overview({ loans, navigate, plData, bsData, cfData, mont
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          y: { ticks: { callback: (v) => v + "万", font: chartFont }, grid: chartGrid },
+          y: { ticks: { callback: (v) => v + "万", font: chartFont }, grid: { color: getChartTheme(settings.theme).gridColor } },
           x: { grid: { display: false }, ticks: { font: chartFont } },
         },
       },

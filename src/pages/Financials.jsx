@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { Chart, registerables } from "chart.js";
-import { YEARS, M, pct, sgn, chartFont, chartGrid, chartLegend } from "../data";
+import { YEARS, M, pct, sgn, chartFont, chartGrid, chartLegend, getChartTheme } from "../data";
+import { useSettings } from "../contexts/SettingsContext";
 import { useAuth } from "../contexts/AuthContext";
 import { addLoanLog } from "../lib/firestore";
 import * as XLSX from "xlsx";
@@ -177,6 +178,7 @@ function RatioTable({ groups, dataset, years }) {
 
 export default function Financials({ plData, bsData, loans = [], savePL, saveBS, canEdit = true }) {
   const { user } = useAuth();
+  const { settings } = useSettings();
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState(null);
   const [taxRate, setTaxRate] = useState(30);
@@ -367,19 +369,21 @@ export default function Financials({ plData, bsData, loans = [], savePL, saveBS,
 
   // Charts
   useEffect(() => {
-    Chart.defaults.color = "rgba(139,146,168,.7)";
-    Chart.defaults.borderColor = "rgba(255,255,255,.04)";
+    const ct = getChartTheme(settings.theme);
+    Chart.defaults.color = ct.textColor;
+    Chart.defaults.borderColor = ct.gridColor;
     c1.current?.destroy(); c2.current?.destroy();
     const fmtTick = (v) => v.toLocaleString() + "万";
+    const tg = { color: ct.gridColor };
     if (plChartRef.current && plData.length) {
-      c1.current = new Chart(plChartRef.current, { data: { labels: years, datasets: [{type:"bar",label:"売上高",data:plData.map(v=>v.売上高),backgroundColor:"rgba(91,141,239,.45)",borderRadius:6},{type:"line",label:"営業利益",data:plData.map(v=>v.営業利益),borderColor:"#22c994",pointRadius:3,tension:.25,borderWidth:2,yAxisID:"y1"},{type:"line",label:"経常利益",data:plData.map(v=>v.経常利益),borderColor:"#e5a83a",pointRadius:3,tension:.25,borderWidth:2,yAxisID:"y1"}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:chartLegend},scales:{y:{ticks:{callback:fmtTick,font:chartFont},grid:chartGrid},y1:{position:"right",ticks:{callback:fmtTick,font:chartFont},grid:{display:false}},x:{grid:{display:false},ticks:{font:chartFont}}}} });
+      c1.current = new Chart(plChartRef.current, { data: { labels: years, datasets: [{type:"bar",label:"売上高",data:plData.map(v=>v.売上高),backgroundColor:"rgba(91,141,239,.45)",borderRadius:6},{type:"line",label:"営業利益",data:plData.map(v=>v.営業利益),borderColor:"#22c994",pointRadius:3,tension:.25,borderWidth:2,yAxisID:"y1"},{type:"line",label:"経常利益",data:plData.map(v=>v.経常利益),borderColor:"#e5a83a",pointRadius:3,tension:.25,borderWidth:2,yAxisID:"y1"}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:chartLegend},scales:{y:{ticks:{callback:fmtTick,font:chartFont},grid:tg},y1:{position:"right",ticks:{callback:fmtTick,font:chartFont},grid:{display:false}},x:{grid:{display:false},ticks:{font:chartFont}}}} });
     }
     if (bsChartRef.current && bsData.length) {
       // スタック順: Chart.jsは下から積み上げるため、上に表示したい項目を後に定義
-      c2.current = new Chart(bsChartRef.current, {type:"bar", data:{labels:bsData.map(d=>d.y),datasets:[{label:"固定資産",data:bsData.map(v=>v.固定資産),backgroundColor:"rgba(91,141,239,.6)",stack:"a",borderRadius:5},{label:"流動資産",data:bsData.map(v=>v.流動資産),backgroundColor:"rgba(91,141,239,.35)",stack:"a",borderRadius:5},{label:"純資産",data:bsData.map(v=>v.純資産),backgroundColor:"rgba(34,201,148,.45)",stack:"b",borderRadius:5},{label:"負債",data:bsData.map(v=>(v.流動負債||0)+(v.固定負債||0)),backgroundColor:"rgba(229,91,91,.35)",stack:"b",borderRadius:5}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:chartLegend},scales:{x:{stacked:true,grid:{display:false},ticks:{font:chartFont}},y:{stacked:true,grid:chartGrid,ticks:{callback:fmtTick,font:chartFont}}}} });
+      c2.current = new Chart(bsChartRef.current, {type:"bar", data:{labels:bsData.map(d=>d.y),datasets:[{label:"固定資産",data:bsData.map(v=>v.固定資産),backgroundColor:"rgba(91,141,239,.6)",stack:"a",borderRadius:5},{label:"流動資産",data:bsData.map(v=>v.流動資産),backgroundColor:"rgba(91,141,239,.35)",stack:"a",borderRadius:5},{label:"純資産",data:bsData.map(v=>v.純資産),backgroundColor:"rgba(34,201,148,.45)",stack:"b",borderRadius:5},{label:"負債",data:bsData.map(v=>(v.流動負債||0)+(v.固定負債||0)),backgroundColor:"rgba(229,91,91,.35)",stack:"b",borderRadius:5}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:chartLegend},scales:{x:{stacked:true,grid:{display:false},ticks:{font:chartFont}},y:{stacked:true,grid:tg,ticks:{callback:fmtTick,font:chartFont}}}} });
     }
     return () => { c1.current?.destroy(); c2.current?.destroy(); };
-  }, [plData, bsData, years]);
+  }, [plData, bsData, years, settings.theme]);
 
   return (
     <div className="page"><div className="g">

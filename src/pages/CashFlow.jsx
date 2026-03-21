@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 import { Chart, registerables } from "chart.js";
-import { CF as DEFAULT_CF, M, chartFont, chartGrid, chartLegend } from "../data";
+import { CF as DEFAULT_CF, M, chartFont, chartGrid, chartLegend, getChartTheme } from "../data";
 import { generateCashFlowData, generateMonthlyPLData, readFileAsArrayBuffer } from "../lib/csvParser";
 import { useSettings } from "../contexts/SettingsContext";
 import { getFiscalYear } from "../contexts/SettingsContext";
@@ -87,15 +87,20 @@ export default function CashFlow({ cfData, saveCF, saveMonthlyPL, monthlyPLData,
   }, [bsFile, plFile, saveCF, saveMonthlyPL, monthlyPLData, settings.fiscalMonth]);
 
   // チャート描画
+  const theme = settings.theme || "dark";
   useEffect(() => {
-    Chart.defaults.color = "rgba(139,146,168,.7)";
+    const ct = getChartTheme(theme);
+    Chart.defaults.color = ct.textColor;
+    Chart.defaults.borderColor = ct.gridColor;
     c1.current?.destroy(); c2.current?.destroy();
     if (!hasData) return;
     const labels = CF.map((v) => v.m);
-    if (r1.current) c1.current = new Chart(r1.current, { type: "line", data: { labels, datasets: [{ label: "BS月末残高", data: enriched.map((v) => v.残高), borderColor: "#22c994", backgroundColor: "rgba(34,201,148,.06)", fill: true, pointRadius: 3, tension: 0.3, borderWidth: 2 }, { label: "平均残高", data: enriched.map((v) => v.平均残高), borderColor: "#3b82f6", pointRadius: 3, tension: 0.3, borderWidth: 3 }, { label: "PLベース推計", data: plEstimates, borderColor: "rgba(255,255,255,.45)", pointRadius: 0, tension: 0.3, borderDash: [5, 5], borderWidth: 1.5 }, { label: "安全水準", data: CF.map(() => safetyLine), borderColor: "rgba(229,91,91,.35)", pointRadius: 0, borderDash: [3, 3], borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: chartLegend }, scales: { y: { ticks: { callback: (v) => v.toLocaleString() + "万", font: chartFont }, grid: chartGrid }, x: { grid: { display: false }, ticks: { font: chartFont } } } } });
-    if (r2.current) c2.current = new Chart(r2.current, { type: "bar", data: { labels, datasets: [{ label: "入金", data: CF.map((v) => v.入金), backgroundColor: "rgba(34,201,148,.5)", borderRadius: 4 }, { label: "出金", data: CF.map((v) => -v.出金), backgroundColor: "rgba(229,91,91,.35)", borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: chartLegend }, scales: { y: { ticks: { callback: (v) => Math.abs(v).toLocaleString() + "万", font: chartFont }, grid: chartGrid }, x: { grid: { display: false }, ticks: { font: chartFont } } } } });
+    const tg = { color: ct.gridColor };
+    const plLineColor = theme === "light" ? "rgba(0,0,0,.25)" : "rgba(255,255,255,.45)";
+    if (r1.current) c1.current = new Chart(r1.current, { type: "line", data: { labels, datasets: [{ label: "BS月末残高", data: enriched.map((v) => v.残高), borderColor: "#22c994", backgroundColor: "rgba(34,201,148,.06)", fill: true, pointRadius: 3, tension: 0.3, borderWidth: 2 }, { label: "平均残高", data: enriched.map((v) => v.平均残高), borderColor: "#3b82f6", pointRadius: 3, tension: 0.3, borderWidth: 3 }, { label: "PLベース推計", data: plEstimates, borderColor: plLineColor, pointRadius: 0, tension: 0.3, borderDash: [5, 5], borderWidth: 1.5 }, { label: "安全水準", data: CF.map(() => safetyLine), borderColor: "rgba(229,91,91,.35)", pointRadius: 0, borderDash: [3, 3], borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: chartLegend }, scales: { y: { ticks: { callback: (v) => v.toLocaleString() + "万", font: chartFont }, grid: tg }, x: { grid: { display: false }, ticks: { font: chartFont } } } } });
+    if (r2.current) c2.current = new Chart(r2.current, { type: "bar", data: { labels, datasets: [{ label: "入金", data: CF.map((v) => v.入金), backgroundColor: "rgba(34,201,148,.5)", borderRadius: 4 }, { label: "出金", data: CF.map((v) => -v.出金), backgroundColor: "rgba(229,91,91,.35)", borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: chartLegend }, scales: { y: { ticks: { callback: (v) => Math.abs(v).toLocaleString() + "万", font: chartFont }, grid: tg }, x: { grid: { display: false }, ticks: { font: chartFont } } } } });
     return () => { c1.current?.destroy(); c2.current?.destroy(); };
-  }, [CF, enriched, plEstimates, hasData, safetyLine]);
+  }, [CF, enriched, plEstimates, hasData, safetyLine, theme]);
 
   return (
     <div className="page"><div className="g">

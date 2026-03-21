@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 import { Chart, registerables } from "chart.js";
-import { M, chartFont, chartGrid, chartLegend } from "../data";
+import { M, chartFont, chartGrid, chartLegend, getChartTheme } from "../data";
 import { useSettings } from "../contexts/SettingsContext";
 import { getFiscalYear, getFiscalYearLabel } from "../contexts/SettingsContext";
 
@@ -262,32 +262,33 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
   }, [selectedFY, monthlyPLData, growthRate, bmData, fyKey, saveBudgetWithSnapshot, saveMonthlyPL]);
 
   // チャート描画（4チャート同時）
+  const theme = settings.theme || "dark";
   useEffect(() => {
-    Chart.defaults.color = "rgba(139,146,168,.7)";
-    Chart.defaults.borderColor = "rgba(255,255,255,.04)";
+    const ct = getChartTheme(theme);
+    Chart.defaults.color = ct.textColor;
+    Chart.defaults.borderColor = ct.gridColor;
     c1.current?.destroy(); c2.current?.destroy(); c3.current?.destroy(); c4.current?.destroy();
     if (!hasData) return;
 
     const labels = fiscalMonths;
+    const themedGrid = { color: ct.gridColor };
     const barOpts = (legend = true) => ({
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: legend ? chartLegend : { display: false } },
       scales: {
-        y: { ticks: { callback: (v) => v.toLocaleString() + "万", font: chartFont }, grid: chartGrid },
+        y: { ticks: { callback: (v) => v.toLocaleString() + "万", font: chartFont }, grid: themedGrid },
         x: { grid: { display: false }, ticks: { font: chartFont } },
       },
     });
 
-    // 売上推移
     if (salesRef.current) {
       c1.current = new Chart(salesRef.current, {
         type: "bar", data: { labels, datasets: [
-          { label: "予算", data: mergedData.map((v) => v.sb), backgroundColor: "rgba(255,255,255,.06)", borderRadius: 4 },
+          { label: "予算", data: mergedData.map((v) => v.sb), backgroundColor: ct.budgetBg, borderRadius: 4 },
           { label: "実績", data: mergedData.map((v) => v.sa), backgroundColor: "rgba(91,141,239,.55)", borderRadius: 4 },
         ]}, options: barOpts(),
       });
     }
-    // 販管費推移
     if (sgaRef.current) {
       c2.current = new Chart(sgaRef.current, {
         type: "bar", data: { labels, datasets: [
@@ -295,27 +296,25 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
         ]}, options: barOpts(false),
       });
     }
-    // 粗利推移
     if (grossRef.current) {
       c3.current = new Chart(grossRef.current, {
         type: "bar", data: { labels, datasets: [
-          { label: "予算", data: mergedData.map((v) => v.gb), backgroundColor: "rgba(255,255,255,.06)", borderRadius: 4 },
+          { label: "予算", data: mergedData.map((v) => v.gb), backgroundColor: ct.budgetBg, borderRadius: 4 },
           { label: "実績", data: mergedData.map((v) => v.ga), backgroundColor: "rgba(34,201,148,.55)", borderRadius: 4 },
         ]}, options: barOpts(),
       });
     }
-    // 営業利益推移
     if (opRef.current) {
       c4.current = new Chart(opRef.current, {
         type: "bar", data: { labels, datasets: [
-          { label: "予算", data: mergedData.map((v) => v.ob), backgroundColor: "rgba(255,255,255,.06)", borderRadius: 4 },
+          { label: "予算", data: mergedData.map((v) => v.ob), backgroundColor: ct.budgetBg, borderRadius: 4 },
           { label: "実績", data: mergedData.map((v) => v.oa), backgroundColor: "rgba(201,34,148,.55)", borderRadius: 4 },
         ]}, options: barOpts(),
       });
     }
 
     return () => { c1.current?.destroy(); c2.current?.destroy(); c3.current?.destroy(); c4.current?.destroy(); };
-  }, [mergedData, hasData, fiscalMonths]);
+  }, [mergedData, hasData, fiscalMonths, theme]);
 
   // 未達ワースト3
   const worst = mergedData

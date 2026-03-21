@@ -340,6 +340,17 @@ export const chartFont = { family: "'IBM Plex Mono','DM Sans',monospace", size: 
 export const chartGrid = { color: "rgba(255,255,255,.04)" };
 export const chartLegend = { position: "bottom", labels: { font: chartFont, usePointStyle: true, boxWidth: 7, padding: 14 } };
 
+// テーマ対応チャート色
+export function getChartTheme(theme) {
+  const isLight = theme === "light";
+  return {
+    textColor: isLight ? "rgba(55,65,81,.8)" : "rgba(160,160,184,.7)",
+    gridColor: isLight ? "rgba(0,0,0,.06)" : "rgba(255,255,255,.04)",
+    budgetBg: isLight ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.06)",
+    doneBg: isLight ? "rgba(0,0,0,.06)" : "rgba(255,255,255,.08)",
+  };
+}
+
 // ── CSV Export（融資データは円単位） ──
 export function exportBalanceCSV(loans, bankFilter) {
   const fl = bankFilter === "all" ? loans : loans.filter((l) => l.bank === bankFilter);

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Chart, registerables } from "chart.js";
-import { M, calcLoanDerived, chartFont, chartGrid } from "../data";
+import { M, calcLoanDerived, chartFont, chartGrid, getChartTheme } from "../data";
 import { useSettings } from "../contexts/SettingsContext";
 import { getFiscalYear } from "../contexts/SettingsContext";
 import { fetchActions, addActionDoc, updateActionDoc, deleteActionDoc } from "../lib/firestore";
@@ -261,16 +261,19 @@ export default function Actions({ loans, plData, bsData, monthlyPLData, canEdit 
 
   // インパクトランキングチャート
   const rankData = allActions.filter((a) => a.impact !== 0).slice(0, 8);
+  const theme = settings.theme || "dark";
   useEffect(() => {
     rankChart.current?.destroy();
     if (!rankRef.current || !rankData.length) return;
+    const ct = getChartTheme(theme);
+    Chart.defaults.color = ct.textColor;
     rankChart.current = new Chart(rankRef.current, {
       type: "bar",
       data: {
         labels: rankData.map((a) => a.title),
         datasets: [{
           data: rankData.map((a) => Math.abs(a.impact)),
-          backgroundColor: rankData.map((a) => a.status === "done" ? "rgba(255,255,255,.08)" : a.impact >= 0 ? "rgba(34,201,148,.5)" : "rgba(229,91,91,.5)"),
+          backgroundColor: rankData.map((a) => a.status === "done" ? ct.doneBg : a.impact >= 0 ? "rgba(34,201,148,.5)" : "rgba(229,91,91,.5)"),
           borderRadius: 4,
         }],
       },
@@ -280,13 +283,13 @@ export default function Actions({ loans, plData, bsData, monthlyPLData, canEdit 
         maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          x: { ticks: { callback: (v) => v.toLocaleString() + "万", font: chartFont }, grid: chartGrid },
+          x: { ticks: { callback: (v) => v.toLocaleString() + "万", font: chartFont }, grid: { color: ct.gridColor } },
           y: { grid: { display: false }, ticks: { font: { ...chartFont, size: 11 } } },
         },
       },
     });
     return () => rankChart.current?.destroy();
-  }, [rankData]);
+  }, [rankData, theme]);
 
   const fmtImpact = (v, period) => {
     const prefix = v >= 0 ? "+" : "";
