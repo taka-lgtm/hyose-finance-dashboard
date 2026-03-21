@@ -14,6 +14,7 @@ const CATEGORIES = ["長期", "短期", "当座貸越"];
 const PERIOD_FILTERS = { thisMonth: "今月", thisPeriod: "今期", last2: "直近2期", last3: "直近3期" };
 
 // 期間フィルタのロジック
+// 「今月」は残高ベース、それ以外は融資開始日(start)がフィルタ起点以降かで判定
 function filterLoansByPeriod(loans, period, fiscalMonth) {
   if (!loans || !loans.length) return loans;
 
@@ -27,12 +28,12 @@ function filterLoansByPeriod(loans, period, fiscalMonth) {
   if (now.getMonth() + 1 < startMonth) fyStartYear--;
   const thisPeriodStart = new Date(fyStartYear, startMonth - 1, 1);
 
-  // 今月: 残高 > 0 のみ（期間判定不要）
+  // 今月: 残高 > 0 のみ
   if (period === "thisMonth") {
     return loans.filter(l => l.balance > 0);
   }
 
-  // 対象期間の開始日を算出
+  // フィルタの起点日を決定
   let filterStart;
   switch (period) {
     case "thisPeriod":
@@ -49,30 +50,15 @@ function filterLoansByPeriod(loans, period, fiscalMonth) {
     default:
       filterStart = thisPeriodStart;
   }
-  // 期末日 = 当期の決算月の末日（3月決算なら2026年3月31日）
-  // new Date(year, month, 0) は前月の末日を返す → fiscalMonth=3なら new Date(year, 3, 0) = 3月31日
-  const periodEndYear = startMonth === 1 ? fyStartYear : fyStartYear + 1;
-  const periodEnd = new Date(periodEndYear, fiscalMonth, 0);
 
   return loans.filter(l => {
     const loanStart = l.start ? new Date(l.start) : null;
 
-    // 開始日がない融資（当座貸越等）: 残高ありなら表示
+    // 開始日がない融資（当座貸越等）: 残高ありなら常に表示
     if (!loanStart) return l.balance > 0;
 
-    // 融資の完済予定日を算出
-    let loanEnd = null;
-    if (l.endDate) {
-      loanEnd = new Date(l.endDate);
-    } else if (l.term && l.term > 0) {
-      loanEnd = new Date(loanStart.getFullYear(), loanStart.getMonth() + l.term, loanStart.getDate());
-    }
-
-    // 完済予定日が不明な場合: 残高で判定
-    if (!loanEnd) return l.balance > 0;
-
-    // 融資期間 [loanStart, loanEnd] と対象期間 [filterStart, periodEnd] が重なるか
-    return loanStart <= periodEnd && loanEnd >= filterStart;
+    // 融資開始日がフィルタ起点日以降かで判定
+    return loanStart >= filterStart;
   });
 }
 
