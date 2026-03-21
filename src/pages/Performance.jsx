@@ -44,18 +44,16 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
   // テーブル表示モード（単月 / 累積）
   const [tableMode, setTableMode] = useState("monthly");
 
-  // グラフ表示切り替え
-  const [chartMetric, setChartMetric] = useState("sales");
-
   // インライン編集
   const [editing, setEditing] = useState(null);
   const [editVal, setEditVal] = useState("");
   const inputRef = useRef(null);
   useEffect(() => { if (editing && inputRef.current) inputRef.current.focus(); }, [editing]);
 
-  // チャート
-  const chartRef = useRef(null);
-  const chartInst = useRef(null);
+  // チャート（4つ: 売上、販管費、粗利、営業利益）
+  const salesRef = useRef(null), sgaRef = useRef(null);
+  const grossRef = useRef(null), opRef = useRef(null);
+  const c1 = useRef(null), c2 = useRef(null), c3 = useRef(null), c4 = useRef(null);
 
   // 月次データを統合（fiscalMonths順に並べる）
   const mergedData = fiscalMonths.map((m) => {
@@ -205,59 +203,61 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
     setUploadMsg({ type: "success", text: `${getFiscalYearLabel(fiscalMonth, selectedFY - 1)}実績 × ${growthRate}% で予算を生成しました` });
   }, [selectedFY, monthlyPLData, growthRate, bmData, fyKey, saveBudget, saveMonthlyPL]);
 
-  // グラフ指標の設定
-  const CHART_METRICS = {
-    sales: { label: "売上", budgetKey: "sb", actualKey: "sa", color: "rgba(91,141,239,.55)" },
-    gross: { label: "粗利", budgetKey: "gb", actualKey: "ga", color: "rgba(34,201,148,.55)" },
-    sga: { label: "販管費", budgetKey: null, actualKey: "sga", color: "rgba(229,168,58,.55)" },
-    op: { label: "営業利益", budgetKey: "ob", actualKey: "oa", color: "rgba(201,34,148,.55)" },
-  };
-
-  // チャート描画
+  // チャート描画（4チャート同時）
   useEffect(() => {
     Chart.defaults.color = "rgba(139,146,168,.7)";
     Chart.defaults.borderColor = "rgba(255,255,255,.04)";
-    chartInst.current?.destroy();
-    if (!hasData || !chartRef.current) return;
+    c1.current?.destroy(); c2.current?.destroy(); c3.current?.destroy(); c4.current?.destroy();
+    if (!hasData) return;
 
-    const metric = CHART_METRICS[chartMetric];
     const labels = fiscalMonths;
-    const datasets = [];
-
-    // 予算データセット（販管費以外）
-    if (metric.budgetKey) {
-      datasets.push({
-        label: `${metric.label}予算`,
-        data: mergedData.map((v) => v[metric.budgetKey]),
-        backgroundColor: "rgba(255,255,255,.06)",
-        borderRadius: 4,
-      });
-    }
-
-    // 実績データセット
-    datasets.push({
-      label: `${metric.label}実績`,
-      data: mergedData.map((v) => v[metric.actualKey]),
-      backgroundColor: metric.color,
-      borderRadius: 4,
-    });
-
-    chartInst.current = new Chart(chartRef.current, {
-      type: "bar",
-      data: { labels, datasets },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: chartLegend },
-        scales: {
-          y: { ticks: { callback: (v) => v + "万", font: chartFont }, grid: chartGrid },
-          x: { grid: { display: false }, ticks: { font: chartFont } },
-        },
+    const barOpts = (legend = true) => ({
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: legend ? chartLegend : { display: false } },
+      scales: {
+        y: { ticks: { callback: (v) => v + "万", font: chartFont }, grid: chartGrid },
+        x: { grid: { display: false }, ticks: { font: chartFont } },
       },
     });
 
-    return () => { chartInst.current?.destroy(); };
-  }, [mergedData, hasData, fiscalMonths, chartMetric]);
+    // 売上推移
+    if (salesRef.current) {
+      c1.current = new Chart(salesRef.current, {
+        type: "bar", data: { labels, datasets: [
+          { label: "予算", data: mergedData.map((v) => v.sb), backgroundColor: "rgba(255,255,255,.06)", borderRadius: 4 },
+          { label: "実績", data: mergedData.map((v) => v.sa), backgroundColor: "rgba(91,141,239,.55)", borderRadius: 4 },
+        ]}, options: barOpts(),
+      });
+    }
+    // 販管費推移
+    if (sgaRef.current) {
+      c2.current = new Chart(sgaRef.current, {
+        type: "bar", data: { labels, datasets: [
+          { label: "販管費", data: mergedData.map((v) => v.sga), backgroundColor: "rgba(229,168,58,.55)", borderRadius: 4 },
+        ]}, options: barOpts(false),
+      });
+    }
+    // 粗利推移
+    if (grossRef.current) {
+      c3.current = new Chart(grossRef.current, {
+        type: "bar", data: { labels, datasets: [
+          { label: "予算", data: mergedData.map((v) => v.gb), backgroundColor: "rgba(255,255,255,.06)", borderRadius: 4 },
+          { label: "実績", data: mergedData.map((v) => v.ga), backgroundColor: "rgba(34,201,148,.55)", borderRadius: 4 },
+        ]}, options: barOpts(),
+      });
+    }
+    // 営業利益推移
+    if (opRef.current) {
+      c4.current = new Chart(opRef.current, {
+        type: "bar", data: { labels, datasets: [
+          { label: "予算", data: mergedData.map((v) => v.ob), backgroundColor: "rgba(255,255,255,.06)", borderRadius: 4 },
+          { label: "実績", data: mergedData.map((v) => v.oa), backgroundColor: "rgba(201,34,148,.55)", borderRadius: 4 },
+        ]}, options: barOpts(),
+      });
+    }
+
+    return () => { c1.current?.destroy(); c2.current?.destroy(); c3.current?.destroy(); c4.current?.destroy(); };
+  }, [mergedData, hasData, fiscalMonths]);
 
   // 未達ワースト3
   const worst = mergedData
@@ -401,17 +401,18 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
           </div>
         )}
 
-        {/* チャート（タブ切り替え） */}
-        <div className="c">
-          <div className="ch">
-            <div><div className="ct">予実推移</div></div>
-            <div className="perf-chart-tabs">
-              {Object.entries(CHART_METRICS).map(([key, m]) => (
-                <button key={key} className={`chip ${chartMetric === key ? "on" : ""}`} onClick={() => setChartMetric(key)}>{m.label}</button>
-              ))}
-            </div>
+        {/* チャート 2×2グリッド */}
+        <div className="g2">
+          {/* 左列: 売上 + 販管費 */}
+          <div className="g" style={{ gap: 14 }}>
+            <div className="c"><div className="ch"><div><div className="ct">売上推移</div></div></div><div className="cb"><div className="chart"><canvas ref={salesRef} /></div></div></div>
+            <div className="c"><div className="ch"><div><div className="ct">販管費推移</div></div></div><div className="cb"><div className="chart"><canvas ref={sgaRef} /></div></div></div>
           </div>
-          <div className="cb"><div className="chart tall"><canvas ref={chartRef} /></div></div>
+          {/* 右列: 粗利 + 営業利益 */}
+          <div className="g" style={{ gap: 14 }}>
+            <div className="c"><div className="ch"><div><div className="ct">粗利推移</div></div></div><div className="cb"><div className="chart"><canvas ref={grossRef} /></div></div></div>
+            <div className="c"><div className="ch"><div><div className="ct">営業利益推移</div></div></div><div className="cb"><div className="chart"><canvas ref={opRef} /></div></div></div>
+          </div>
         </div>
 
         {/* 月次予実テーブル */}
