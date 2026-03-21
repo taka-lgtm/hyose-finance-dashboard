@@ -381,20 +381,20 @@ td.cell-edited .ctv{color:var(--ac)}
 .bal-tbl{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0}
 .bal-tbl th,.bal-tbl td{
   padding:9px 14px;font-size:11px;white-space:nowrap;
-  border-bottom:1px solid rgba(255,255,255,.04);
+  border-bottom:1px solid var(--bd);
 }
 .bal-tbl th{
   font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;
-  color:var(--tx3);background:rgba(19,21,29,.98);
+  color:var(--tx3);background:var(--bg2);
   position:sticky;top:0;z-index:3;
 }
 .bal-tbl td{vertical-align:middle}
-.bal-tbl tr:hover td{background:rgba(255,255,255,.02)}
+.bal-tbl tr:hover td{background:var(--stripe)}
 
 /* Sticky left columns */
 .bal-tbl th.sticky,.bal-tbl td.sticky{
   position:sticky;z-index:4;
-  background:rgba(19,21,29,.98);
+  background:var(--bg2);
 }
 .bal-tbl th.sticky{z-index:5}
 .bal-tbl .sticky-0{left:0;min-width:130px}
@@ -402,7 +402,7 @@ td.cell-edited .ctv{color:var(--ac)}
 /* Divider shadow on last sticky col */
 .bal-tbl .sticky-1::after{
   content:'';position:absolute;top:0;right:-8px;bottom:0;width:8px;
-  background:linear-gradient(90deg,rgba(8,9,13,.5),transparent);
+  background:linear-gradient(90deg,var(--bg),transparent);
   pointer-events:none;
 }
 
@@ -418,18 +418,18 @@ td.cell-edited .ctv{color:var(--ac)}
 }
 .bal-tbl .cat-header-row td{
   font-weight:600;color:var(--tx);
-  border-top:2px solid rgba(91,141,239,.25);
-  background:rgba(91,141,239,.06);
+  border-top:2px solid var(--bl);
+  background:var(--blB);
   font-size:11px;
   padding-top:10px;padding-bottom:10px;
 }
-.bal-tbl .cat-header-row td.sticky{background:rgba(20,23,35,.96)}
+.bal-tbl .cat-header-row td.sticky{background:var(--bg2)}
 .bal-tbl .total-row td{
   font-weight:700;color:var(--tx);
-  border-top:2px solid rgba(255,255,255,.1);
-  background:rgba(255,255,255,.025);
+  border-top:2px solid var(--bdh);
+  background:var(--stripe);
 }
-.bal-tbl .total-row td.sticky{background:rgba(25,28,39,.98)}
+.bal-tbl .total-row td.sticky{background:var(--bg2)}
 
 /* 予実管理のタブ切り替え */
 .perf-chart-tabs,.perf-table-tabs{display:flex;gap:4px}
@@ -1108,5 +1108,5 @@ select.form-input option{background:var(--sf);color:var(--tx)}
 .settings-logo-preview img{max-height:48px;max-width:200px;object-fit:contain}
 
 /* ── 資金繰り合計行 ── */
-.cf-total-row{border-top:2px solid var(--bd);background:rgba(255,255,255,.02);font-weight:600}
+.cf-total-row{border-top:2px solid var(--bd);background:var(--stripe);font-weight:600}
 .cf-total-row td{padding-top:10px;padding-bottom:10px}

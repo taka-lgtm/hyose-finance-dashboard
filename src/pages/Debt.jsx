@@ -208,7 +208,7 @@ function BalanceView({ proj, wRate, tMon, loans, bankFilter, onEdit }) {
 
   const getCategoryStyle = (cat) => {
     if (cat === "短期") return { borderDash: [6, 3], borderColor: "#e5a83a" };
-    if (cat === "当座貸越") return { borderDash: [3, 3], borderColor: "rgba(255,255,255,.3)" };
+    if (cat === "当座貸越") return { borderDash: [3, 3], borderColor: "rgba(128,128,128,.4)" };
     return { borderDash: [], borderColor: null };
   };
 
@@ -265,7 +265,7 @@ function BalanceView({ proj, wRate, tMon, loans, bankFilter, onEdit }) {
     <div className="g2">
       <div className="c"><div className="ch"><div><div className="ct">12ヶ月後 借入残高予測</div></div></div>
         <div className="cb"><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-          <div style={{ textAlign: "center", padding: 16, borderRadius: "var(--rs)", background: "rgba(255,255,255,.02)", border: "1px solid var(--bd)" }}><div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>現在残高</div><div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 24, fontWeight: 700, marginTop: 6 }}>{MY(curTotal)}</div></div>
+          <div style={{ textAlign: "center", padding: 16, borderRadius: "var(--rs)", background: "var(--stripe)", border: "1px solid var(--bd)" }}><div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>現在残高</div><div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 24, fontWeight: 700, marginTop: 6 }}>{MY(curTotal)}</div></div>
           <div style={{ textAlign: "center", padding: 16, borderRadius: "var(--rs)", background: "rgba(34,201,148,.04)", border: "1px solid rgba(34,201,148,.12)" }}><div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>12ヶ月後 予測</div><div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 24, fontWeight: 700, color: "var(--ac)", marginTop: 6 }}>{MY(endTotal)}</div><div style={{ fontSize: 10, color: "var(--ac)", marginTop: 4 }}>▼{MY(curTotal - endTotal)} 減少</div></div>
         </div></div></div>
       <div className="c"><div className="ch"><div><div className="ct">エクスポート</div></div></div>
@@ -401,7 +401,7 @@ function AnalysisView({ bSum, bankInt, totalInt, fixedBal, varBal, loans, sorted
           <div className="int-bar"><div className="ib-fill" style={{ width: pv + "%", background: b.color }} /></div>
         </div>
       ); })}
-      <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,.05)", display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 700 }}><span>合計</span><span className="mono">{valFmt(total)}</span></div>
+      <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid var(--bd)", display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 700 }}><span>合計</span><span className="mono">{valFmt(total)}</span></div>
     </div>
   );
 
