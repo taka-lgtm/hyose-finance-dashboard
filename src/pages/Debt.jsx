@@ -11,7 +11,7 @@ Chart.register(...registerables);
 
 const VIEWS = { balance: "残高推移", table: "一覧", schedule: "スケジュール", analysis: "分析", logs: "ログ" };
 const CATEGORIES = ["長期", "短期", "当座貸越"];
-const PERIOD_FILTERS = { thisMonth: "今月", thisPeriod: "今期", last2: "直近2期", last3: "直近3期" };
+const PERIOD_FILTERS = { all: "全期間", thisPeriod: "今期", last2: "直近2期", last3: "直近3期" };
 
 // 期間フィルタのロジック
 // 「今月」は残高ベース、それ以外は融資開始日(start)がフィルタ起点以降かで判定
@@ -28,9 +28,9 @@ function filterLoansByPeriod(loans, period, fiscalMonth) {
   if (now.getMonth() + 1 < startMonth) fyStartYear--;
   const thisPeriodStart = new Date(fyStartYear, startMonth - 1, 1);
 
-  // 今月: 残高 > 0 のみ
-  if (period === "thisMonth") {
-    return loans.filter(l => l.balance > 0);
+  // 全期間: フィルタなし（残高ゼロの完済済み融資も含む）
+  if (period === "all") {
+    return loans;
   }
 
   // フィルタの起点日を決定
@@ -67,7 +67,7 @@ export default function Debt({ loans, addLoan, updateLoan, removeLoan, loading, 
   const [view, setView] = useState("balance");
   const [bankFilter, setBankFilter] = useState("all");
   const [catFilter, setCatFilter] = useState("all");
-  const [periodFilter, setPeriodFilter] = useState("thisMonth");
+  const [periodFilter, setPeriodFilter] = useState("all");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingLoan, setEditingLoan] = useState(null);
 
