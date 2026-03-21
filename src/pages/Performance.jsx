@@ -361,7 +361,7 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
           </select>
           {canEdit && (
             <div ref={menuRef} style={{ position: "relative" }}>
-              <button className="btn pr" onClick={() => setShowMenu(!showMenu)} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, padding: "6px 12px" }}>
+              <button className="btn pr" onClick={() => setShowMenu(!showMenu)} style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 <span>操作</span>
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M2 3.5L5 7l3-3.5H2z"/></svg>
               </button>

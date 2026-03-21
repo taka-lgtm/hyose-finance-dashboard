@@ -78,8 +78,8 @@ button,input,select{font:inherit;color:inherit}
 .main{padding:24px 28px 48px;min-width:0}
 .page{max-width:1260px;margin:0 auto}
 .ph{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--bd);flex-wrap:wrap}
-.ph h2{font-family:'DM Sans';font-size:24px;font-weight:700;letter-spacing:-.03em;line-height:1}
-.ph p{font-size:14px;color:var(--tx3);margin-top:5px}
+.ph h2{font-family:'DM Sans';font-size:20px;font-weight:600;letter-spacing:-.02em;line-height:1}
+.ph p{font-size:13px;color:var(--tx3);margin-top:5px}
 .pa{display:flex;gap:6px;flex-wrap:wrap}
 
 /* Btns */
