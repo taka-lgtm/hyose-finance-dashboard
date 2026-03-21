@@ -14,9 +14,14 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
   // 年度切り替え
   const currentFY = getFiscalYear(fiscalMonth);
   const [selectedFY, setSelectedFY] = useState(currentFY);
-  // 利用可能な年度リスト（月次PL実績のデータからキーを抽出）
-  const availableYears = monthlyPLData ? [...new Set(Object.keys(monthlyPLData))].sort() : [];
-  const fyOptions = availableYears.length > 0 ? availableYears.map(Number) : [currentFY];
+  // 利用可能な年度リスト（月次PL・予算データのキー + 前後年度を含む）
+  const dataYears = new Set([
+    ...(monthlyPLData ? Object.keys(monthlyPLData).map(Number) : []),
+    ...(bmData ? Object.keys(bmData).map(Number) : []),
+  ]);
+  dataYears.add(currentFY);
+  dataYears.add(currentFY - 1);
+  const fyOptions = [...dataYears].filter(Boolean).sort();
 
   // 選択年度のデータを取得
   const fyKey = String(selectedFY);
@@ -121,16 +126,16 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
       const result = generateMonthlyPLData(buffer, fiscalMonth);
       if (!result.length) throw new Error("データを抽出できませんでした");
 
-      // 年度を推定（CSVの月データから）
-      // CSVのデータは1年度分なので、選択中の年度に保存
-      const newData = { ...(monthlyPLData || {}), [fyKey]: result };
+      // 選択中の年度に保存
+      const targetFY = String(selectedFY);
+      const newData = { ...(monthlyPLData || {}), [targetFY]: result };
       await saveMonthlyPL(newData);
-      setUploadMsg({ type: "success", text: `${result.length}ヶ月分のPL実績データを登録しました（${selectedFY}年度）` });
+      setUploadMsg({ type: "success", text: `${result.length}ヶ月分のPL実績データを${selectedFY}年度（${(fiscalMonth % 12) + 1}月〜${fiscalMonth}月）に登録しました` });
     } catch (e) {
       setUploadMsg({ type: "error", text: e.message || "CSVの解析に失敗しました" });
     }
     setUploading(false);
-  }, [saveMonthlyPL, fiscalMonth, fyKey, monthlyPLData, selectedFY]);
+  }, [saveMonthlyPL, fiscalMonth, monthlyPLData, selectedFY]);
 
   // 予算セル編集
   const startEdit = (mi, field) => {
@@ -240,7 +245,7 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
           {/* 年度切り替え */}
           <select className="fy-select" value={selectedFY} onChange={(e) => setSelectedFY(Number(e.target.value))}>
             {fyOptions.map((y) => (
-              <option key={y} value={y}>{y}年度</option>
+              <option key={y} value={y}>{y}年度（{(fiscalMonth % 12) + 1}月〜{fiscalMonth}月）</option>
             ))}
           </select>
           {canEdit && <>
