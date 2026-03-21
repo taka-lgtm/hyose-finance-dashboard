@@ -38,12 +38,14 @@ function filterLoansByPeriod(loans, period, fiscalMonth) {
   if (now.getMonth() + 1 < startMonth) fyStartYear--;
   const thisPeriodStart = new Date(fyStartYear, startMonth - 1, 1);
 
-  // フィルタの起点日を決定
+  // 今月: 残高 > 0 のみ（期間判定不要）
+  if (period === "thisMonth") {
+    return loans.filter(l => l.balance > 0);
+  }
+
+  // 対象期間の開始日・終了日を算出
   let filterStart;
   switch (period) {
-    case "thisMonth":
-      filterStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      break;
     case "thisPeriod":
       filterStart = thisPeriodStart;
       break;
@@ -58,13 +60,20 @@ function filterLoansByPeriod(loans, period, fiscalMonth) {
     default:
       filterStart = thisPeriodStart;
   }
+  // 期末日 = 当期の期首日の前日（= 決算月の末日）
+  const filterEnd = new Date(thisPeriodStart.getFullYear() + 1, thisPeriodStart.getMonth(), 0);
 
   return loans.filter(l => {
-    // 融資開始日がfilterStart以降、またはbalanceが0より大きい（まだ返済中）
-    const started = l.start ? new Date(l.start) : null;
-    if (started && started >= filterStart) return true;
-    if (l.balance > 0 && started && started < filterStart) return true;
-    return false;
+    const loanStart = l.start ? new Date(l.start) : null;
+
+    // 開始日がない融資: 残高ありなら表示
+    if (!loanStart) return l.balance > 0;
+
+    // 融資の完済予定日を算出（start + term）
+    const loanEnd = getLoanEndDate(l);
+
+    // 融資期間 [loanStart, loanEnd] と対象期間 [filterStart, filterEnd] が重なるか
+    return loanStart <= filterEnd && loanEnd >= filterStart;
   });
 }
 
