@@ -25,8 +25,8 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
 
   // 選択年度のデータを取得
   const fyKey = String(selectedFY);
-  const actuals = monthlyPLData?.[fyKey] || null; // [{m, sales, cogs, grossProfit, sgaExpenses, operatingProfit}]
-  const budget = bmData?.[fyKey] || null; // [{m, sb, gb, ob}]
+  const actuals = monthlyPLData?.[fyKey] || null;
+  const budget = bmData?.[fyKey] || null;
 
   const hasActuals = actuals && actuals.length > 0;
   const hasBudget = budget && budget.length > 0;
@@ -41,15 +41,21 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState(null);
 
+  // テーブル表示モード（単月 / 累積）
+  const [tableMode, setTableMode] = useState("monthly");
+
+  // グラフ表示切り替え
+  const [chartMetric, setChartMetric] = useState("sales");
+
   // インライン編集
-  const [editing, setEditing] = useState(null); // "row-col"
+  const [editing, setEditing] = useState(null);
   const [editVal, setEditVal] = useState("");
   const inputRef = useRef(null);
   useEffect(() => { if (editing && inputRef.current) inputRef.current.focus(); }, [editing]);
 
   // チャート
-  const sRef = useRef(null), oRef = useRef(null);
-  const c1 = useRef(null), c2 = useRef(null);
+  const chartRef = useRef(null);
+  const chartInst = useRef(null);
 
   // 月次データを統合（fiscalMonths順に並べる）
   const mergedData = fiscalMonths.map((m) => {
@@ -57,11 +63,11 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
     const bud = budget?.find((b) => b.m === m);
     return {
       m,
-      // 実績
       sa: act?.sales ?? null,
+      ca: act?.cogs ?? null,
       ga: act?.grossProfit ?? null,
+      sga: act?.sgaExpenses ?? null,
       oa: act?.operatingProfit ?? null,
-      // 予算
       sb: bud?.sb ?? null,
       gb: bud?.gb ?? null,
       ob: bud?.ob ?? null,
@@ -75,6 +81,21 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
     }
     return -1;
   })();
+
+  // 累積データを計算（各月までのYTD）
+  const cumulativeData = mergedData.map((_, i) => {
+    const cum = { sa: 0, ga: 0, oa: 0, sb: 0, gb: 0, ob: 0 };
+    for (let j = 0; j <= i; j++) {
+      const v = mergedData[j];
+      if (v.sa !== null) cum.sa += v.sa;
+      if (v.ga !== null) cum.ga += v.ga;
+      if (v.oa !== null) cum.oa += v.oa;
+      cum.sb += v.sb || 0;
+      cum.gb += v.gb || 0;
+      cum.ob += v.ob || 0;
+    }
+    return cum;
+  });
 
   // YTD集計（実績がある月まで）
   const ytd = mergedData.reduce((acc, v, i) => {
@@ -126,7 +147,6 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
       const result = generateMonthlyPLData(buffer, fiscalMonth);
       if (!result.length) throw new Error("データを抽出できませんでした");
 
-      // 選択中の年度に保存
       const targetFY = String(selectedFY);
       const newData = { ...(monthlyPLData || {}), [targetFY]: result };
       await saveMonthlyPL(newData);
@@ -185,42 +205,59 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
     setUploadMsg({ type: "success", text: `${selectedFY - 1}年度実績 × ${growthRate}% で予算を生成しました` });
   }, [selectedFY, monthlyPLData, growthRate, bmData, fyKey, saveBudget, saveMonthlyPL]);
 
+  // グラフ指標の設定
+  const CHART_METRICS = {
+    sales: { label: "売上", budgetKey: "sb", actualKey: "sa", color: "rgba(91,141,239,.55)" },
+    gross: { label: "粗利", budgetKey: "gb", actualKey: "ga", color: "rgba(34,201,148,.55)" },
+    sga: { label: "販管費", budgetKey: null, actualKey: "sga", color: "rgba(229,168,58,.55)" },
+    op: { label: "営業利益", budgetKey: "ob", actualKey: "oa", color: "rgba(201,34,148,.55)" },
+  };
+
   // チャート描画
   useEffect(() => {
     Chart.defaults.color = "rgba(139,146,168,.7)";
     Chart.defaults.borderColor = "rgba(255,255,255,.04)";
-    c1.current?.destroy(); c2.current?.destroy();
-    if (!hasData) return;
+    chartInst.current?.destroy();
+    if (!hasData || !chartRef.current) return;
 
+    const metric = CHART_METRICS[chartMetric];
     const labels = fiscalMonths;
-    const opts = { type: "bar", options: { responsive: true, maintainAspectRatio: false, plugins: { legend: chartLegend }, scales: { y: { ticks: { callback: (v) => v + "万", font: chartFont }, grid: chartGrid }, x: { grid: { display: false }, ticks: { font: chartFont } } } } };
+    const datasets = [];
 
-    if (sRef.current) {
-      c1.current = new Chart(sRef.current, {
-        ...opts,
-        data: {
-          labels,
-          datasets: [
-            { label: "売上予算", data: mergedData.map((v) => v.sb), backgroundColor: "rgba(255,255,255,.06)", borderRadius: 4 },
-            { label: "売上実績", data: mergedData.map((v) => v.sa), backgroundColor: "rgba(91,141,239,.55)", borderRadius: 4 },
-          ],
-        },
+    // 予算データセット（販管費以外）
+    if (metric.budgetKey) {
+      datasets.push({
+        label: `${metric.label}予算`,
+        data: mergedData.map((v) => v[metric.budgetKey]),
+        backgroundColor: "rgba(255,255,255,.06)",
+        borderRadius: 4,
       });
     }
-    if (oRef.current) {
-      c2.current = new Chart(oRef.current, {
-        ...opts,
-        data: {
-          labels,
-          datasets: [
-            { label: "営利予算", data: mergedData.map((v) => v.ob), backgroundColor: "rgba(255,255,255,.06)", borderRadius: 4 },
-            { label: "営利実績", data: mergedData.map((v) => v.oa), backgroundColor: "rgba(34,201,148,.55)", borderRadius: 4 },
-          ],
+
+    // 実績データセット
+    datasets.push({
+      label: `${metric.label}実績`,
+      data: mergedData.map((v) => v[metric.actualKey]),
+      backgroundColor: metric.color,
+      borderRadius: 4,
+    });
+
+    chartInst.current = new Chart(chartRef.current, {
+      type: "bar",
+      data: { labels, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: chartLegend },
+        scales: {
+          y: { ticks: { callback: (v) => v + "万", font: chartFont }, grid: chartGrid },
+          x: { grid: { display: false }, ticks: { font: chartFont } },
         },
-      });
-    }
-    return () => { c1.current?.destroy(); c2.current?.destroy(); };
-  }, [mergedData, hasData, fiscalMonths]);
+      },
+    });
+
+    return () => { chartInst.current?.destroy(); };
+  }, [mergedData, hasData, fiscalMonths, chartMetric]);
 
   // 未達ワースト3
   const worst = mergedData
@@ -233,6 +270,23 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
   const ytdSalesRate = achieveRate(ytd.sa, ytd.sb);
   const ytdGrossRate = achieveRate(ytd.ga, ytd.gb);
   const ytdOpRate = achieveRate(ytd.oa, ytd.ob);
+
+  // 編集可能セルのレンダラー
+  const EditableCell = ({ mi, field, value }) => (
+    <td className="tr mono">
+      {editing === `${mi}-${field}` ? (
+        <input ref={inputRef} type="number" className="cell-edit-input" value={editVal}
+          onChange={(e) => setEditVal(e.target.value)}
+          onBlur={() => commitEdit(mi, field)}
+          onKeyDown={(e) => { if (e.key === "Enter") commitEdit(mi, field); if (e.key === "Escape") setEditing(null); }}
+        />
+      ) : (
+        <span className={canEdit && saveBudget ? "cell-editable" : ""} onClick={() => startEdit(mi, field)}>
+          {value !== null ? M(value) : "-"}
+        </span>
+      )}
+    </td>
+  );
 
   return (
     <div className="page"><div className="g">
@@ -249,14 +303,12 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
             ))}
           </select>
           {canEdit && <>
-            {/* PL CSVアップロード */}
             <button className="btn upload-compact-btn" onClick={() => plFileRef.current?.click()} disabled={uploading}>
               <input ref={plFileRef} type="file" accept=".csv" style={{ display: "none" }}
                 onChange={(e) => { handleUpload(e.target.files[0]); e.target.value = ""; }} />
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               <span>{uploading ? "解析中..." : "PL CSV取り込み"}</span>
             </button>
-            {/* 前年実績から予算生成 */}
             <button className="btn upload-compact-btn" onClick={() => setShowGrowthInput(!showGrowthInput)}>
               <span>前年実績から予算生成</span>
             </button>
@@ -349,118 +401,127 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
           </div>
         )}
 
-        {/* チャート */}
-        <div className="g2">
-          <div className="c"><div className="ch"><div><div className="ct">売上 予実推移</div></div></div><div className="cb"><div className="chart tall"><canvas ref={sRef} /></div></div></div>
-          <div className="c"><div className="ch"><div><div className="ct">営業利益 予実推移</div></div></div><div className="cb"><div className="chart tall"><canvas ref={oRef} /></div></div></div>
+        {/* チャート（タブ切り替え） */}
+        <div className="c">
+          <div className="ch">
+            <div><div className="ct">予実推移</div></div>
+            <div className="perf-chart-tabs">
+              {Object.entries(CHART_METRICS).map(([key, m]) => (
+                <button key={key} className={`chip ${chartMetric === key ? "on" : ""}`} onClick={() => setChartMetric(key)}>{m.label}</button>
+              ))}
+            </div>
+          </div>
+          <div className="cb"><div className="chart tall"><canvas ref={chartRef} /></div></div>
         </div>
 
         {/* 月次予実テーブル */}
         <div className="c">
-          <div className="ch"><div><div className="ct">月次予実 詳細</div><div className="cs">{selectedFY}年度（{(fiscalMonth % 12) + 1}月〜{fiscalMonth}月）— 予算セルはクリックで編集可能</div></div></div>
+          <div className="ch">
+            <div>
+              <div className="ct">月次予実 詳細</div>
+              <div className="cs">{selectedFY}年度（{(fiscalMonth % 12) + 1}月〜{fiscalMonth}月）— 予算セルはクリックで編集可能</div>
+            </div>
+            <div className="perf-table-tabs">
+              <button className={`chip ${tableMode === "monthly" ? "on" : ""}`} onClick={() => setTableMode("monthly")}>単月</button>
+              <button className={`chip ${tableMode === "cumulative" ? "on" : ""}`} onClick={() => setTableMode("cumulative")}>累積</button>
+            </div>
+          </div>
           <div className="cb tw">
-            <table>
-              <thead>
-                <tr>
-                  <th>月</th>
-                  <th className="tr">売上予算</th><th className="tr">売上実績</th><th className="tr">売上差異</th><th className="tr">達成率</th>
-                  <th className="tr">粗利予算</th><th className="tr">粗利実績</th>
-                  <th className="tr">営利予算</th><th className="tr">営利実績</th><th className="tr">営利差異</th>
-                </tr>
-              </thead>
-              <tbody>
-                {mergedData.map((v, i) => {
-                  const sd = v.sa !== null && v.sb !== null ? v.sa - v.sb : null;
-                  const od = v.oa !== null && v.ob !== null ? v.oa - v.ob : null;
-                  const sRate = achieveRate(v.sa, v.sb);
-                  const isCurrentOrPast = i <= currentMonthIdx;
+            {tableMode === "monthly" ? (
+              /* 単月テーブル */
+              <table>
+                <thead>
+                  <tr>
+                    <th>月</th>
+                    <th className="tr">売上予算</th><th className="tr">売上実績</th><th className="tr">売上差異</th><th className="tr">達成率</th>
+                    <th className="tr">粗利予算</th><th className="tr">粗利実績</th>
+                    <th className="tr">営利予算</th><th className="tr">営利実績</th><th className="tr">営利差異</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {mergedData.map((v, i) => {
+                    const sd = v.sa !== null && v.sb !== null ? v.sa - v.sb : null;
+                    const od = v.oa !== null && v.ob !== null ? v.oa - v.ob : null;
+                    const sRate = achieveRate(v.sa, v.sb);
 
-                  return (
-                    <tr key={i} style={i === currentMonthIdx ? { borderLeft: "2px solid var(--ac)" } : undefined}>
-                      <td className="bold">{v.m}</td>
-
-                      {/* 売上予算（編集可能） */}
-                      <td className="tr mono">
-                        {editing === `${i}-sb` ? (
-                          <input ref={inputRef} type="number" className="cell-edit-input" value={editVal}
-                            onChange={(e) => setEditVal(e.target.value)}
-                            onBlur={() => commitEdit(i, "sb")}
-                            onKeyDown={(e) => { if (e.key === "Enter") commitEdit(i, "sb"); if (e.key === "Escape") setEditing(null); }}
-                          />
-                        ) : (
-                          <span className={canEdit && saveBudget ? "cell-editable" : ""} onClick={() => startEdit(i, "sb")}>
-                            {v.sb !== null ? M(v.sb) : "-"}
-                          </span>
-                        )}
+                    return (
+                      <tr key={i} style={i === currentMonthIdx ? { borderLeft: "2px solid var(--ac)" } : undefined}>
+                        <td className="bold">{v.m}</td>
+                        <EditableCell mi={i} field="sb" value={v.sb} />
+                        <td className="tr mono">{v.sa !== null ? M(v.sa) : <span style={{ color: "var(--tx4)" }}>-</span>}</td>
+                        <td className="tr mono" style={{ color: sd !== null ? (sd >= 0 ? "var(--ac)" : "var(--rd)") : "" }}>
+                          {sd !== null ? `${sd >= 0 ? "+" : ""}${sd}万` : "-"}
+                        </td>
+                        <td className="tr mono" style={{ color: rateColor(sRate) }}>{fmtRate(sRate)}</td>
+                        <EditableCell mi={i} field="gb" value={v.gb} />
+                        <td className="tr mono">{v.ga !== null ? M(v.ga) : <span style={{ color: "var(--tx4)" }}>-</span>}</td>
+                        <EditableCell mi={i} field="ob" value={v.ob} />
+                        <td className="tr mono">{v.oa !== null ? M(v.oa) : <span style={{ color: "var(--tx4)" }}>-</span>}</td>
+                        <td className="tr mono" style={{ color: od !== null ? (od >= 0 ? "var(--ac)" : "var(--rd)") : "" }}>
+                          {od !== null ? `${od >= 0 ? "+" : ""}${od}万` : "-"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                {hasActuals && (
+                  <tfoot>
+                    <tr className="cf-total-row">
+                      <td className="bold">YTD合計</td>
+                      <td className="tr mono">{M(ytd.sb)}</td>
+                      <td className="tr mono">{M(ytd.sa)}</td>
+                      <td className="tr mono" style={{ color: ytd.sa - ytd.sb >= 0 ? "var(--ac)" : "var(--rd)" }}>
+                        {ytd.sa - ytd.sb >= 0 ? "+" : ""}{ytd.sa - ytd.sb}万
                       </td>
-                      <td className="tr mono">{v.sa !== null ? M(v.sa) : <span style={{ color: "var(--tx4)" }}>-</span>}</td>
-                      <td className="tr mono" style={{ color: sd !== null ? (sd >= 0 ? "var(--ac)" : "var(--rd)") : "" }}>
-                        {sd !== null ? `${sd >= 0 ? "+" : ""}${sd}万` : "-"}
-                      </td>
-                      <td className="tr mono" style={{ color: rateColor(sRate) }}>
-                        {fmtRate(sRate)}
-                      </td>
-
-                      {/* 粗利予算（編集可能） */}
-                      <td className="tr mono">
-                        {editing === `${i}-gb` ? (
-                          <input ref={inputRef} type="number" className="cell-edit-input" value={editVal}
-                            onChange={(e) => setEditVal(e.target.value)}
-                            onBlur={() => commitEdit(i, "gb")}
-                            onKeyDown={(e) => { if (e.key === "Enter") commitEdit(i, "gb"); if (e.key === "Escape") setEditing(null); }}
-                          />
-                        ) : (
-                          <span className={canEdit && saveBudget ? "cell-editable" : ""} onClick={() => startEdit(i, "gb")}>
-                            {v.gb !== null ? M(v.gb) : "-"}
-                          </span>
-                        )}
-                      </td>
-                      <td className="tr mono">{v.ga !== null ? M(v.ga) : <span style={{ color: "var(--tx4)" }}>-</span>}</td>
-
-                      {/* 営利予算（編集可能） */}
-                      <td className="tr mono">
-                        {editing === `${i}-ob` ? (
-                          <input ref={inputRef} type="number" className="cell-edit-input" value={editVal}
-                            onChange={(e) => setEditVal(e.target.value)}
-                            onBlur={() => commitEdit(i, "ob")}
-                            onKeyDown={(e) => { if (e.key === "Enter") commitEdit(i, "ob"); if (e.key === "Escape") setEditing(null); }}
-                          />
-                        ) : (
-                          <span className={canEdit && saveBudget ? "cell-editable" : ""} onClick={() => startEdit(i, "ob")}>
-                            {v.ob !== null ? M(v.ob) : "-"}
-                          </span>
-                        )}
-                      </td>
-                      <td className="tr mono">{v.oa !== null ? M(v.oa) : <span style={{ color: "var(--tx4)" }}>-</span>}</td>
-                      <td className="tr mono" style={{ color: od !== null ? (od >= 0 ? "var(--ac)" : "var(--rd)") : "" }}>
-                        {od !== null ? `${od >= 0 ? "+" : ""}${od}万` : "-"}
+                      <td className="tr mono" style={{ color: rateColor(ytdSalesRate) }}>{fmtRate(ytdSalesRate)}</td>
+                      <td className="tr mono">{M(ytd.gb)}</td>
+                      <td className="tr mono">{M(ytd.ga)}</td>
+                      <td className="tr mono">{M(ytd.ob)}</td>
+                      <td className="tr mono">{M(ytd.oa)}</td>
+                      <td className="tr mono" style={{ color: ytd.oa - ytd.ob >= 0 ? "var(--ac)" : "var(--rd)" }}>
+                        {ytd.oa - ytd.ob >= 0 ? "+" : ""}{ytd.oa - ytd.ob}万
                       </td>
                     </tr>
-                  );
-                })}
-              </tbody>
-              {/* 合計行 */}
-              {hasActuals && (
-                <tfoot>
-                  <tr className="cf-total-row">
-                    <td className="bold">YTD合計</td>
-                    <td className="tr mono">{M(ytd.sb)}</td>
-                    <td className="tr mono">{M(ytd.sa)}</td>
-                    <td className="tr mono" style={{ color: ytd.sa - ytd.sb >= 0 ? "var(--ac)" : "var(--rd)" }}>
-                      {ytd.sa - ytd.sb >= 0 ? "+" : ""}{ytd.sa - ytd.sb}万
-                    </td>
-                    <td className="tr mono" style={{ color: rateColor(ytdSalesRate) }}>{fmtRate(ytdSalesRate)}</td>
-                    <td className="tr mono">{M(ytd.gb)}</td>
-                    <td className="tr mono">{M(ytd.ga)}</td>
-                    <td className="tr mono">{M(ytd.ob)}</td>
-                    <td className="tr mono">{M(ytd.oa)}</td>
-                    <td className="tr mono" style={{ color: ytd.oa - ytd.ob >= 0 ? "var(--ac)" : "var(--rd)" }}>
-                      {ytd.oa - ytd.ob >= 0 ? "+" : ""}{ytd.oa - ytd.ob}万
-                    </td>
+                  </tfoot>
+                )}
+              </table>
+            ) : (
+              /* 累積テーブル */
+              <table>
+                <thead>
+                  <tr>
+                    <th>月</th>
+                    <th className="tr">売上累計予算</th><th className="tr">売上累計実績</th><th className="tr">達成率</th>
+                    <th className="tr">粗利累計予算</th><th className="tr">粗利累計実績</th><th className="tr">達成率</th>
+                    <th className="tr">営利累計予算</th><th className="tr">営利累計実績</th><th className="tr">達成率</th>
                   </tr>
-                </tfoot>
-              )}
-            </table>
+                </thead>
+                <tbody>
+                  {mergedData.map((v, i) => {
+                    const cum = cumulativeData[i];
+                    const hasAct = v.sa !== null;
+                    const sr = hasAct ? achieveRate(cum.sa, cum.sb) : null;
+                    const gr = hasAct ? achieveRate(cum.ga, cum.gb) : null;
+                    const or = hasAct ? achieveRate(cum.oa, cum.ob) : null;
+
+                    return (
+                      <tr key={i} style={i === currentMonthIdx ? { borderLeft: "2px solid var(--ac)" } : undefined}>
+                        <td className="bold">{v.m}</td>
+                        <td className="tr mono">{M(cum.sb)}</td>
+                        <td className="tr mono">{hasAct ? M(cum.sa) : <span style={{ color: "var(--tx4)" }}>-</span>}</td>
+                        <td className="tr mono" style={{ color: rateColor(sr) }}>{fmtRate(sr)}</td>
+                        <td className="tr mono">{M(cum.gb)}</td>
+                        <td className="tr mono">{hasAct ? M(cum.ga) : <span style={{ color: "var(--tx4)" }}>-</span>}</td>
+                        <td className="tr mono" style={{ color: rateColor(gr) }}>{fmtRate(gr)}</td>
+                        <td className="tr mono">{M(cum.ob)}</td>
+                        <td className="tr mono">{hasAct ? M(cum.oa) : <span style={{ color: "var(--tx4)" }}>-</span>}</td>
+                        <td className="tr mono" style={{ color: rateColor(or) }}>{fmtRate(or)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       </>}
