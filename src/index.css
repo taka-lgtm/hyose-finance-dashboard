@@ -23,7 +23,7 @@
 [data-theme="light"]{
   --bg:#f8f9fa;--bg2:#ffffff;--sf:#ffffff;--sf2:#f0f1f3;
   --bd:#e5e7eb;--bdh:#d1d5db;
-  --tx:#1a1a2e;--tx2:#6b7280;--tx3:#9ca3af;
+  --tx:#111827;--tx2:#4b5563;--tx3:#6b7280;
   --ac:#059669;--acB:rgba(5,150,105,.08);--acG:rgba(5,150,105,.15);
   --bl:#3b82f6;--blB:rgba(59,130,246,.08);
   --am:#d97706;--amB:rgba(217,119,6,.08);
@@ -37,6 +37,11 @@
   --stripe:rgba(0,0,0,.02);
   --logo-text:#fff;
 }
+[data-theme="light"] .k-label{font-weight:600}
+[data-theme="light"] .k-ctx{color:var(--tx2)}
+[data-theme="light"] th{font-weight:700;color:var(--tx2)}
+[data-theme="light"] td{color:var(--tx)}
+[data-theme="light"] .cs{color:var(--tx2)}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{background:var(--bg)}
 body{font-family:'Noto Sans JP','DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;-webkit-font-smoothing:antialiased}
