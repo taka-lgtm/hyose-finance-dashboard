@@ -40,8 +40,12 @@ export function getFiscalPeriodLabel(fiscalMonth) {
 
 /**
  * 決算月と日付から年度を判定する
- * 例: fiscalMonth=3, date=2025-04-01 → 2025
- * 例: fiscalMonth=3, date=2026-02-15 → 2025
+ * ルール: 期末月が属する年 - 1 = 年度
+ * 例: fiscalMonth=3（3月決算）
+ *   2025-04-01 → 2025年度（2026年3月期）
+ *   2026-02-15 → 2025年度（2026年3月期）
+ *   2026-03-31 → 2025年度（2026年3月期）
+ *   2026-04-01 → 2026年度（2027年3月期）
  */
 export function getFiscalYear(fiscalMonth, date = new Date()) {
   const d = typeof date === "string" ? new Date(date) : date;
@@ -51,6 +55,15 @@ export function getFiscalYear(fiscalMonth, date = new Date()) {
   const startMonth = (fiscalMonth % 12) + 1;
   if (startMonth === 1) return year; // 12月決算 → 1月始まり
   return month >= startMonth ? year : year - 1;
+}
+
+/**
+ * 年度の表示ラベルを生成する
+ * 例: getFiscalYearLabel(3, 2025) → "2025年度（2026年3月期）"
+ */
+export function getFiscalYearLabel(fiscalMonth, fy) {
+  const endYear = fiscalMonth <= 3 ? fy + 1 : fy; // 1-3月決算は翌年
+  return `${fy}年度（${endYear}年${fiscalMonth}月期）`;
 }
 
 export function SettingsProvider({ children }) {

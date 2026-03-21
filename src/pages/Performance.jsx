@@ -2,7 +2,7 @@ import { useRef, useEffect, useState, useCallback } from "react";
 import { Chart, registerables } from "chart.js";
 import { M, chartFont, chartGrid, chartLegend } from "../data";
 import { useSettings } from "../contexts/SettingsContext";
-import { getFiscalYear } from "../contexts/SettingsContext";
+import { getFiscalYear, getFiscalYearLabel } from "../contexts/SettingsContext";
 import { generateMonthlyPLData, readFileAsArrayBuffer } from "../lib/csvParser";
 
 Chart.register(...registerables);
@@ -150,7 +150,7 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
       const targetFY = String(selectedFY);
       const newData = { ...(monthlyPLData || {}), [targetFY]: result };
       await saveMonthlyPL(newData);
-      setUploadMsg({ type: "success", text: `${result.length}ヶ月分のPL実績データを${selectedFY}年度（${(fiscalMonth % 12) + 1}月〜${fiscalMonth}月）に登録しました` });
+      setUploadMsg({ type: "success", text: `${result.length}ヶ月分のPL実績データを${getFiscalYearLabel(fiscalMonth, selectedFY)}に登録しました` });
     } catch (e) {
       setUploadMsg({ type: "error", text: e.message || "CSVの解析に失敗しました" });
     }
@@ -189,7 +189,7 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
     const prevFY = String(selectedFY - 1);
     const prevActuals = monthlyPLData?.[prevFY];
     if (!prevActuals || prevActuals.length === 0) {
-      setUploadMsg({ type: "error", text: `${selectedFY - 1}年度の実績データがありません` });
+      setUploadMsg({ type: "error", text: `${getFiscalYearLabel(fiscalMonth, selectedFY - 1)}の実績データがありません` });
       return;
     }
     const rate = 1 + growthRate / 100;
@@ -202,7 +202,7 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
     const newBmData = { ...(bmData || {}), [fyKey]: generated };
     saveBudget(newBmData);
     setShowGrowthInput(false);
-    setUploadMsg({ type: "success", text: `${selectedFY - 1}年度実績 × ${growthRate}% で予算を生成しました` });
+    setUploadMsg({ type: "success", text: `${getFiscalYearLabel(fiscalMonth, selectedFY - 1)}実績 × ${growthRate}% で予算を生成しました` });
   }, [selectedFY, monthlyPLData, growthRate, bmData, fyKey, saveBudget, saveMonthlyPL]);
 
   // グラフ指標の設定
@@ -299,7 +299,7 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
           {/* 年度切り替え */}
           <select className="fy-select" value={selectedFY} onChange={(e) => setSelectedFY(Number(e.target.value))}>
             {fyOptions.map((y) => (
-              <option key={y} value={y}>{y}年度（{(fiscalMonth % 12) + 1}月〜{fiscalMonth}月）</option>
+              <option key={y} value={y}>{getFiscalYearLabel(fiscalMonth, y)}</option>
             ))}
           </select>
           {canEdit && <>
@@ -325,7 +325,7 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
               style={{ width: 60, padding: "4px 8px", background: "var(--bg3)", border: "1px solid var(--br)", borderRadius: 4, color: "var(--tx1)", fontSize: 13, textAlign: "right" }} />
             <span style={{ fontSize: 13, color: "var(--tx2)" }}>%</span>
             <button className="btn pr" onClick={generateFromPrevYear} style={{ fontSize: 12, padding: "4px 12px" }}>
-              {selectedFY - 1}年度実績 × {growthRate}% で生成
+              {getFiscalYearLabel(fiscalMonth, selectedFY - 1)}実績 × {growthRate}% で生成
             </button>
             <button className="btn" onClick={() => setShowGrowthInput(false)} style={{ fontSize: 12, padding: "4px 12px" }}>
               キャンセル
@@ -419,7 +419,7 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
           <div className="ch">
             <div>
               <div className="ct">月次予実 詳細</div>
-              <div className="cs">{selectedFY}年度（{(fiscalMonth % 12) + 1}月〜{fiscalMonth}月）— 予算セルはクリックで編集可能</div>
+              <div className="cs">{getFiscalYearLabel(fiscalMonth, selectedFY)} — 予算セルはクリックで編集可能</div>
             </div>
             <div className="perf-table-tabs">
               <button className={`chip ${tableMode === "monthly" ? "on" : ""}`} onClick={() => setTableMode("monthly")}>単月</button>
