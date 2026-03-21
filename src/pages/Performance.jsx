@@ -3,7 +3,7 @@ import { Chart, registerables } from "chart.js";
 import { M, chartFont, chartGrid, chartLegend } from "../data";
 import { useSettings } from "../contexts/SettingsContext";
 import { getFiscalYear, getFiscalYearLabel } from "../contexts/SettingsContext";
-import { generateMonthlyPLData, readFileAsArrayBuffer } from "../lib/csvParser";
+
 
 Chart.register(...registerables);
 
@@ -42,9 +42,7 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
   const [annualGross, setAnnualGross] = useState("");
   const [annualOp, setAnnualOp] = useState("");
 
-  // CSVアップロード
-  const plFileRef = useRef(null);
-  const [uploading, setUploading] = useState(false);
+
   const [uploadMsg, setUploadMsg] = useState(null);
 
   // アクションメニュー
@@ -150,26 +148,6 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
   const achieveRate = (actual, budget) => budget ? (actual / budget * 100) : null;
   const fmtRate = (rate) => rate == null ? "-" : rate.toFixed(1) + "%";
   const rateColor = (rate) => rate == null ? "" : rate >= 100 ? "var(--ac)" : "var(--rd)";
-
-  // CSVアップロード処理
-  const handleUpload = useCallback(async (file) => {
-    if (!file || !saveMonthlyPL) return;
-    setUploading(true);
-    setUploadMsg({ type: "info", text: "CSVを解析中..." });
-    try {
-      const buffer = await readFileAsArrayBuffer(file);
-      const result = generateMonthlyPLData(buffer, fiscalMonth);
-      if (!result.length) throw new Error("データを抽出できませんでした");
-
-      const targetFY = String(selectedFY);
-      const newData = { ...(monthlyPLData || {}), [targetFY]: result };
-      await saveMonthlyPL(newData);
-      setUploadMsg({ type: "success", text: `${result.length}ヶ月分のPL実績データを${getFiscalYearLabel(fiscalMonth, selectedFY)}に登録しました` });
-    } catch (e) {
-      setUploadMsg({ type: "error", text: e.message || "CSVの解析に失敗しました" });
-    }
-    setUploading(false);
-  }, [saveMonthlyPL, fiscalMonth, monthlyPLData, selectedFY]);
 
   // 予算セル編集
   const startEdit = (mi, field) => {
@@ -372,11 +350,6 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
               </button>
               {showMenu && (
                 <div style={{ position: "absolute", right: 0, top: "calc(100% + 4px)", background: "var(--bg2)", border: "1px solid var(--br)", borderRadius: 8, padding: "4px 0", minWidth: 200, zIndex: 100, boxShadow: "0 8px 24px rgba(0,0,0,.4)" }}>
-                  <button className="perf-menu-item" onClick={() => { plFileRef.current?.click(); setShowMenu(false); }} disabled={uploading}>
-                    <input ref={plFileRef} type="file" accept=".csv" style={{ display: "none" }}
-                      onChange={(e) => { handleUpload(e.target.files[0]); e.target.value = ""; }} />
-                    PL CSV取り込み
-                  </button>
                   <button className="perf-menu-item" onClick={() => { setShowBudgetInput(!showBudgetInput); setShowGrowthInput(false); setShowMenu(false); }}>
                     予算入力（年間金額）
                   </button>
