@@ -109,6 +109,31 @@ export async function saveMonthlyPL(data) {
 }
 
 // ═══════════════════════════════
+// ACTIONS（意思決定エンジン用）
+// ═══════════════════════════════
+
+const ACTIONS_COL = "actions";
+
+export async function fetchActions() {
+  const q = query(collection(db, ACTIONS_COL), orderBy("createdAt", "desc"));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+export async function addActionDoc(action) {
+  const ref = await addDoc(collection(db, ACTIONS_COL), { ...action, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+  return { id: ref.id, ...action };
+}
+
+export async function updateActionDoc(id, data) {
+  await updateDoc(doc(db, ACTIONS_COL, id), { ...data, updatedAt: serverTimestamp() });
+}
+
+export async function deleteActionDoc(id) {
+  await deleteDoc(doc(db, ACTIONS_COL, id));
+}
+
+// ═══════════════════════════════
 // SEED: Initialize Firestore with default data
 // ═══════════════════════════════
 

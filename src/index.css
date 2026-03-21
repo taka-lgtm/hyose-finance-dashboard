@@ -472,6 +472,34 @@ td.cell-edited .ctv{color:var(--ac)}
 .ob-nav{display:flex;justify-content:space-between;align-items:center;margin-top:24px;padding-top:16px;border-top:1px solid var(--bd)}
 @media(max-width:768px){.ob-container{padding:20px}.ob-progress-label{display:none}.ob-body{min-height:auto}}
 
+/* 意思決定エンジン（Actionsページ） */
+.act-list{display:flex;flex-direction:column;gap:10px}
+.act-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rs);padding:14px 16px;transition:border-color .15s}
+.act-card:hover{border-color:var(--bdh)}
+.act-card.act-done{opacity:.5}
+.act-top{display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.act-main{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.act-title{font-size:15px;font-weight:600;color:var(--tx)}
+.act-impact{font-size:18px;font-weight:700;white-space:nowrap}
+.act-impact-plus{color:var(--ac)}
+.act-impact-minus{color:var(--rd)}
+.act-detail{font-size:12px;color:var(--tx3);margin-top:4px}
+.act-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:10px;gap:8px;flex-wrap:wrap}
+.act-meta{display:flex;gap:10px;font-size:11px;color:var(--tx3);align-items:center}
+.act-del{background:none;border:none;color:var(--tx3);font-size:11px;cursor:pointer;padding:0}
+.act-del:hover{color:var(--rd)}
+.act-urgency{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px}
+.act-urgency-high{background:var(--rdB);color:var(--rd)}
+.act-urgency-medium{background:var(--amB);color:var(--am)}
+.act-urgency-low{background:var(--sf2);color:var(--tx3)}
+.act-auto-badge{font-size:10px;color:var(--bl);background:var(--blB);padding:2px 6px;border-radius:4px}
+.act-risk{padding:12px 16px;border-bottom:1px solid var(--bd)}
+.act-risk:last-child{border-bottom:none}
+.act-risk-header{display:flex;align-items:center;gap:8px}
+.act-risk-name{font-size:14px;font-weight:600;color:var(--tx);flex:1}
+.act-risk-impact{font-size:14px;font-weight:700;color:var(--am)}
+.act-risk-cond{font-size:12px;color:var(--tx3);margin-top:4px;margin-left:42px}
+
 /* Unit badge in header */
 .unit-badge{
   display:inline-flex;padding:2px 7px;border-radius:99px;

@@ -191,7 +191,7 @@ function Dashboard() {
     financials: <Financials plData={plData} bsData={bsData} loans={loans} savePL={canEdit ? savePL : null} saveBS={canEdit ? saveBS : null} canEdit={canEdit} />,
     cashflow: <CashFlow cfData={cfData} saveCF={canEdit ? saveCF : null} saveMonthlyPL={canEdit ? saveMonthlyPL : null} monthlyPLData={monthlyPLData} canEdit={canEdit} />,
     debt: <Debt loans={loans} addLoan={canEdit ? addLoan : null} updateLoan={canEdit ? updateLoan : null} removeLoan={canEdit ? removeLoan : null} loading={loansLoading} plData={plData} canEdit={canEdit} />,
-    actions: <Actions />,
+    actions: <Actions loans={loans} plData={plData} bsData={bsData} monthlyPLData={monthlyPLData} canEdit={canEdit} />,
     users: <Users />,
     settings: <Settings navigate={navigate} loans={loans} plData={plData} monthlyPLData={monthlyPLData} bmData={bmData} />,
     guide: <Guide />,
