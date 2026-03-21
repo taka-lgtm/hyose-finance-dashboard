@@ -1,4 +1,7 @@
-:root{
+:root{--nw:240px;--r:14px;--rs:8px;--e:cubic-bezier(.4,0,.2,1)}
+
+/* ダークテーマ（デフォルト） */
+[data-theme="dark"],:root{
   --bg:#08090d;--bg2:#0e1018;--sf:#13151d;--sf2:#191c27;
   --bd:rgba(255,255,255,.06);--bdh:rgba(255,255,255,.12);
   --tx:#e4e8f1;--tx2:#8b92a8;--tx3:#6b7389;
@@ -7,13 +10,30 @@
   --am:#e5a83a;--amB:rgba(229,168,58,.10);
   --rd:#e55b5b;--rdB:rgba(229,91,91,.10);
   --pu:#9b7cf6;--puB:rgba(155,124,246,.10);
-  --nw:240px;--r:14px;--rs:8px;--e:cubic-bezier(.4,0,.2,1);
+  --card-shadow:none;
+  --glow-opacity:.03;
+  --scrollbar-thumb:rgba(255,255,255,.08);
+}
+
+/* ライトテーマ */
+[data-theme="light"]{
+  --bg:#f8f9fa;--bg2:#ffffff;--sf:#ffffff;--sf2:#f0f1f3;
+  --bd:#e5e7eb;--bdh:#d1d5db;
+  --tx:#1a1a2e;--tx2:#6b7280;--tx3:#9ca3af;
+  --ac:#059669;--acB:rgba(5,150,105,.08);--acG:rgba(5,150,105,.15);
+  --bl:#3b82f6;--blB:rgba(59,130,246,.08);
+  --am:#d97706;--amB:rgba(217,119,6,.08);
+  --rd:#dc2626;--rdB:rgba(220,38,38,.08);
+  --pu:#7c3aed;--puB:rgba(124,58,237,.08);
+  --card-shadow:0 1px 3px rgba(0,0,0,.06);
+  --glow-opacity:0;
+  --scrollbar-thumb:rgba(0,0,0,.12);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{background:var(--bg)}
 body{font-family:'Noto Sans JP','DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;-webkit-font-smoothing:antialiased}
-body::before{content:'';position:fixed;top:-30vh;right:-20vw;width:60vw;height:60vh;background:radial-gradient(ellipse,rgba(34,201,148,.03),transparent 70%);pointer-events:none}
-::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:99px}
+body::before{content:'';position:fixed;top:-30vh;right:-20vw;width:60vw;height:60vh;background:radial-gradient(ellipse,rgba(34,201,148,var(--glow-opacity)),transparent 70%);pointer-events:none}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:99px}
 button,input,select{font:inherit;color:inherit}
 
 .shell{display:grid;grid-template-columns:var(--nw) 1fr;min-height:100vh;position:relative;z-index:1}

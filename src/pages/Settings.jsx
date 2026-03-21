@@ -130,6 +130,18 @@ export default function Settings({ navigate, loans, plData, monthlyPLData, bmDat
         <div className="cb">
           <div className="settings-grid">
             <div className="settings-field">
+              <label className="settings-label">テーマ</label>
+              <div className="settings-radio-group">
+                {[["dark", "ダーク"], ["light", "ライト"]].map(([val, label]) => (
+                  <label key={val} className={`settings-radio ${form.theme === val ? "active" : ""}`}>
+                    <input type="radio" name="theme" value={val} checked={form.theme === val}
+                      onChange={() => handleChange("theme", val)} style={{ display: "none" }} />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="settings-field">
               <label className="settings-label">金額単位</label>
               <div className="settings-radio-group">
                 {["万円", "千円", "円"].map((unit) => (

@@ -14,6 +14,7 @@ export const DEFAULT_SETTINGS = {
   amountUnit: "万円",       // "万円" | "千円" | "円"
   safetyLine: 4500,         // 安全水準ライン（万円）
   taxRate: 30,              // 法人実効税率（%）
+  theme: "dark",            // "dark" | "light"
 };
 
 /**

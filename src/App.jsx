@@ -24,6 +24,11 @@ function Dashboard() {
   const { settings, settingsLoading } = useSettings();
   const [page, setPage] = useState("overview");
 
+  // テーマをbodyに適用
+  useEffect(() => {
+    document.body.dataset.theme = settings.theme || "dark";
+  }, [settings.theme]);
+
   // ── Loans state (Firestore-backed) ──
   const [loans, setLoans] = useState([]);
   const [loansLoading, setLoansLoading] = useState(true);
