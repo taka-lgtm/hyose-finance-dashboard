@@ -11,6 +11,7 @@ import Debt from "./pages/Debt";
 import Actions from "./pages/Actions";
 import Users from "./pages/Users";
 import Settings from "./pages/Settings";
+import Guide from "./pages/Guide";
 import { INITIAL_LOANS, PL as DEFAULT_PL, BS as DEFAULT_BS, CF as DEFAULT_CF } from "./data";
 import { fetchLoans, addLoanDoc, updateLoanDoc, deleteLoanDoc, seedLoansIfEmpty, fetchFinancialData, saveFinancialData, saveBudget as saveBudgetDoc, saveMonthlyPL as saveMonthlyPLDoc, addLoanLog } from "./lib/firestore";
 
@@ -178,6 +179,7 @@ function Dashboard() {
     actions: <Actions />,
     users: <Users />,
     settings: <Settings />,
+    guide: <Guide />,
   };
 
   return (

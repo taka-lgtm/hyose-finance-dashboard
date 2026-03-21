@@ -404,6 +404,27 @@ td.cell-edited .ctv{color:var(--ac)}
 .perf-menu-item:hover{background:var(--bg3)}
 .perf-menu-item:disabled{opacity:.4;cursor:default}
 
+/* ガイドページ */
+.guide-steps{display:flex;flex-direction:column;gap:16px;margin-bottom:16px}
+.guide-step{display:flex;gap:14px;align-items:flex-start}
+.guide-step-num{width:28px;height:28px;border-radius:50%;background:var(--acB);color:var(--ac);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.guide-step-content{flex:1}
+.guide-step-title{font-size:14px;font-weight:600;color:var(--tx);margin-bottom:6px}
+.guide-ol{padding-left:18px;margin:0;font-size:13px;color:var(--tx2);line-height:1.8}
+.guide-ul{padding-left:18px;margin:4px 0 0;font-size:13px;color:var(--tx2);line-height:1.8}
+.guide-result{background:var(--acB);border:1px solid rgba(34,201,148,.15);border-radius:var(--rs);padding:12px 16px}
+.guide-result-title{font-size:13px;font-weight:600;color:var(--ac);margin-bottom:4px}
+.guide-events{display:flex;flex-direction:column;gap:16px}
+.guide-event{display:flex;gap:12px;align-items:flex-start}
+.guide-event-icon{font-size:20px;flex-shrink:0;width:28px;text-align:center}
+.guide-event-title{font-size:14px;font-weight:600;color:var(--tx);margin-bottom:2px}
+.guide-desc{font-size:13px;color:var(--tx2);margin:0 0 6px;line-height:1.6}
+.guide-accordion{border-bottom:1px solid var(--bd)}
+.guide-accordion:last-child{border-bottom:none}
+.guide-accordion-header{display:flex;align-items:center;justify-content:space-between;width:100%;padding:12px 16px;background:none;border:none;color:var(--tx);font-size:14px;font-weight:600;cursor:pointer;text-align:left}
+.guide-accordion-header:hover{background:var(--sf)}
+.guide-accordion-body{padding:0 16px 14px}
+
 /* Unit badge in header */
 .unit-badge{
   display:inline-flex;padding:2px 7px;border-radius:99px;
