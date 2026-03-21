@@ -25,6 +25,16 @@ function getLoanEndDate(loan) {
   return loan.balance > 0 ? new Date(2099, 11, 31) : new Date();
 }
 
+// 融資の実際の完済予定日を計算（2099年フォールバックを使わない）
+function getActualLoanEndDate(loan) {
+  if (loan.endDate) return new Date(loan.endDate);
+  if (loan.start && loan.term) {
+    const s = new Date(loan.start);
+    return new Date(s.getFullYear(), s.getMonth() + loan.term, s.getDate());
+  }
+  return null; // 完済予定日が不明
+}
+
 // 期間フィルタのロジック
 function filterLoansByPeriod(loans, periodKey, fiscalMonth) {
   const now = new Date();
@@ -53,18 +63,29 @@ function filterLoansByPeriod(loans, periodKey, fiscalMonth) {
 
   const result = loans.filter((l) => {
     const loanStart = l.start ? new Date(l.start) : null;
-    const loanEnd = getLoanEndDate(l);
+    const loanEnd = getActualLoanEndDate(l);
 
-    // 融資開始日が対象期間内
-    const startedInPeriod = loanStart && loanStart >= periodStart && loanStart <= periodEnd;
-    // 融資が対象期間中に活動していた（期間と重なる）
-    const activeInPeriod = loanStart
-      ? loanStart <= periodEnd && loanEnd >= periodStart
-      : l.balance > 0; // 開始日未設定で残高ありなら表示
+    // 開始日未設定の場合: 残高ありなら表示
+    if (!loanStart) {
+      const pass = l.balance > 0;
+      if (!pass) console.log(`[融資フィルタ] 除外: ${l.bank} ${l.name} (開始=未設定, 残高=${l.balance})`);
+      return pass;
+    }
 
-    const pass = startedInPeriod || activeInPeriod;
+    // 完済予定日が算出できる場合: 融資期間と対象期間が重なるかチェック
+    if (loanEnd) {
+      const activeInPeriod = loanStart <= periodEnd && loanEnd >= periodStart;
+      if (!activeInPeriod) {
+        console.log(`[融資フィルタ] 除外: ${l.bank} ${l.name} (開始=${l.start}, 完済予定=${loanEnd.toLocaleDateString()}, 残高=${l.balance})`);
+      }
+      return activeInPeriod;
+    }
+
+    // 完済予定日が不明な場合: 期間内に開始された、または残高ありなら表示
+    const startedInPeriod = loanStart >= periodStart && loanStart <= periodEnd;
+    const pass = startedInPeriod || l.balance > 0;
     if (!pass) {
-      console.log(`[融資フィルタ] 除外: ${l.bank} ${l.name} (開始=${l.start || "未設定"}, 残高=${l.balance})`);
+      console.log(`[融資フィルタ] 除外: ${l.bank} ${l.name} (開始=${l.start}, 完済予定=不明, 残高=${l.balance})`);
     }
     return pass;
   });
