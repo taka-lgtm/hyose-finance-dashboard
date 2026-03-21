@@ -5,7 +5,6 @@ import { BANK_COLORS, getBankColor } from "../data/banks";
 import { calcAllProjections } from "../lib/loanCalc";
 import { fetchLoanLogs } from "../lib/firestore";
 import { useSettings } from "../contexts/SettingsContext";
-import { getFiscalYear } from "../contexts/SettingsContext";
 import LoanModal from "../components/LoanModal";
 
 Chart.register(...registerables);
@@ -25,73 +24,48 @@ function getLoanEndDate(loan) {
   return loan.balance > 0 ? new Date(2099, 11, 31) : new Date();
 }
 
-// 融資の実際の完済予定日を計算（2099年フォールバックを使わない）
-function getActualLoanEndDate(loan) {
-  if (loan.endDate) return new Date(loan.endDate);
-  if (loan.start && loan.term) {
-    const s = new Date(loan.start);
-    return new Date(s.getFullYear(), s.getMonth() + loan.term, s.getDate());
-  }
-  return null; // 完済予定日が不明
-}
-
 // 期間フィルタのロジック
-function filterLoansByPeriod(loans, periodKey, fiscalMonth) {
-  const now = new Date();
-  const currentFY = getFiscalYear(fiscalMonth, now);
-  const startMonth = (fiscalMonth % 12) + 1; // 期首月
+function filterLoansByPeriod(loans, period, fiscalMonth) {
+  if (!loans || !loans.length) return loans;
 
-  // 今月: 現在残高がゼロでない融資のみ
-  if (periodKey === "thisMonth") {
-    const result = loans.filter((l) => l.balance > 0);
-    console.log(`[融資フィルタ] 今月: ${loans.length}件 → ${result.length}件（残高>0のみ）`);
-    return result;
+  const now = new Date();
+
+  // 期首月を算出（3月決算なら4月が期首）
+  const startMonth = (fiscalMonth % 12) + 1;
+
+  // 当期の期首日を算出
+  let fyStartYear = now.getFullYear();
+  if (now.getMonth() + 1 < startMonth) fyStartYear--;
+  const thisPeriodStart = new Date(fyStartYear, startMonth - 1, 1);
+
+  // フィルタの起点日を決定
+  let filterStart;
+  switch (period) {
+    case "thisMonth":
+      filterStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      break;
+    case "thisPeriod":
+      filterStart = thisPeriodStart;
+      break;
+    case "last2":
+      filterStart = new Date(thisPeriodStart);
+      filterStart.setFullYear(filterStart.getFullYear() - 1);
+      break;
+    case "last3":
+      filterStart = new Date(thisPeriodStart);
+      filterStart.setFullYear(filterStart.getFullYear() - 2);
+      break;
+    default:
+      filterStart = thisPeriodStart;
   }
 
-  // 期間の開始日・終了日を算出
-  let periodsBack = 0;
-  if (periodKey === "thisPeriod") periodsBack = 0;
-  else if (periodKey === "last2") periodsBack = 1;
-  else if (periodKey === "last3") periodsBack = 2;
-
-  const periodStartYear = currentFY - periodsBack;
-  const periodStart = new Date(periodStartYear, startMonth - 1, 1);
-  const endYear = currentFY + (startMonth > 1 ? 1 : 0);
-  const periodEnd = new Date(endYear, fiscalMonth, 0);
-
-  console.log(`[融資フィルタ] ${periodKey}: 期間 ${periodStart.toLocaleDateString()} 〜 ${periodEnd.toLocaleDateString()}, FY=${currentFY}`);
-
-  const result = loans.filter((l) => {
-    const loanStart = l.start ? new Date(l.start) : null;
-    const loanEnd = getActualLoanEndDate(l);
-
-    // 開始日未設定の場合: 残高ありなら表示
-    if (!loanStart) {
-      const pass = l.balance > 0;
-      if (!pass) console.log(`[融資フィルタ] 除外: ${l.bank} ${l.name} (開始=未設定, 残高=${l.balance})`);
-      return pass;
-    }
-
-    // 完済予定日が算出できる場合: 融資期間と対象期間が重なるかチェック
-    if (loanEnd) {
-      const activeInPeriod = loanStart <= periodEnd && loanEnd >= periodStart;
-      if (!activeInPeriod) {
-        console.log(`[融資フィルタ] 除外: ${l.bank} ${l.name} (開始=${l.start}, 完済予定=${loanEnd.toLocaleDateString()}, 残高=${l.balance})`);
-      }
-      return activeInPeriod;
-    }
-
-    // 完済予定日が不明な場合: 期間内に開始された、または残高ありなら表示
-    const startedInPeriod = loanStart >= periodStart && loanStart <= periodEnd;
-    const pass = startedInPeriod || l.balance > 0;
-    if (!pass) {
-      console.log(`[融資フィルタ] 除外: ${l.bank} ${l.name} (開始=${l.start}, 完済予定=不明, 残高=${l.balance})`);
-    }
-    return pass;
+  return loans.filter(l => {
+    // 融資開始日がfilterStart以降、またはbalanceが0より大きい（まだ返済中）
+    const started = l.start ? new Date(l.start) : null;
+    if (started && started >= filterStart) return true;
+    if (l.balance > 0 && started && started < filterStart) return true;
+    return false;
   });
-
-  console.log(`[融資フィルタ] ${periodKey}: ${loans.length}件 → ${result.length}件`);
-  return result;
 }
 
 export default function Debt({ loans, addLoan, updateLoan, removeLoan, loading, plData, canEdit = true }) {
