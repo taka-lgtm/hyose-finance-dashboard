@@ -42,6 +42,9 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
   const [annualGross, setAnnualGross] = useState("");
   const [annualOp, setAnnualOp] = useState("");
 
+  // 予算の変更前スナップショット（元に戻す用）
+  const [prevBudgetSnapshot, setPrevBudgetSnapshot] = useState(null);
+
 
   const [uploadMsg, setUploadMsg] = useState(null);
 
@@ -202,6 +205,20 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
     setUploadMsg({ type: "success", text: `${getFiscalYearLabel(fiscalMonth, selectedFY)}のデータを${getFiscalYearLabel(fiscalMonth, targetFY)}に移動しました` });
   }, [selectedFY, monthlyPLData, bmData, saveMonthlyPL, saveBudget, fiscalMonth]);
 
+  // 変更前の予算を保存してから上書きする共通処理
+  const saveBudgetWithSnapshot = useCallback((newBmData) => {
+    setPrevBudgetSnapshot(bmData ? JSON.parse(JSON.stringify(bmData)) : null);
+    saveBudget(newBmData);
+  }, [bmData, saveBudget]);
+
+  // 予算を元に戻す
+  const restoreBudget = useCallback(() => {
+    if (!prevBudgetSnapshot) return;
+    saveBudget(prevBudgetSnapshot);
+    setPrevBudgetSnapshot(null);
+    setUploadMsg({ type: "success", text: "予算を変更前の状態に戻しました" });
+  }, [prevBudgetSnapshot, saveBudget]);
+
   // 年間予算金額から月次予算を均等配分で生成
   const generateFromAnnual = useCallback(() => {
     if (!saveBudget) return;
@@ -217,10 +234,10 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
       ob: Math.round(op / 12),
     }));
     const newBmData = { ...(bmData || {}), [fyKey]: generated };
-    saveBudget(newBmData);
+    saveBudgetWithSnapshot(newBmData);
     setShowBudgetInput(false);
     setUploadMsg({ type: "success", text: `年間予算（売上${sales}万/粗利${gross}万/営利${op}万）を12ヶ月に配分しました` });
-  }, [annualSales, annualGross, annualOp, fiscalMonths, bmData, fyKey, saveBudget]);
+  }, [annualSales, annualGross, annualOp, fiscalMonths, bmData, fyKey, saveBudgetWithSnapshot]);
 
   // 前年実績から予算自動生成
   const generateFromPrevYear = useCallback(() => {
@@ -239,10 +256,10 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
       ob: Math.round(a.operatingProfit * rate),
     }));
     const newBmData = { ...(bmData || {}), [fyKey]: generated };
-    saveBudget(newBmData);
+    saveBudgetWithSnapshot(newBmData);
     setShowGrowthInput(false);
     setUploadMsg({ type: "success", text: `${getFiscalYearLabel(fiscalMonth, selectedFY - 1)}実績 × ${growthRate}% で予算を生成しました` });
-  }, [selectedFY, monthlyPLData, growthRate, bmData, fyKey, saveBudget, saveMonthlyPL]);
+  }, [selectedFY, monthlyPLData, growthRate, bmData, fyKey, saveBudgetWithSnapshot, saveMonthlyPL]);
 
   // チャート描画（4チャート同時）
   useEffect(() => {
@@ -350,7 +367,14 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
               </button>
               {showMenu && (
                 <div style={{ position: "absolute", right: 0, top: "calc(100% + 4px)", background: "var(--bg2)", border: "1px solid var(--br)", borderRadius: 8, padding: "4px 0", minWidth: 200, zIndex: 100, boxShadow: "0 8px 24px rgba(0,0,0,.4)" }}>
-                  <button className="perf-menu-item" onClick={() => { setShowBudgetInput(!showBudgetInput); setShowGrowthInput(false); setShowMenu(false); }}>
+                  <button className="perf-menu-item" onClick={() => {
+                    if (!showBudgetInput) {
+                      setAnnualSales(totalBudget.sales ? String(totalBudget.sales) : "");
+                      setAnnualGross(totalBudget.gross ? String(totalBudget.gross) : "");
+                      setAnnualOp(totalBudget.op ? String(totalBudget.op) : "");
+                    }
+                    setShowBudgetInput(!showBudgetInput); setShowGrowthInput(false); setShowMenu(false);
+                  }}>
                     予算入力（年間金額）
                   </button>
                   <button className="perf-menu-item" onClick={() => { setShowGrowthInput(!showGrowthInput); setShowBudgetInput(false); setShowMenu(false); }}>
@@ -421,6 +445,9 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
           {uploadMsg.type === "success" && <span style={{ fontSize: 16 }}>✓</span>}
           {uploadMsg.type === "error" && <span style={{ fontSize: 16 }}>✕</span>}
           <span>{uploadMsg.text}</span>
+          {prevBudgetSnapshot && uploadMsg.type === "success" && (
+            <button onClick={restoreBudget} style={{ background: "none", border: "1px solid currentColor", borderRadius: 4, color: "inherit", fontSize: 11, padding: "2px 8px", cursor: "pointer", marginLeft: 4, whiteSpace: "nowrap" }}>取り消し</button>
+          )}
           <button className="upload-msg-close" onClick={() => setUploadMsg(null)}>&times;</button>
         </div>
       )}
