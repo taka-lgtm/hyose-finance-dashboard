@@ -181,6 +181,33 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
     setEditing(null);
   };
 
+  // 選択中の年度データを別の年度に移動する
+  const moveDataToFY = useCallback(async (targetFY) => {
+    if (!saveMonthlyPL || !saveBudget) return;
+    const srcKey = String(selectedFY);
+    const dstKey = String(targetFY);
+    if (srcKey === dstKey) return;
+
+    // 実績データの移動
+    const newPL = { ...(monthlyPLData || {}) };
+    if (newPL[srcKey]) {
+      newPL[dstKey] = newPL[srcKey];
+      delete newPL[srcKey];
+      await saveMonthlyPL(newPL);
+    }
+
+    // 予算データの移動
+    const newBM = { ...(bmData || {}) };
+    if (newBM[srcKey]) {
+      newBM[dstKey] = newBM[srcKey];
+      delete newBM[srcKey];
+      await saveBudget(newBM);
+    }
+
+    setSelectedFY(targetFY);
+    setUploadMsg({ type: "success", text: `${getFiscalYearLabel(fiscalMonth, selectedFY)}のデータを${getFiscalYearLabel(fiscalMonth, targetFY)}に移動しました` });
+  }, [selectedFY, monthlyPLData, bmData, saveMonthlyPL, saveBudget, fiscalMonth]);
+
   // 前年実績から予算自動生成
   const generateFromPrevYear = useCallback(() => {
     if (!saveMonthlyPL) return;
@@ -312,6 +339,14 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
             <button className="btn upload-compact-btn" onClick={() => setShowGrowthInput(!showGrowthInput)}>
               <span>前年実績から予算生成</span>
             </button>
+            {hasData && (
+              <button className="btn upload-compact-btn" onClick={() => {
+                const target = prompt(`「${getFiscalYearLabel(fiscalMonth, selectedFY)}」のデータを移動する先の年度を入力してください（例: ${selectedFY - 1}）`);
+                if (target && !isNaN(Number(target))) moveDataToFY(Number(target));
+              }}>
+                <span>年度修正</span>
+              </button>
+            )}
           </>}
         </div>
       </div>
