@@ -393,26 +393,53 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
       {hasData && <>
         {/* KPIカード */}
         <div className="g4">
-          <div className="k hero">
-            <div className="k-label">売上 YTD達成率</div>
-            <div className="k-val" style={{ color: rateColor(ytdSalesRate) }}>{fmtRate(ytdSalesRate)}</div>
-            <div className="k-ctx">実績 {M(ytd.sa)} / 予算 {M(ytd.sb)}</div>
-          </div>
-          <div className="k">
-            <div className="k-label">粗利 YTD達成率</div>
-            <div className="k-val" style={{ color: rateColor(ytdGrossRate) }}>{fmtRate(ytdGrossRate)}</div>
-            <div className="k-ctx">実績 {M(ytd.ga)} / 予算 {M(ytd.gb)}</div>
-          </div>
-          <div className="k">
-            <div className="k-label">営利 YTD達成率</div>
-            <div className="k-val" style={{ color: rateColor(ytdOpRate) }}>{fmtRate(ytdOpRate)}</div>
-            <div className="k-ctx">実績 {M(ytd.oa)} / 予算 {M(ytd.ob)}</div>
-          </div>
-          <div className="k">
-            <div className="k-label">未達ワースト</div>
-            <div className="k-val" style={{ color: "var(--rd)" }}>{worst.length > 0 ? worst[0].m : "-"}</div>
-            <div className="k-ctx">{worst.length > 0 ? `営利差異 ${worst[0].d >= 0 ? "+" : ""}${worst[0].d}万` : "-"}</div>
-          </div>
+          {hasActuals ? (
+            <>
+              <div className="k hero">
+                <div className="k-label">売上 YTD達成率</div>
+                <div className="k-val" style={{ color: rateColor(ytdSalesRate) }}>{fmtRate(ytdSalesRate)}</div>
+                <div className="k-ctx">実績 {M(ytd.sa)} / 予算 {M(ytd.sb)}</div>
+              </div>
+              <div className="k">
+                <div className="k-label">粗利 YTD達成率</div>
+                <div className="k-val" style={{ color: rateColor(ytdGrossRate) }}>{fmtRate(ytdGrossRate)}</div>
+                <div className="k-ctx">実績 {M(ytd.ga)} / 予算 {M(ytd.gb)}</div>
+              </div>
+              <div className="k">
+                <div className="k-label">営利 YTD達成率</div>
+                <div className="k-val" style={{ color: rateColor(ytdOpRate) }}>{fmtRate(ytdOpRate)}</div>
+                <div className="k-ctx">実績 {M(ytd.oa)} / 予算 {M(ytd.ob)}</div>
+              </div>
+              <div className="k">
+                <div className="k-label">未達ワースト</div>
+                <div className="k-val" style={{ color: "var(--rd)" }}>{worst.length > 0 ? worst[0].m : "-"}</div>
+                <div className="k-ctx">{worst.length > 0 ? `営利差異 ${worst[0].d >= 0 ? "+" : ""}${worst[0].d}万` : "-"}</div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="k hero">
+                <div className="k-label">売上 年間予算</div>
+                <div className="k-val">{M(totalBudget.sales)}</div>
+                <div className="k-ctx">月平均 {M(Math.round(totalBudget.sales / 12))}</div>
+              </div>
+              <div className="k">
+                <div className="k-label">粗利 年間予算</div>
+                <div className="k-val">{M(totalBudget.gross)}</div>
+                <div className="k-ctx">月平均 {M(Math.round(totalBudget.gross / 12))}</div>
+              </div>
+              <div className="k">
+                <div className="k-label">営利 年間予算</div>
+                <div className="k-val">{M(totalBudget.op)}</div>
+                <div className="k-ctx">月平均 {M(Math.round(totalBudget.op / 12))}</div>
+              </div>
+              <div className="k">
+                <div className="k-label">粗利率（予算）</div>
+                <div className="k-val">{totalBudget.sales ? (totalBudget.gross / totalBudget.sales * 100).toFixed(1) + "%" : "-"}</div>
+                <div className="k-ctx">営利率 {totalBudget.sales ? (totalBudget.op / totalBudget.sales * 100).toFixed(1) + "%" : "-"}</div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* 着地見込み */}
