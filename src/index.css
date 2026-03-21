@@ -106,32 +106,32 @@ button,input,select{font:inherit;color:inherit}
 .chip.on{background:var(--acB);border-color:var(--ac);color:var(--ac);font-weight:600}
 
 /* Grid */
-.g{display:grid;gap:14px}
+.g{display:grid;gap:16px}
 .g2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
 .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
 .gs{display:grid;grid-template-columns:1.6fr 1fr;gap:14px}
 
 /* Card */
-.c{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;transition:.18s var(--e)}
+.c{background:var(--sf);border:1px solid var(--bd);border-radius:12px;overflow:hidden;transition:.18s var(--e);box-shadow:var(--card-shadow)}
 .c:hover{border-color:var(--bdh)}
-.ch{padding:14px 18px 12px;border-bottom:1px solid rgba(255,255,255,.03);display:flex;justify-content:space-between;align-items:center;gap:10px}
-.ct{font-family:'DM Sans';font-size:13px;font-weight:600;letter-spacing:-.01em}
-.cs{font-size:10px;color:var(--tx3);margin-top:2px}
-.cb{padding:14px 18px 18px}
+.ch{padding:16px 20px 14px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.ct{font-family:'DM Sans';font-size:14px;font-weight:600;letter-spacing:-.01em}
+.cs{font-size:12px;color:var(--tx3);margin-top:2px}
+.cb{padding:16px 20px 20px}
 
 /* KPI */
-.k{padding:18px;border-radius:var(--r);background:var(--sf);border:1px solid var(--bd);transition:.18s var(--e);position:relative;overflow:hidden}
+.k{padding:20px;border-radius:12px;background:var(--sf);border:1px solid var(--bd);transition:.18s var(--e);position:relative;overflow:hidden;box-shadow:var(--card-shadow)}
 .k:hover{border-color:var(--bdh);transform:translateY(-1px)}
-.k.hero{background:linear-gradient(135deg,rgba(34,201,148,.06),rgba(91,141,239,.03));border-color:rgba(34,201,148,.12)}
+.k.hero{background:linear-gradient(135deg,var(--acB),var(--blB));border-color:var(--ac)}
 .k-row{display:flex;justify-content:space-between;align-items:flex-start}
-.k-label{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--tx3)}
-.k-val{font-family:'IBM Plex Mono','DM Sans',monospace;font-size:26px;font-weight:700;letter-spacing:-.03em;line-height:1;margin-top:8px}
+.k-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3)}
+.k-val{font-family:'IBM Plex Mono','DM Sans',monospace;font-size:28px;font-weight:700;letter-spacing:-.03em;line-height:1;margin-top:8px}
 .k.hero .k-val{color:var(--ac)}
-.k-ctx{font-size:10.5px;color:var(--tx3);margin-top:6px;line-height:1.4}
+.k-ctx{font-size:12px;color:var(--tx3);margin-top:6px;line-height:1.4}
 .k-spark{width:72px;height:32px}
-.k-foot{margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.04);display:flex;gap:14px}
-.k-foot span{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--tx3)}
+.k-foot{margin-top:12px;padding-top:10px;border-top:1px solid var(--bd);display:flex;gap:14px}
+.k-foot span{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--tx3)}
 
 /* Health Hero */
 .hh{display:grid;grid-template-columns:200px 1fr;background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden}
@@ -182,8 +182,8 @@ button,input,select{font:inherit;color:inherit}
 /* Tables */
 .tw{overflow-x:auto}
 table{width:100%;border-collapse:collapse}
-th{text-align:left;padding:9px 12px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--tx3);background:rgba(255,255,255,.015);border-bottom:1px solid rgba(255,255,255,.05);white-space:nowrap}
-td{padding:10px 12px;font-size:11.5px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle}
+th{text-align:left;padding:10px 12px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);background:var(--stripe);border-bottom:1px solid var(--bd);white-space:nowrap}
+td{padding:10px 12px;font-size:13px;border-bottom:1px solid var(--bd);vertical-align:middle;line-height:1.4}
 tr:hover td{background:rgba(255,255,255,.015)}
 .tr{text-align:right}.mono{font-family:'IBM Plex Mono',monospace;font-size:11px}.bold{font-weight:600}
 .ct-tbl{width:100%;table-layout:fixed}
