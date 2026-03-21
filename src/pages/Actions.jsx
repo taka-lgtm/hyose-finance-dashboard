@@ -300,6 +300,11 @@ export default function Actions({ loans, plData, bsData, monthlyPLData, canEdit 
         <div><h2>アクション</h2><p>経営データから課題を自動検出し、インパクトの大きい順に表示する。</p></div>
       </div>
 
+      {/* 主役KPI */}
+      {allActions.length > 0 && (
+        <div className="k hero"><div className="k-label">改善余地 合計</div><div className="k-val">{M(activeImpact)}</div><div className="k-ctx">自動検出 {filteredAuto.length}件 + 対応中 {active.length}件</div></div>
+      )}
+
       {/* セクション1: 意思決定リスト */}
       {allActions.length === 0 && !loading && (
         <div className="c"><div className="cb" style={{ padding: "28px 20px", textAlign: "center", color: "var(--tx3)", fontSize: 13 }}>

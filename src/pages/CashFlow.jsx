@@ -148,7 +148,7 @@ export default function CashFlow({ cfData, saveCF, saveMonthlyPL, monthlyPLData,
 
       {hasData && <>
         <div className="g4">
-          <div className="k hero"><div className="k-label">年間最低残高</div><div className="k-val">{M(min)}</div><div className="k-ctx">安全水準{M(safetyLine)}との差 {M(min - safetyLine)}</div></div>
+          <div className="k hero"><div className="k-label">最新月 現預金残高</div><div className="k-val">{M(CF[CF.length - 1]?.残高 || 0)}</div><div className="k-ctx">最低残高 {M(min)} / 安全水準 {M(safetyLine)}</div></div>
           <div className="k"><div className="k-label">年間最高残高</div><div className="k-val">{M(max)}</div><div className="k-ctx">余剰資金の活用検討</div></div>
           <div className="k"><div className="k-label">月平均入金</div><div className="k-val">{M(avgI)}</div><div className="k-ctx">入金サイクル安定性</div></div>
           <div className="k"><div className="k-label">月平均Net CF</div><div className="k-val" style={{ color: avgI - avgO >= 0 ? "var(--ac)" : "var(--rd)" }}>{avgI - avgO >= 0 ? "+" : ""}{M(avgI - avgO)}</div><div className="k-ctx">出金 {M(avgO)} / 月</div></div>
