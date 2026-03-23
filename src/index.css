@@ -191,6 +191,7 @@ td{padding:14px 16px;font-size:13px;border-bottom:1px solid var(--bd);vertical-a
 tr:hover td{background:var(--hover-bg);transition:background .2s var(--e)}
 .tr{text-align:right;font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-nums;font-weight:600}.mono{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-nums;font-weight:600}.bold{font-weight:600}
 .ct-tbl{width:100%;table-layout:fixed}
+.ct-tbl th,.ct-tbl td{padding:8px 12px}
 .ct-tbl th:first-child,.ct-tbl td:first-child{width:130px;text-align:left}
 .ct-tbl th:not(:first-child),.ct-tbl td:not(:first-child){text-align:center}
 .ctc{display:grid;justify-items:center;gap:2px}
