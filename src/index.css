@@ -131,13 +131,11 @@ button,input,select{font:inherit;color:inherit}
 /* KPI */
 .k{padding:24px;border-radius:var(--r);background:var(--glass-bg);backdrop-filter:blur(24px);border:1px solid var(--glass-border);transition:.2s var(--e);position:relative;overflow:hidden;box-shadow:var(--card-shadow)}
 .k:hover{border-color:var(--bdh);transform:translateY(-2px)}
-.k.hero{background:var(--accent-gradient);border-color:transparent;color:var(--logo-text)}
-.k.hero .k-label{color:inherit;opacity:.7}
-.k.hero .k-ctx{color:inherit;opacity:.7}
+.k.hero{border-color:var(--ac);border-left:3px solid var(--ac)}
 .k-row{display:flex;justify-content:space-between;align-items:flex-start}
 .k-label{font-family:'Inter';font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--tx3)}
 .k-val{font-family:'Plus Jakarta Sans',sans-serif;font-size:28px;font-weight:800;letter-spacing:-.03em;line-height:1;margin-top:10px;color:var(--tx)}
-.k.hero .k-val{color:inherit;font-size:36px}
+.k.hero .k-val{color:var(--ac);font-size:36px}
 .k-ctx{font-size:12px;color:var(--tx2);margin-top:8px;line-height:1.5}
 .k-spark{width:72px;height:32px}
 .k-foot{margin-top:14px;padding-top:12px;border-top:1px solid var(--glass-border);display:flex;gap:14px}
