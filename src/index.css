@@ -194,8 +194,8 @@ tr:hover td{background:var(--hover-bg);transition:background .2s var(--e)}
 .ct-tbl th:first-child,.ct-tbl td:first-child{width:130px;text-align:left}
 .ct-tbl th:not(:first-child),.ct-tbl td:not(:first-child){text-align:center}
 .ctc{display:grid;justify-items:center;gap:2px}
-.ctv{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-nums;font-size:11px;font-weight:600;white-space:nowrap}
-.cty{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-nums;font-size:9px;color:var(--tx3);white-space:nowrap}
+.ctv{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-nums;font-size:13px;font-weight:600;white-space:nowrap}
+.cty{font-family:'Inter',sans-serif;font-size:11px;color:var(--tx3);white-space:nowrap}
 .cty.up{color:var(--ac)}.cty.dn{color:var(--rd)}
 
 /* インライン編集 */
@@ -379,11 +379,11 @@ td.cell-edited .ctv{color:var(--ac)}
 
 .bal-tbl{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0}
 .bal-tbl th,.bal-tbl td{
-  padding:9px 14px;font-size:11px;white-space:nowrap;
+  padding:10px 14px;font-size:13px;white-space:nowrap;
   border-bottom:1px solid var(--bd);
 }
 .bal-tbl th{
-  font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;
+  font-family:'Inter';font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;
   color:var(--tx3);background:var(--bg2);
   position:sticky;top:0;z-index:3;
 }

@@ -268,8 +268,8 @@ function BalanceView({ proj, wRate, tMon, loans, bankFilter, onEdit }) {
     <div className="g2">
       <div className="c"><div className="ch"><div><div className="ct">12ヶ月後 借入残高予測</div></div></div>
         <div className="cb"><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-          <div style={{ textAlign: "center", padding: 16, borderRadius: "var(--rs)", background: "var(--stripe)", border: "1px solid var(--bd)" }}><div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>現在残高</div><div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontVariantNumeric: "tabular-nums", fontSize: 24, fontWeight: 700, marginTop: 6 }}>{MY(curTotal)}</div></div>
-          <div style={{ textAlign: "center", padding: 16, borderRadius: "var(--rs)", background: "var(--acB)", border: "1px solid rgba(34,201,148,.12)" }}><div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>12ヶ月後 予測</div><div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontVariantNumeric: "tabular-nums", fontSize: 24, fontWeight: 700, color: "var(--ac)", marginTop: 6 }}>{MY(endTotal)}</div><div style={{ fontSize: 10, color: "var(--ac)", marginTop: 4 }}>▼{MY(curTotal - endTotal)} 減少</div></div>
+          <div style={{ textAlign: "center", padding: 16, borderRadius: "var(--rs)", background: "var(--stripe)", border: "1px solid var(--bd)" }}><div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--tx3)", fontWeight: 600 }}>現在残高</div><div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontVariantNumeric: "tabular-nums", fontSize: 24, fontWeight: 700, marginTop: 6 }}>{MY(curTotal)}</div></div>
+          <div style={{ textAlign: "center", padding: 16, borderRadius: "var(--rs)", background: "var(--acB)", border: "1px solid rgba(34,201,148,.12)" }}><div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--tx3)", fontWeight: 600 }}>12ヶ月後 予測</div><div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontVariantNumeric: "tabular-nums", fontSize: 24, fontWeight: 700, color: "var(--ac)", marginTop: 6 }}>{MY(endTotal)}</div><div style={{ fontSize: 10, color: "var(--ac)", marginTop: 4 }}>▼{MY(curTotal - endTotal)} 減少</div></div>
         </div></div></div>
       <div className="c"><div className="ch"><div><div className="ct">エクスポート</div></div></div>
         <div className="cb"><div style={{ display: "grid", gap: 10 }}>
@@ -331,18 +331,18 @@ function ListView({ loans, onEdit }) {
               const rc = l.rate >= 1.8 ? "var(--rd)" : l.rate >= 1.5 ? "var(--am)" : "var(--ac)";
               return (
                 <tr key={l.id || i}>
-                  <td className="mono" style={{ fontSize: 10, color: "var(--tx3)" }}>{l.num || "-"}</td>
-                  <td><span className={`p ${l.category === "長期" ? "bu" : l.category === "短期" ? "wr" : "mt"}`} style={{ fontSize: 9 }}>{l.category}</span></td>
+                  <td className="mono" style={{ color: "var(--tx3)" }}>{l.num || "-"}</td>
+                  <td><span className={`p ${l.category === "長期" ? "bu" : l.category === "短期" ? "wr" : "mt"}`}>{l.category}</span></td>
                   <td className="bold">{l.bank}</td>
                   <td>{l.name}</td>
                   <td className="tr mono">{MY(l.balance)}</td>
                   <td className="tr mono">{MY(l.monthly)}</td>
                   <td className="tr mono" style={{ color: rc }}>{l.rate}%</td>
-                  <td><span className={`p ${l.rt === "変動" ? "wr" : "mt"}`} style={{ fontSize: 9 }}>{l.rt}</span></td>
-                  <td style={{ fontSize: 10 }}>{l.condition === "P" ? "プロパー" : l.condition === "保" ? "保証付き" : "-"}</td>
-                  <td className="tr mono" style={{ fontSize: 10 }}>{l.endDate || "-"}</td>
+                  <td><span className={`p ${l.rt === "変動" ? "wr" : "mt"}`}>{l.rt}</span></td>
+                  <td>{l.condition === "P" ? "プロパー" : l.condition === "保" ? "保証付き" : "-"}</td>
+                  <td className="tr mono">{l.endDate || "-"}</td>
                   {onEdit && <td>
-                    <button onClick={() => onEdit(l)} style={{ background: "none", border: "1px solid var(--bd)", cursor: "pointer", color: "var(--tx2)", fontSize: 10, padding: "3px 10px", borderRadius: 4 }} onMouseOver={(e) => { e.target.style.borderColor = "var(--ac)"; e.target.style.color = "var(--ac)"; }} onMouseOut={(e) => { e.target.style.borderColor = "var(--bd)"; e.target.style.color = "var(--tx2)"; }}>
+                    <button onClick={() => onEdit(l)} style={{ background: "none", border: "1px solid var(--bd)", cursor: "pointer", color: "var(--tx2)", fontSize: 12, padding: "4px 12px", borderRadius: "var(--rs)" }} onMouseOver={(e) => { e.target.style.borderColor = "var(--ac)"; e.target.style.color = "var(--ac)"; }} onMouseOut={(e) => { e.target.style.borderColor = "var(--bd)"; e.target.style.color = "var(--tx2)"; }}>
                       編集
                     </button>
                   </td>}
@@ -400,11 +400,11 @@ function AnalysisView({ bSum, bankInt, totalInt, fixedBal, varBal, loans, sorted
     <div>
       {items.map((b, i) => { const pv = total > 0 ? (b.val / total * 100).toFixed(1) : 0; return (
         <div key={i} style={{ marginBottom: 10 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 3 }}><span className="bold">{b.label}</span><span className="mono">{valFmt(b.val)} ({pv}%)</span></div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 3 }}><span className="bold">{b.label}</span><span className="mono">{valFmt(b.val)} ({pv}%)</span></div>
           <div className="int-bar"><div className="ib-fill" style={{ width: pv + "%", background: b.color }} /></div>
         </div>
       ); })}
-      <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid var(--bd)", display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 700 }}><span>合計</span><span className="mono">{valFmt(total)}</span></div>
+      <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid var(--bd)", display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 700 }}><span>合計</span><span className="mono">{valFmt(total)}</span></div>
     </div>
   );
 
@@ -428,8 +428,8 @@ function AnalysisView({ bSum, bankInt, totalInt, fixedBal, varBal, loans, sorted
       <div className="c"><div className="ch"><div><div className="ct">固定 vs 変動</div></div></div>
         <div className="cb">
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-            <div style={{ textAlign: "center", padding: 12, borderRadius: "var(--rs)", background: "var(--acB)", border: "1px solid var(--ac)" }}><div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>固定</div><div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontVariantNumeric: "tabular-nums", fontSize: 22, fontWeight: 700, color: "var(--ac)", marginTop: 4 }}>{tBal > 0 ? (fixedBal / tBal * 100).toFixed(1) : 0}%</div></div>
-            <div style={{ textAlign: "center", padding: 12, borderRadius: "var(--rs)", background: "var(--amB)", border: "1px solid var(--am)" }}><div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>変動</div><div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontVariantNumeric: "tabular-nums", fontSize: 22, fontWeight: 700, color: "var(--am)", marginTop: 4 }}>{tBal > 0 ? (varBal / tBal * 100).toFixed(1) : 0}%</div></div>
+            <div style={{ textAlign: "center", padding: 12, borderRadius: "var(--rs)", background: "var(--acB)", border: "1px solid var(--ac)" }}><div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--tx3)", fontWeight: 600 }}>固定</div><div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontVariantNumeric: "tabular-nums", fontSize: 22, fontWeight: 700, color: "var(--ac)", marginTop: 4 }}>{tBal > 0 ? (fixedBal / tBal * 100).toFixed(1) : 0}%</div></div>
+            <div style={{ textAlign: "center", padding: 12, borderRadius: "var(--rs)", background: "var(--amB)", border: "1px solid var(--am)" }}><div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--tx3)", fontWeight: 600 }}>変動</div><div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontVariantNumeric: "tabular-nums", fontSize: 22, fontWeight: 700, color: "var(--am)", marginTop: 4 }}>{tBal > 0 ? (varBal / tBal * 100).toFixed(1) : 0}%</div></div>
           </div>
           <div className="chart"><canvas ref={r1} /></div>
         </div>
@@ -437,8 +437,8 @@ function AnalysisView({ bSum, bankInt, totalInt, fixedBal, varBal, loans, sorted
       <div className="c"><div className="ch"><div><div className="ct">プロパー vs 保証付き</div></div></div>
         <div className="cb">
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-            <div style={{ textAlign: "center", padding: 12, borderRadius: "var(--rs)", background: "var(--blB)", border: "1px solid var(--bl)" }}><div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>プロパー</div><div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontVariantNumeric: "tabular-nums", fontSize: 22, fontWeight: 700, color: "var(--bl)", marginTop: 4 }}>{tBal > 0 ? (proparBal / tBal * 100).toFixed(1) : 0}%</div></div>
-            <div style={{ textAlign: "center", padding: 12, borderRadius: "var(--rs)", background: "var(--puB)", border: "1px solid var(--pu)" }}><div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>保証付き</div><div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontVariantNumeric: "tabular-nums", fontSize: 22, fontWeight: 700, color: "var(--pu)", marginTop: 4 }}>{tBal > 0 ? (guarBal / tBal * 100).toFixed(1) : 0}%</div></div>
+            <div style={{ textAlign: "center", padding: 12, borderRadius: "var(--rs)", background: "var(--blB)", border: "1px solid var(--bl)" }}><div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--tx3)", fontWeight: 600 }}>プロパー</div><div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontVariantNumeric: "tabular-nums", fontSize: 22, fontWeight: 700, color: "var(--bl)", marginTop: 4 }}>{tBal > 0 ? (proparBal / tBal * 100).toFixed(1) : 0}%</div></div>
+            <div style={{ textAlign: "center", padding: 12, borderRadius: "var(--rs)", background: "var(--puB)", border: "1px solid var(--pu)" }}><div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--tx3)", fontWeight: 600 }}>保証付き</div><div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontVariantNumeric: "tabular-nums", fontSize: 22, fontWeight: 700, color: "var(--pu)", marginTop: 4 }}>{tBal > 0 ? (guarBal / tBal * 100).toFixed(1) : 0}%</div></div>
           </div>
           <div className="chart"><canvas ref={r2} /></div>
         </div>
@@ -506,11 +506,11 @@ function LogView() {
             <tbody>
               {logs.map((log, i) => (
                 <tr key={log.id || i}>
-                  <td className="mono" style={{ fontSize: 10, whiteSpace: "nowrap" }}>{fmtDate(log.createdAt)}</td>
-                  <td><span className={`p ${actionBadge(log.action)}`} style={{ fontSize: 9 }}>{log.action}</span></td>
-                  <td className="bold" style={{ fontSize: 11 }}>{log.target}</td>
-                  <td style={{ fontSize: 11, color: "var(--tx2)" }}>{log.user}</td>
-                  <td style={{ fontSize: 10, color: "var(--tx3)", maxWidth: 300, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={log.details}>{log.details || "-"}</td>
+                  <td className="mono" style={{ whiteSpace: "nowrap" }}>{fmtDate(log.createdAt)}</td>
+                  <td><span className={`p ${actionBadge(log.action)}`}>{log.action}</span></td>
+                  <td className="bold">{log.target}</td>
+                  <td style={{ color: "var(--tx2)" }}>{log.user}</td>
+                  <td style={{ color: "var(--tx3)", maxWidth: 300, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={log.details}>{log.details || "-"}</td>
                 </tr>
               ))}
             </tbody>
