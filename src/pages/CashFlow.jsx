@@ -64,16 +64,25 @@ export default function CashFlow({ cfData, saveCF, saveMonthlyPL, monthlyPLData,
       if (!cfResult.length) throw new Error("データを抽出できませんでした");
       await saveCF(cfResult);
       // 月次PL実績も同時に生成・保存（予実管理用）
+      // ファイル名から年度を自動判定（例: 損益計算書_月次推移_20260320_0156.csv → 2026年3月 → FY2025）
       let plMsg = "";
       if (saveMonthlyPL) {
         try {
           const plBuffer2 = await readFileAsArrayBuffer(plFile);
           const monthlyResult = generateMonthlyPLData(plBuffer2, settings.fiscalMonth);
           if (monthlyResult.length > 0) {
-            const fy = String(getFiscalYear(settings.fiscalMonth));
+            // ファイル名から日付を抽出して年度判定
+            const dateMatch = plFile.name.match(/(\d{4})(\d{2})(\d{2})/);
+            let fy;
+            if (dateMatch) {
+              const fileDate = new Date(Number(dateMatch[1]), Number(dateMatch[2]) - 1, Number(dateMatch[3]));
+              fy = String(getFiscalYear(settings.fiscalMonth, fileDate));
+            } else {
+              fy = String(getFiscalYear(settings.fiscalMonth));
+            }
             const newData = { ...(monthlyPLData || {}), [fy]: monthlyResult };
             await saveMonthlyPL(newData);
-            plMsg = ` + 予実管理の実績データも更新`;
+            plMsg = ` + 予実管理（${fy}年度）も更新`;
           }
         } catch (_) { /* 月次PL生成失敗は無視（資金繰りは成功） */ }
       }
