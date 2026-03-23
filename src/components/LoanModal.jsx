@@ -9,7 +9,7 @@ const EMPTY = {
   baseRate: "", guaranteeFee: "0", monthly: "", method: "元金均等",
   term: "", grace: "0",
   guaranteeOrg: "", guaranteeType: "", guaranteeSec: "", guaranteePlan: "",
-  collateral: "プロパー", notes: "",
+  collateral: [], notes: "",
 };
 
 // editing: null（新規）または既存ローンオブジェクト（編集）
@@ -34,7 +34,8 @@ export default function LoanModal({ open, onClose, onSubmit, onUpdate, onDelete,
         monthly: e.monthly ?? "", method: e.method || "", term: e.term ?? "", grace: e.grace ?? "0",
         guaranteeOrg: e.guaranteeOrg || "", guaranteeType: e.guaranteeType || "",
         guaranteeSec: e.guaranteeSec || "", guaranteePlan: e.guaranteePlan || "",
-        collateral: e.collateral || "", notes: e.notes || "",
+        collateral: Array.isArray(e.collateral) ? e.collateral : (e.collateral ? [e.collateral] : []),
+        notes: e.notes || "",
       });
     } else {
       setForm(EMPTY);
@@ -145,7 +146,23 @@ export default function LoanModal({ open, onClose, onSubmit, onUpdate, onDelete,
 
             <div className="form-divider" />
             <div className="form-section-label">担保・保証</div>
-            <Select label="担保区分" value={form.collateral} onChange={(v) => set("collateral", v)} options={["プロパー", "保証協会", "土地担保", "不動産担保", "無担保"]} />
+            <div className="form-group">
+              <label className="form-label">担保区分（複数選択可）</label>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {["プロパー", "保証協会", "土地担保", "不動産担保", "無担保"].map((opt) => {
+                  const checked = (form.collateral || []).includes(opt);
+                  return (
+                    <label key={opt} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, padding: "4px 10px", borderRadius: "var(--rs)", border: "1px solid var(--bd)", cursor: "pointer", background: checked ? "var(--acB)" : "transparent", color: checked ? "var(--ac)" : "var(--tx3)" }}>
+                      <input type="checkbox" checked={checked} onChange={() => {
+                        const arr = form.collateral || [];
+                        set("collateral", checked ? arr.filter((c) => c !== opt) : [...arr, opt]);
+                      }} style={{ display: "none" }} />
+                      {opt}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
             <Field label="保証協会" value={form.guaranteeOrg} onChange={(v) => set("guaranteeOrg", v)} placeholder="例: 国、県" />
             <Field label="保証枠/種類" value={form.guaranteeType} onChange={(v) => set("guaranteeType", v)} placeholder="例: 一般、セーフティ" />
             <Field label="保証枠/担保" value={form.guaranteeSec} onChange={(v) => set("guaranteeSec", v)} placeholder="例: 無担保、有担保" />

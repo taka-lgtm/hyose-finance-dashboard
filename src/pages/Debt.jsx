@@ -339,7 +339,7 @@ function ListView({ loans, onEdit }) {
                   <td className="tr mono">{MY(l.monthly)}</td>
                   <td className="tr mono" style={{ color: rc }}>{l.rate}%</td>
                   <td><span className={`p ${l.rt === "変動" ? "wr" : "mt"}`}>{l.rt}</span></td>
-                  <td>{l.condition === "P" ? "プロパー" : l.condition === "保" ? "保証付き" : "-"}</td>
+                  <td>{Array.isArray(l.collateral) ? l.collateral.join("・") : (l.collateral || l.condition === "P" ? "プロパー" : l.condition === "保" ? "保証付き" : "-")}</td>
                   <td className="tr mono">{l.endDate || "-"}</td>
                   {onEdit && <td>
                     <button onClick={() => onEdit(l)} style={{ background: "none", border: "1px solid var(--bd)", cursor: "pointer", color: "var(--tx2)", fontSize: 12, padding: "4px 12px", borderRadius: "var(--rs)" }} onMouseOver={(e) => { e.target.style.borderColor = "var(--ac)"; e.target.style.color = "var(--ac)"; }} onMouseOut={(e) => { e.target.style.borderColor = "var(--bd)"; e.target.style.color = "var(--tx2)"; }}>
