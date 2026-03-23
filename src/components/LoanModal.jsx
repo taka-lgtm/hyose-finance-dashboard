@@ -4,8 +4,8 @@ import { BANK_COLORS } from "../data/banks";
 // 新規登録時のデフォルト値（金額は円単位）
 const EMPTY = {
   category: "長期", purpose: "運転", name: "", num: "",
-  bank: "", bankSeq: "", start: "2026-04-01", endDate: "",
-  debitDay: "", principal: "", balance: "", rate: "", rt: "固定",
+  bank: "", bankSeq: "", start: "2026-04-01", repayStart: "", endDate: "",
+  debitDay: "", principal: "", balance: "", balanceManual: false, rate: "", rt: "固定",
   baseRate: "", guaranteeFee: "0", monthly: "", method: "元金均等",
   term: "", grace: "0",
   guaranteeOrg: "", guaranteeType: "", guaranteeSec: "", guaranteePlan: "",
@@ -28,8 +28,8 @@ export default function LoanModal({ open, onClose, onSubmit, onUpdate, onDelete,
       const e = editing;
       setForm({
         category: e.category || "長期", purpose: e.purpose || "", name: e.name || "", num: e.num || "",
-        bank: e.bank || "", bankSeq: e.bankSeq ?? "", start: e.start || "", endDate: e.endDate || "",
-        debitDay: e.debitDay ?? "", principal: e.principal ?? "", balance: e.balance ?? "",
+        bank: e.bank || "", bankSeq: e.bankSeq ?? "", start: e.start || "", repayStart: e.repayStart || "", endDate: e.endDate || "",
+        debitDay: e.debitDay ?? "", principal: e.principal ?? "", balance: e.balance ?? "", balanceManual: false,
         rate: e.rate ?? "", rt: e.rt || "固定", baseRate: e.baseRate ?? "", guaranteeFee: e.guaranteeFee ?? "0",
         monthly: e.monthly ?? "", method: e.method || "", term: e.term ?? "", grace: e.grace ?? "0",
         guaranteeOrg: e.guaranteeOrg || "", guaranteeType: e.guaranteeType || "",
@@ -49,11 +49,41 @@ export default function LoanModal({ open, onClose, onSubmit, onUpdate, onDelete,
     return () => document.removeEventListener("keydown", handleEsc);
   }, [open, onClose]);
 
+  // 返済開始日から残高を自動計算
+  const calcAutoBalance = (f) => {
+    const principal = Number(f.principal);
+    const monthly = Number(f.monthly);
+    const repayStart = f.repayStart;
+    if (!principal || !monthly || !repayStart) return null;
+    const now = new Date();
+    const rs = new Date(repayStart);
+    if (now < rs) return principal; // 据置期間中
+    const months = (now.getFullYear() - rs.getFullYear()) * 12 + (now.getMonth() - rs.getMonth());
+    return Math.max(0, principal - monthly * Math.max(0, months));
+  };
+
   const set = (key, val) => {
     setForm((prev) => {
       const next = { ...prev, [key]: val };
+      // 新規時: 借入金額変更で残高も連動
       if (key === "principal" && !isEdit && (!prev.balance || prev.balance === prev.principal)) {
         next.balance = val;
+      }
+      // 残高の手動入力
+      if (key === "balance") {
+        next.balanceManual = true;
+      }
+      // 返済開始日から据置期間を自動算出
+      if (key === "repayStart" && next.start && val) {
+        const s = new Date(next.start);
+        const r = new Date(val);
+        const graceMonths = (r.getFullYear() - s.getFullYear()) * 12 + (r.getMonth() - s.getMonth());
+        next.grace = String(Math.max(0, graceMonths));
+      }
+      // 残高自動計算（手動上書きでなければ）
+      if (["principal", "monthly", "repayStart"].includes(key) && !next.balanceManual) {
+        const auto = calcAutoBalance(next);
+        if (auto !== null) next.balance = String(auto);
       }
       return next;
     });
@@ -68,7 +98,7 @@ export default function LoanModal({ open, onClose, onSubmit, onUpdate, onDelete,
       category: form.category, purpose: form.purpose, bank: form.bank,
       bankSeq: Number(form.bankSeq) || 0, name: form.name,
       num: form.num || (isEdit ? "" : `NEW-${Date.now().toString(36).toUpperCase().slice(-6)}`),
-      start: form.start || "", endDate: form.endDate || "",
+      start: form.start || "", repayStart: form.repayStart || "", endDate: form.endDate || "",
       debitDay: Number(form.debitDay) || null, principal: Number(form.principal),
       rate: parseFloat(form.rate), baseRate, guaranteeFee, rt: form.rt,
       method: form.method, term: Number(form.term) || (monthly > 0 ? Math.ceil(balance / monthly) : 0),
@@ -125,13 +155,20 @@ export default function LoanModal({ open, onClose, onSubmit, onUpdate, onDelete,
               <datalist id="bankList">{allBanks.map((b) => <option key={b} value={b} />)}</datalist>
             </div>
             <Field label="借入日" type="date" value={form.start} onChange={(v) => set("start", v)} />
+            <Field label="返済開始日" type="date" value={form.repayStart} onChange={(v) => set("repayStart", v)} />
             <Field label="最終期限" type="date" value={form.endDate} onChange={(v) => set("endDate", v)} />
             <Field label="引落日" type="number" value={form.debitDay} onChange={(v) => set("debitDay", v)} placeholder="例: 15" />
 
             <div className="form-divider" />
             <div className="form-section-label">金額・金利</div>
             <Field label="借入金額（円）" req type="number" value={form.principal} onChange={(v) => set("principal", v)} placeholder="例: 30000000" />
-            <Field label="現在残高（円）" req type="number" value={form.balance} onChange={(v) => set("balance", v)} placeholder="借入金額と同額が初期値" />
+            <div className="form-group">
+              <label className="form-label">現在残高（円）<span className="req">*</span>
+                {form.repayStart && !form.balanceManual && <span style={{ marginLeft: 6, fontSize: 10, color: "var(--ac)", fontWeight: 500 }}>自動計算</span>}
+                {form.balanceManual && <span style={{ marginLeft: 6, fontSize: 10, color: "var(--am)", fontWeight: 500 }}>手動設定</span>}
+              </label>
+              <input className="form-input" type="number" value={form.balance} onChange={(e) => set("balance", e.target.value)} placeholder="借入金額と同額が初期値" />
+            </div>
             <Field label="実効金利（%）" req type="number" step="0.01" value={form.rate} onChange={(v) => set("rate", v)} placeholder="例: 1.25" />
             <Field label="基本金利（%）" type="number" step="0.01" value={form.baseRate} onChange={(v) => set("baseRate", v)} placeholder="実効金利と同じなら空欄可" />
             <Field label="保証料率（%）" type="number" step="0.01" value={form.guaranteeFee} onChange={(v) => set("guaranteeFee", v)} placeholder="0" />
@@ -142,7 +179,10 @@ export default function LoanModal({ open, onClose, onSubmit, onUpdate, onDelete,
             <Field label="月返済額（円）" req={form.category !== "当座貸越"} type="number" value={form.monthly} onChange={(v) => set("monthly", v)} placeholder="例: 500000" />
             <Select label="返済方式" value={form.method} onChange={(v) => set("method", v)} options={["元金均等", "元利均等", "一括返済", ""]} />
             <Field label="返済期間（ヶ月）" type="number" value={form.term} onChange={(v) => set("term", v)} placeholder="例: 60" />
-            <Field label="据置期間（ヶ月）" type="number" value={form.grace} onChange={(v) => set("grace", v)} placeholder="0" />
+            <div className="form-group">
+              <label className="form-label">据置期間（ヶ月）{form.repayStart && <span style={{ marginLeft: 6, fontSize: 10, color: "var(--tx3)", fontWeight: 400 }}>自動算出</span>}</label>
+              <input className="form-input" type="number" value={form.grace} onChange={(e) => set("grace", e.target.value)} placeholder="0" readOnly={!!form.repayStart} style={form.repayStart ? { opacity: 0.7 } : undefined} />
+            </div>
 
             <div className="form-divider" />
             <div className="form-section-label">担保・保証</div>
