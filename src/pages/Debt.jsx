@@ -241,9 +241,9 @@ function BalanceView({ proj, wRate, tMon, loans, bankFilter, onEdit }) {
             <table className="bal-tbl">
               <thead><tr><th className="sticky sticky-0">銀行</th><th className="sticky sticky-1">融資名</th><th className="num-head">金利</th><th className="num-head">月返済</th><th className="num-head" style={{ background: "var(--acB)" }}>現在</th>{projLabels.map((m) => <th key={m} className="num-head">{m}</th>)}</tr></thead>
               <tbody>
-                <BalanceBlock title="長期借入金" badge="bu" data={longTerm} projLabels={projLabels} onEdit={onEdit} isFirst={true} />
-                <BalanceBlock title="短期借入金" badge="wr" data={shortTerm} projLabels={projLabels} onEdit={onEdit} isFirst={!longTerm.length} />
-                <BalanceBlock title="当座貸越" badge="mt" data={overdraft} projLabels={projLabels} onEdit={onEdit} isFirst={!longTerm.length && !shortTerm.length} />
+                <BalanceBlock title="長期借入金" badge="cat-long" data={longTerm} projLabels={projLabels} onEdit={onEdit} isFirst={true} />
+                <BalanceBlock title="短期借入金" badge="cat-short" data={shortTerm} projLabels={projLabels} onEdit={onEdit} isFirst={!longTerm.length} />
+                <BalanceBlock title="当座貸越" badge="cat-od" data={overdraft} projLabels={projLabels} onEdit={onEdit} isFirst={!longTerm.length && !shortTerm.length} />
                 <tr className="total-row">
                   <td className="bold sticky sticky-0">総合計</td><td className="sticky sticky-1" />
                   <td className="num">{wRate}%</td><td className="num">{Math.round(tMon / 10000).toLocaleString()}</td>
@@ -332,13 +332,13 @@ function ListView({ loans, onEdit }) {
               return (
                 <tr key={l.id || i}>
                   <td className="mono" style={{ color: "var(--tx3)" }}>{l.num || "-"}</td>
-                  <td><span className={`p ${l.category === "長期" ? "bu" : l.category === "短期" ? "wr" : "mt"}`}>{l.category}</span></td>
+                  <td><span className={`p ${l.category === "長期" ? "cat-long" : l.category === "短期" ? "cat-short" : "cat-od"}`}>{l.category}</span></td>
                   <td className="bold">{l.bank}</td>
                   <td>{l.name}</td>
                   <td className="tr mono">{MY(l.balance)}</td>
                   <td className="tr mono">{MY(l.monthly)}</td>
                   <td className="tr mono" style={{ color: rc }}>{l.rate}%</td>
-                  <td><span className={`p ${l.rt === "変動" ? "wr" : "mt"}`}>{l.rt}</span></td>
+                  <td><span className={`p ${l.rt === "変動" ? "rt-float" : "rt-fixed"}`}>{l.rt}</span></td>
                   <td>{Array.isArray(l.collateral) ? l.collateral.join("・") : (l.collateral || l.condition === "P" ? "プロパー" : l.condition === "保" ? "保証付き" : "-")}</td>
                   <td className="tr mono">{l.endDate || "-"}</td>
                   {onEdit && <td>
