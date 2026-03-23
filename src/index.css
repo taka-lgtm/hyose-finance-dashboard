@@ -186,12 +186,11 @@ button,input,select{font:inherit;color:inherit}
 /* Tables */
 .tw{overflow-x:auto}
 table{width:100%;border-collapse:collapse}
-th{text-align:left;padding:12px 16px;font-family:'Inter';font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--tx3);background:transparent;border-bottom:1px solid var(--bd);white-space:nowrap}
-td{padding:14px 16px;font-size:13px;border-bottom:1px solid var(--bd);vertical-align:middle;line-height:1.5;color:var(--tx)}
+th{text-align:left;padding:9px 14px;font-family:'Inter';font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--tx3);background:transparent;border-bottom:1px solid var(--bd);white-space:nowrap}
+td{padding:9px 14px;font-size:13px;border-bottom:1px solid var(--bd);vertical-align:middle;line-height:1.4;color:var(--tx)}
 tr:hover td{background:var(--hover-bg);transition:background .2s var(--e)}
 .tr{text-align:right;font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-nums;font-weight:600}.mono{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-nums;font-weight:600}.bold{font-weight:600}
 .ct-tbl{width:100%;table-layout:fixed}
-.ct-tbl th,.ct-tbl td{padding:8px 12px}
 .ct-tbl th:first-child,.ct-tbl td:first-child{width:130px;text-align:left}
 .ct-tbl th:not(:first-child),.ct-tbl td:not(:first-child){text-align:center}
 .ctc{display:grid;justify-items:center;gap:2px}
