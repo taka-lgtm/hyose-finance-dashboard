@@ -336,7 +336,7 @@ export function calcHealth(loans, plArr, bsArr) {
 }
 
 // ── Chart Defaults ──
-export const chartFont = { family: "'IBM Plex Mono','DM Sans',monospace", size: 10 };
+export const chartFont = { family: "'Inter','Plus Jakarta Sans',sans-serif", size: 10 };
 export const chartGrid = { color: "rgba(255,255,255,.04)" };
 export const chartLegend = { position: "bottom", labels: { font: chartFont, usePointStyle: true, boxWidth: 7, padding: 14 } };
 
