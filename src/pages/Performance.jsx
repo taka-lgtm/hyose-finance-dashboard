@@ -285,14 +285,14 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
       c1.current = new Chart(salesRef.current, {
         type: "bar", data: { labels, datasets: [
           { label: "予算", data: mergedData.map((v) => v.sb), backgroundColor: ct.budgetBg, borderRadius: 4 },
-          { label: "実績", data: mergedData.map((v) => v.sa), backgroundColor: "rgba(91,141,239,.55)", borderRadius: 4 },
+          { label: "実績", data: mergedData.map((v) => v.sa), backgroundColor: "rgba(91,141,239,.75)", borderRadius: 4 },
         ]}, options: barOpts(),
       });
     }
     if (sgaRef.current) {
       c2.current = new Chart(sgaRef.current, {
         type: "bar", data: { labels, datasets: [
-          { label: "販管費", data: mergedData.map((v) => v.sga), backgroundColor: "rgba(229,168,58,.55)", borderRadius: 4 },
+          { label: "販管費", data: mergedData.map((v) => v.sga), backgroundColor: "rgba(229,168,58,.75)", borderRadius: 4 },
         ]}, options: barOpts(false),
       });
     }
@@ -300,7 +300,7 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
       c3.current = new Chart(grossRef.current, {
         type: "bar", data: { labels, datasets: [
           { label: "予算", data: mergedData.map((v) => v.gb), backgroundColor: ct.budgetBg, borderRadius: 4 },
-          { label: "実績", data: mergedData.map((v) => v.ga), backgroundColor: "rgba(34,201,148,.55)", borderRadius: 4 },
+          { label: "実績", data: mergedData.map((v) => v.ga), backgroundColor: "rgba(34,201,148,.75)", borderRadius: 4 },
         ]}, options: barOpts(),
       });
     }
@@ -308,7 +308,7 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
       c4.current = new Chart(opRef.current, {
         type: "bar", data: { labels, datasets: [
           { label: "予算", data: mergedData.map((v) => v.ob), backgroundColor: ct.budgetBg, borderRadius: 4 },
-          { label: "実績", data: mergedData.map((v) => v.oa), backgroundColor: "rgba(201,34,148,.55)", borderRadius: 4 },
+          { label: "実績", data: mergedData.map((v) => v.oa), backgroundColor: "rgba(201,34,148,.75)", borderRadius: 4 },
         ]}, options: barOpts(),
       });
     }

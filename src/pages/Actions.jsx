@@ -273,7 +273,7 @@ export default function Actions({ loans, plData, bsData, monthlyPLData, canEdit 
         labels: rankData.map((a) => a.title),
         datasets: [{
           data: rankData.map((a) => Math.abs(a.impact)),
-          backgroundColor: rankData.map((a) => a.status === "done" ? ct.doneBg : a.impact >= 0 ? "rgba(34,201,148,.5)" : "rgba(229,91,91,.5)"),
+          backgroundColor: rankData.map((a) => a.status === "done" ? ct.doneBg : a.impact >= 0 ? "rgba(34,201,148,.75)" : "rgba(229,91,91,.7)"),
           borderRadius: 4,
         }],
       },
