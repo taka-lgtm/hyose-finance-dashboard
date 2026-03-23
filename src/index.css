@@ -1,4 +1,4 @@
-:root{--nw:260px;--r:16px;--rs:10px;--e:cubic-bezier(.4,0,.2,1)}
+:root{--nw:260px;--r:12px;--rs:8px;--e:cubic-bezier(.4,0,.2,1)}
 
 /* ダークテーマ — Emerald Ledger */
 [data-theme="dark"],:root{
@@ -10,7 +10,7 @@
   --am:#e5a83a;--amB:rgba(229,168,58,.10);
   --rd:#ffb3b0;--rdB:rgba(255,179,176,.10);
   --pu:#9b7cf6;--puB:rgba(155,124,246,.10);
-  --card-shadow:0 2px 20px rgba(0,33,19,.08);
+  --card-shadow:0 2px 32px rgba(0,33,19,.06);
   --glow-opacity:.03;
   --scrollbar-thumb:var(--bd);
   --overlay:rgba(11,14,20,.75);
@@ -21,24 +21,24 @@
   --btn-pr-bg:var(--ac);
 }
 
-/* ライトテーマ — Luminous Integrity */
+/* ライトテーマ — Luminous Integrity (Stitch) */
 [data-theme="light"]{
   --bg:#fbf9f8;--bg2:#f6f3f2;--sf:#ffffff;--sf2:#f0eded;
-  --bd:rgba(189,202,191,.20);--bdh:rgba(189,202,191,.40);
+  --bd:rgba(189,202,191,.15);--bdh:rgba(189,202,191,.30);
   --tx:#1b1c1c;--tx2:#3e4a41;--tx3:#6d7a71;
-  --ac:#006d44;--acB:rgba(0,109,68,.06);--acG:rgba(0,109,68,.12);
+  --ac:#006d44;--acB:rgba(0,109,68,.06);--acG:rgba(0,109,68,.10);
   --bl:#005232;--blB:rgba(0,82,50,.06);
   --am:#8a5100;--amB:rgba(138,81,0,.06);
   --rd:#ba1a1a;--rdB:rgba(186,26,26,.06);
   --pu:#5f5e5e;--puB:rgba(95,94,94,.06);
-  --card-shadow:0 2px 8px rgba(0,109,68,.04);
+  --card-shadow:0 2px 32px rgba(27,28,28,.04);
   --glow-opacity:0;
-  --scrollbar-thumb:rgba(0,0,0,.08);
+  --scrollbar-thumb:rgba(0,0,0,.06);
   --overlay:rgba(27,28,28,.35);
-  --hover-bg:rgba(0,0,0,.02);
-  --stripe:rgba(0,0,0,.02);
+  --hover-bg:rgba(0,0,0,.015);
+  --stripe:rgba(0,0,0,.015);
   --logo-text:#ffffff;
-  --nav-bg:#f6f3f2;
+  --nav-bg:#fbf9f8;
   --btn-pr-bg:linear-gradient(135deg,#006d44,#41b87f);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
