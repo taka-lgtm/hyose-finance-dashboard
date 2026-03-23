@@ -174,7 +174,7 @@ function BalanceBlock({ title, badge, data, projLabels, onEdit, isFirst }) {
           {data.length}件
         </td>
         <td className="num" /><td className="num">{Math.round(subMon / 10000).toLocaleString()}</td>
-        <td className="num" style={{ background: "rgba(34,201,148,.04)" }}>{Math.round(sub / 10000).toLocaleString()}</td>
+        <td className="num" style={{ background: "var(--acB)" }}>{Math.round(sub / 10000).toLocaleString()}</td>
         {subTotals.map((v, i) => <td key={i} className="num">{Math.round(v / 10000).toLocaleString()}</td>)}
       </tr>
       {data.map((l, i) => {
@@ -185,7 +185,7 @@ function BalanceBlock({ title, badge, data, projLabels, onEdit, isFirst }) {
             <td className="sticky sticky-1">{l.name}</td>
             <td className="num" style={{ color: rc }}>{l.rate}%</td>
             <td className="num">{Math.round(l.monthly / 10000).toLocaleString()}</td>
-            <td className="num" style={{ background: "rgba(34,201,148,.04)", color: "var(--tx)" }}>{Math.round(l.balance / 10000).toLocaleString()}</td>
+            <td className="num" style={{ background: "var(--acB)", color: "var(--tx)" }}>{Math.round(l.balance / 10000).toLocaleString()}</td>
             {l.balances.map((v, j) => <td key={j} className="num" style={v === 0 ? { color: "var(--tx3)", opacity: 0.5 } : {}}>{v === 0 ? "—" : Math.round(v / 10000).toLocaleString()}</td>)}
           </tr>
         );
@@ -239,7 +239,7 @@ function BalanceView({ proj, wRate, tMon, loans, bankFilter, onEdit }) {
         <div className="scroll-table-wrap" ref={wrapRef}>
           <div className="scroll-table-inner" ref={scrollRef}>
             <table className="bal-tbl">
-              <thead><tr><th className="sticky sticky-0">銀行</th><th className="sticky sticky-1">融資名</th><th className="num-head">金利</th><th className="num-head">月返済</th><th className="num-head" style={{ background: "rgba(34,201,148,.06)" }}>現在</th>{projLabels.map((m) => <th key={m} className="num-head">{m}</th>)}</tr></thead>
+              <thead><tr><th className="sticky sticky-0">銀行</th><th className="sticky sticky-1">融資名</th><th className="num-head">金利</th><th className="num-head">月返済</th><th className="num-head" style={{ background: "var(--acB)" }}>現在</th>{projLabels.map((m) => <th key={m} className="num-head">{m}</th>)}</tr></thead>
               <tbody>
                 <BalanceBlock title="長期借入金" badge="bu" data={longTerm} projLabels={projLabels} onEdit={onEdit} isFirst={true} />
                 <BalanceBlock title="短期借入金" badge="wr" data={shortTerm} projLabels={projLabels} onEdit={onEdit} isFirst={!longTerm.length} />
@@ -247,7 +247,7 @@ function BalanceView({ proj, wRate, tMon, loans, bankFilter, onEdit }) {
                 <tr className="total-row">
                   <td className="bold sticky sticky-0">総合計</td><td className="sticky sticky-1" />
                   <td className="num">{wRate}%</td><td className="num">{Math.round(tMon / 10000).toLocaleString()}</td>
-                  <td className="num" style={{ background: "rgba(34,201,148,.04)" }}>{Math.round(curTotal / 10000).toLocaleString()}</td>
+                  <td className="num" style={{ background: "var(--acB)" }}>{Math.round(curTotal / 10000).toLocaleString()}</td>
                   {projTotals.map((v, i) => <td key={i} className="num">{Math.round(v / 10000).toLocaleString()}</td>)}
                 </tr>
               </tbody>
@@ -269,7 +269,7 @@ function BalanceView({ proj, wRate, tMon, loans, bankFilter, onEdit }) {
       <div className="c"><div className="ch"><div><div className="ct">12ヶ月後 借入残高予測</div></div></div>
         <div className="cb"><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <div style={{ textAlign: "center", padding: 16, borderRadius: "var(--rs)", background: "var(--stripe)", border: "1px solid var(--bd)" }}><div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>現在残高</div><div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 24, fontWeight: 700, marginTop: 6 }}>{MY(curTotal)}</div></div>
-          <div style={{ textAlign: "center", padding: 16, borderRadius: "var(--rs)", background: "rgba(34,201,148,.04)", border: "1px solid rgba(34,201,148,.12)" }}><div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>12ヶ月後 予測</div><div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 24, fontWeight: 700, color: "var(--ac)", marginTop: 6 }}>{MY(endTotal)}</div><div style={{ fontSize: 10, color: "var(--ac)", marginTop: 4 }}>▼{MY(curTotal - endTotal)} 減少</div></div>
+          <div style={{ textAlign: "center", padding: 16, borderRadius: "var(--rs)", background: "var(--acB)", border: "1px solid rgba(34,201,148,.12)" }}><div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>12ヶ月後 予測</div><div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 24, fontWeight: 700, color: "var(--ac)", marginTop: 6 }}>{MY(endTotal)}</div><div style={{ fontSize: 10, color: "var(--ac)", marginTop: 4 }}>▼{MY(curTotal - endTotal)} 減少</div></div>
         </div></div></div>
       <div className="c"><div className="ch"><div><div className="ct">エクスポート</div></div></div>
         <div className="cb"><div style={{ display: "grid", gap: 10 }}>
@@ -428,8 +428,8 @@ function AnalysisView({ bSum, bankInt, totalInt, fixedBal, varBal, loans, sorted
       <div className="c"><div className="ch"><div><div className="ct">固定 vs 変動</div></div></div>
         <div className="cb">
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-            <div style={{ textAlign: "center", padding: 12, borderRadius: "var(--rs)", background: "rgba(34,201,148,.05)", border: "1px solid rgba(34,201,148,.15)" }}><div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>固定</div><div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 22, fontWeight: 700, color: "var(--ac)", marginTop: 4 }}>{tBal > 0 ? (fixedBal / tBal * 100).toFixed(1) : 0}%</div></div>
-            <div style={{ textAlign: "center", padding: 12, borderRadius: "var(--rs)", background: "rgba(229,168,58,.05)", border: "1px solid rgba(229,168,58,.15)" }}><div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>変動</div><div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 22, fontWeight: 700, color: "var(--am)", marginTop: 4 }}>{tBal > 0 ? (varBal / tBal * 100).toFixed(1) : 0}%</div></div>
+            <div style={{ textAlign: "center", padding: 12, borderRadius: "var(--rs)", background: "var(--acB)", border: "1px solid var(--ac)" }}><div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>固定</div><div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 22, fontWeight: 700, color: "var(--ac)", marginTop: 4 }}>{tBal > 0 ? (fixedBal / tBal * 100).toFixed(1) : 0}%</div></div>
+            <div style={{ textAlign: "center", padding: 12, borderRadius: "var(--rs)", background: "var(--amB)", border: "1px solid var(--am)" }}><div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>変動</div><div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 22, fontWeight: 700, color: "var(--am)", marginTop: 4 }}>{tBal > 0 ? (varBal / tBal * 100).toFixed(1) : 0}%</div></div>
           </div>
           <div className="chart"><canvas ref={r1} /></div>
         </div>
@@ -437,8 +437,8 @@ function AnalysisView({ bSum, bankInt, totalInt, fixedBal, varBal, loans, sorted
       <div className="c"><div className="ch"><div><div className="ct">プロパー vs 保証付き</div></div></div>
         <div className="cb">
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-            <div style={{ textAlign: "center", padding: 12, borderRadius: "var(--rs)", background: "rgba(91,141,239,.05)", border: "1px solid rgba(91,141,239,.15)" }}><div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>プロパー</div><div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 22, fontWeight: 700, color: "var(--bl)", marginTop: 4 }}>{tBal > 0 ? (proparBal / tBal * 100).toFixed(1) : 0}%</div></div>
-            <div style={{ textAlign: "center", padding: 12, borderRadius: "var(--rs)", background: "rgba(155,124,246,.05)", border: "1px solid rgba(155,124,246,.15)" }}><div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>保証付き</div><div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 22, fontWeight: 700, color: "var(--pu)", marginTop: 4 }}>{tBal > 0 ? (guarBal / tBal * 100).toFixed(1) : 0}%</div></div>
+            <div style={{ textAlign: "center", padding: 12, borderRadius: "var(--rs)", background: "var(--blB)", border: "1px solid var(--bl)" }}><div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>プロパー</div><div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 22, fontWeight: 700, color: "var(--bl)", marginTop: 4 }}>{tBal > 0 ? (proparBal / tBal * 100).toFixed(1) : 0}%</div></div>
+            <div style={{ textAlign: "center", padding: 12, borderRadius: "var(--rs)", background: "var(--puB)", border: "1px solid var(--pu)" }}><div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: ".12em", color: "var(--tx3)", fontWeight: 600 }}>保証付き</div><div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 22, fontWeight: 700, color: "var(--pu)", marginTop: 4 }}>{tBal > 0 ? (guarBal / tBal * 100).toFixed(1) : 0}%</div></div>
           </div>
           <div className="chart"><canvas ref={r2} /></div>
         </div>

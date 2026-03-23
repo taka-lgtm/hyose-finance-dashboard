@@ -230,7 +230,7 @@ export default function Overview({ loans, navigate, plData, bsData, cfData, mont
         datasets: [{
           label: "現預金",
           data,
-          backgroundColor: "rgba(34,201,148,.35)",
+          backgroundColor: "rgba(78,222,163,.35)",
           borderRadius: 4,
         }],
       },

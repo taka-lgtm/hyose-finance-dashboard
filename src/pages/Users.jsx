@@ -252,7 +252,7 @@ export default function Users() {
                                       {PAGE_OPTIONS.map((pg) => {
                                         const checked = userPages.includes(pg.id);
                                         return (
-                                          <label key={pg.id} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, padding: "3px 8px", borderRadius: 4, border: "1px solid var(--bd)", cursor: "pointer", background: checked ? "rgba(34,201,148,.08)" : "transparent", color: checked ? "var(--ac)" : "var(--tx3)" }}>
+                                          <label key={pg.id} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, padding: "3px 8px", borderRadius: 4, border: "1px solid var(--bd)", cursor: "pointer", background: checked ? "var(--acB)" : "transparent", color: checked ? "var(--ac)" : "var(--tx3)" }}>
                                             <input
                                               type="checkbox"
                                               checked={checked}
