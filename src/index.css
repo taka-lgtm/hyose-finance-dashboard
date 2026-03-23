@@ -20,24 +20,24 @@
   --nav-bg:rgba(25,28,34,.92);
 }
 
-/* ライトテーマ — Azure Ledger */
+/* ライトテーマ — Luminous Integrity */
 [data-theme="light"]{
-  --bg:#f7f9fb;--bg2:#f2f4f6;--sf:#ffffff;--sf2:#eceef0;
-  --bd:rgba(195,198,214,.20);--bdh:rgba(195,198,214,.40);
-  --tx:#191c1e;--tx2:#434654;--tx3:#737685;
-  --ac:#0052cc;--acB:rgba(0,82,204,.06);--acG:rgba(0,82,204,.12);
-  --bl:#0c56d0;--blB:rgba(12,86,208,.06);
-  --am:#7b2600;--amB:rgba(123,38,0,.06);
+  --bg:#fbf9f8;--bg2:#f6f3f2;--sf:#ffffff;--sf2:#f0eded;
+  --bd:rgba(189,202,191,.20);--bdh:rgba(189,202,191,.40);
+  --tx:#1b1c1c;--tx2:#3e4a41;--tx3:#6d7a71;
+  --ac:#006d44;--acB:rgba(0,109,68,.06);--acG:rgba(0,109,68,.12);
+  --bl:#005232;--blB:rgba(0,82,50,.06);
+  --am:#8a5100;--amB:rgba(138,81,0,.06);
   --rd:#ba1a1a;--rdB:rgba(186,26,26,.06);
-  --pu:#4c5d8d;--puB:rgba(76,93,141,.06);
-  --card-shadow:0 1px 4px rgba(0,61,155,.05);
+  --pu:#5f5e5e;--puB:rgba(95,94,94,.06);
+  --card-shadow:0 2px 8px rgba(0,109,68,.04);
   --glow-opacity:0;
   --scrollbar-thumb:rgba(0,0,0,.08);
-  --overlay:rgba(25,28,30,.35);
+  --overlay:rgba(27,28,28,.35);
   --hover-bg:rgba(0,0,0,.02);
   --stripe:rgba(0,0,0,.02);
   --logo-text:#ffffff;
-  --nav-bg:#f2f4f6;
+  --nav-bg:#f6f3f2;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{background:var(--bg)}

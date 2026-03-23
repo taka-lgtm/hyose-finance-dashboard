@@ -344,9 +344,9 @@ export const chartLegend = { position: "bottom", labels: { font: chartFont, useP
 export function getChartTheme(theme) {
   const isLight = theme === "light";
   return {
-    textColor: isLight ? "rgba(67,70,84,.7)" : "rgba(187,202,191,.6)",
-    gridColor: isLight ? "rgba(195,198,214,.15)" : "rgba(225,226,235,.05)",
-    budgetBg: isLight ? "rgba(0,82,204,.08)" : "rgba(225,226,235,.06)",
+    textColor: isLight ? "rgba(62,74,65,.7)" : "rgba(187,202,191,.6)",
+    gridColor: isLight ? "rgba(189,202,191,.15)" : "rgba(225,226,235,.05)",
+    budgetBg: isLight ? "rgba(0,109,68,.08)" : "rgba(225,226,235,.06)",
     doneBg: isLight ? "rgba(0,0,0,.04)" : "rgba(225,226,235,.06)",
   };
 }
