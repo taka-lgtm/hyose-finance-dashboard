@@ -8,7 +8,7 @@ const EMPTY = {
   debitDay: "", principal: "", balance: "", rate: "", rt: "固定",
   baseRate: "", guaranteeFee: "0", monthly: "", method: "元金均等",
   term: "", grace: "0",
-  condition: "P", guaranteeOrg: "", guaranteeType: "", guaranteeSec: "", guaranteePlan: "",
+  guaranteeOrg: "", guaranteeType: "", guaranteeSec: "", guaranteePlan: "",
   collateral: "プロパー", notes: "",
 };
 
@@ -32,7 +32,7 @@ export default function LoanModal({ open, onClose, onSubmit, onUpdate, onDelete,
         debitDay: e.debitDay ?? "", principal: e.principal ?? "", balance: e.balance ?? "",
         rate: e.rate ?? "", rt: e.rt || "固定", baseRate: e.baseRate ?? "", guaranteeFee: e.guaranteeFee ?? "0",
         monthly: e.monthly ?? "", method: e.method || "", term: e.term ?? "", grace: e.grace ?? "0",
-        condition: e.condition || "P", guaranteeOrg: e.guaranteeOrg || "", guaranteeType: e.guaranteeType || "",
+        guaranteeOrg: e.guaranteeOrg || "", guaranteeType: e.guaranteeType || "",
         guaranteeSec: e.guaranteeSec || "", guaranteePlan: e.guaranteePlan || "",
         collateral: e.collateral || "", notes: e.notes || "",
       });
@@ -71,7 +71,7 @@ export default function LoanModal({ open, onClose, onSubmit, onUpdate, onDelete,
       debitDay: Number(form.debitDay) || null, principal: Number(form.principal),
       rate: parseFloat(form.rate), baseRate, guaranteeFee, rt: form.rt,
       method: form.method, term: Number(form.term) || (monthly > 0 ? Math.ceil(balance / monthly) : 0),
-      grace: Number(form.grace) || 0, condition: form.condition,
+      grace: Number(form.grace) || 0,
       guaranteeOrg: form.guaranteeOrg, guaranteeType: form.guaranteeType,
       guaranteeSec: form.guaranteeSec, guaranteePlan: form.guaranteePlan,
       collateral: form.collateral, balance, monthly, notes: form.notes,
@@ -145,7 +145,6 @@ export default function LoanModal({ open, onClose, onSubmit, onUpdate, onDelete,
 
             <div className="form-divider" />
             <div className="form-section-label">担保・保証</div>
-            <Select label="条件" value={form.condition} onChange={(v) => set("condition", v)} options={["P", "保"]} />
             <Select label="担保区分" value={form.collateral} onChange={(v) => set("collateral", v)} options={["プロパー", "保証協会", "土地担保", "不動産担保", "無担保"]} />
             <Field label="保証協会" value={form.guaranteeOrg} onChange={(v) => set("guaranteeOrg", v)} placeholder="例: 国、県" />
             <Field label="保証枠/種類" value={form.guaranteeType} onChange={(v) => set("guaranteeType", v)} placeholder="例: 一般、セーフティ" />
