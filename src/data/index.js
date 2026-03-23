@@ -344,10 +344,10 @@ export const chartLegend = { position: "bottom", labels: { font: chartFont, useP
 export function getChartTheme(theme) {
   const isLight = theme === "light";
   return {
-    textColor: isLight ? "rgba(55,65,81,.8)" : "rgba(160,160,184,.7)",
-    gridColor: isLight ? "rgba(0,0,0,.06)" : "rgba(255,255,255,.04)",
-    budgetBg: isLight ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.06)",
-    doneBg: isLight ? "rgba(0,0,0,.06)" : "rgba(255,255,255,.08)",
+    textColor: isLight ? "rgba(67,70,84,.7)" : "rgba(187,202,191,.6)",
+    gridColor: isLight ? "rgba(195,198,214,.15)" : "rgba(225,226,235,.04)",
+    budgetBg: isLight ? "rgba(0,61,155,.08)" : "rgba(225,226,235,.06)",
+    doneBg: isLight ? "rgba(0,0,0,.04)" : "rgba(225,226,235,.06)",
   };
 }
 
