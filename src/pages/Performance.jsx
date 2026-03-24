@@ -3,12 +3,14 @@ import { Chart, registerables } from "chart.js";
 import { M, chartFont, chartGrid, chartLegend, getChartTheme } from "../data";
 import { useSettings } from "../contexts/SettingsContext";
 import { getFiscalYear, getFiscalYearLabel } from "../contexts/SettingsContext";
+import { useIsMobile } from "../lib/useIsMobile";
 
 
 Chart.register(...registerables);
 
 export default function Performance({ bmData, monthlyPLData, saveBudget, saveMonthlyPL, canEdit = true }) {
   const { settings, fiscalMonths } = useSettings();
+  const isMobile = useIsMobile();
   const fiscalMonth = settings.fiscalMonth;
 
   // 年度切り替え
@@ -569,103 +571,145 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
               <button className={`chip ${tableMode === "cumulative" ? "on" : ""}`} onClick={() => setTableMode("cumulative")}>累積</button>
             </div>
           </div>
-          <div className="cb tw">
-            {tableMode === "monthly" ? (
-              /* 単月テーブル */
-              <table>
-                <thead>
-                  <tr>
-                    <th>月</th>
-                    <th className="tr">売上予算</th><th className="tr">売上実績</th><th className="tr">売上差異</th><th className="tr">達成率</th>
-                    <th className="tr">粗利予算</th><th className="tr">粗利実績</th>
-                    <th className="tr">営利予算</th><th className="tr">営利実績</th><th className="tr">営利差異</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {mergedData.map((v, i) => {
-                    const sd = v.sa !== null && v.sb !== null ? v.sa - v.sb : null;
-                    const od = v.oa !== null && v.ob !== null ? v.oa - v.ob : null;
-                    const sRate = achieveRate(v.sa, v.sb);
-
-                    return (
-                      <tr key={i} style={i === currentMonthIdx ? { borderLeft: "2px solid var(--ac)" } : undefined}>
-                        <td className="bold">{v.m}</td>
-                        <EditableCell mi={i} field="sb" value={v.sb} />
-                        <td className="tr mono">{v.sa !== null ? M(v.sa) : <span style={{ color: "var(--tx4)" }}>-</span>}</td>
-                        <td className="tr mono" style={{ color: sd !== null ? (sd >= 0 ? "var(--ac)" : "var(--rd)") : "" }}>
-                          {sd !== null ? `${sd >= 0 ? "+" : ""}${sd}万` : "-"}
-                        </td>
-                        <td className="tr mono" style={{ color: rateColor(sRate) }}>{fmtRate(sRate)}</td>
-                        <EditableCell mi={i} field="gb" value={v.gb} />
-                        <td className="tr mono">{v.ga !== null ? M(v.ga) : <span style={{ color: "var(--tx4)" }}>-</span>}</td>
-                        <EditableCell mi={i} field="ob" value={v.ob} />
-                        <td className="tr mono">{v.oa !== null ? M(v.oa) : <span style={{ color: "var(--tx4)" }}>-</span>}</td>
-                        <td className="tr mono" style={{ color: od !== null ? (od >= 0 ? "var(--ac)" : "var(--rd)") : "" }}>
-                          {od !== null ? `${od >= 0 ? "+" : ""}${od}万` : "-"}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-                {hasActuals && (
-                  <tfoot>
-                    <tr className="cf-total-row">
-                      <td className="bold">YTD合計</td>
-                      <td className="tr mono">{M(ytd.sb)}</td>
-                      <td className="tr mono">{M(ytd.sa)}</td>
-                      <td className="tr mono" style={{ color: ytd.sa - ytd.sb >= 0 ? "var(--ac)" : "var(--rd)" }}>
-                        {ytd.sa - ytd.sb >= 0 ? "+" : ""}{ytd.sa - ytd.sb}万
-                      </td>
-                      <td className="tr mono" style={{ color: rateColor(ytdSalesRate) }}>{fmtRate(ytdSalesRate)}</td>
-                      <td className="tr mono">{M(ytd.gb)}</td>
-                      <td className="tr mono">{M(ytd.ga)}</td>
-                      <td className="tr mono">{M(ytd.ob)}</td>
-                      <td className="tr mono">{M(ytd.oa)}</td>
-                      <td className="tr mono" style={{ color: ytd.oa - ytd.ob >= 0 ? "var(--ac)" : "var(--rd)" }}>
-                        {ytd.oa - ytd.ob >= 0 ? "+" : ""}{ytd.oa - ytd.ob}万
-                      </td>
+          {isMobile ? (
+            /* スマホ: カード表示 */
+            <div className="cb">
+              <div className="mob-cards">
+                {mergedData.map((v, i) => {
+                  const sd = v.sa !== null && v.sb !== null ? v.sa - v.sb : null;
+                  const od = v.oa !== null && v.ob !== null ? v.oa - v.ob : null;
+                  const sRate = achieveRate(v.sa, v.sb);
+                  const gRate = achieveRate(v.ga, v.gb);
+                  const oRate = achieveRate(v.oa, v.ob);
+                  const isCurrent = i === currentMonthIdx;
+                  return (
+                    <div className="month-mc" key={i} style={isCurrent ? { borderLeft: "3px solid var(--ac)" } : undefined}>
+                      <div className="month-mc-title">{v.m}{isCurrent ? " ●" : ""}</div>
+                      <div className="perf-mc-section">
+                        <div className="perf-mc-cat">売上</div>
+                        <div className="perf-mc-pair">
+                          <div className="perf-mc-item"><span className="mc-label">予算</span><span className="mc-val">{v.sb !== null ? M(v.sb) : "-"}</span></div>
+                          <div className="perf-mc-item"><span className="mc-label">実績</span><span className="mc-val">{v.sa !== null ? M(v.sa) : "-"}</span></div>
+                        </div>
+                        <div className="perf-mc-rate" style={{ color: rateColor(sRate) }}>達成率 {fmtRate(sRate)}{sd !== null ? ` (${sd >= 0 ? "+" : ""}${sd}万)` : ""}</div>
+                      </div>
+                      <div className="perf-mc-section">
+                        <div className="perf-mc-cat">粗利</div>
+                        <div className="perf-mc-pair">
+                          <div className="perf-mc-item"><span className="mc-label">予算</span><span className="mc-val">{v.gb !== null ? M(v.gb) : "-"}</span></div>
+                          <div className="perf-mc-item"><span className="mc-label">実績</span><span className="mc-val">{v.ga !== null ? M(v.ga) : "-"}</span></div>
+                        </div>
+                        <div className="perf-mc-rate" style={{ color: rateColor(gRate) }}>達成率 {fmtRate(gRate)}</div>
+                      </div>
+                      <div className="perf-mc-section">
+                        <div className="perf-mc-cat">営業利益</div>
+                        <div className="perf-mc-pair">
+                          <div className="perf-mc-item"><span className="mc-label">予算</span><span className="mc-val">{v.ob !== null ? M(v.ob) : "-"}</span></div>
+                          <div className="perf-mc-item"><span className="mc-label">実績</span><span className="mc-val">{v.oa !== null ? M(v.oa) : "-"}</span></div>
+                        </div>
+                        <div className="perf-mc-rate" style={{ color: rateColor(oRate) }}>達成率 {fmtRate(oRate)}{od !== null ? ` (${od >= 0 ? "+" : ""}${od}万)` : ""}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            /* デスクトップ: テーブル表示 */
+            <div className="cb tw">
+              {tableMode === "monthly" ? (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>月</th>
+                      <th className="tr">売上予算</th><th className="tr">売上実績</th><th className="tr">売上差異</th><th className="tr">達成率</th>
+                      <th className="tr">粗利予算</th><th className="tr">粗利実績</th>
+                      <th className="tr">営利予算</th><th className="tr">営利実績</th><th className="tr">営利差異</th>
                     </tr>
-                  </tfoot>
-                )}
-              </table>
-            ) : (
-              /* 累積テーブル */
-              <table>
-                <thead>
-                  <tr>
-                    <th>月</th>
-                    <th className="tr">売上累計予算</th><th className="tr">売上累計実績</th><th className="tr">達成率</th>
-                    <th className="tr">粗利累計予算</th><th className="tr">粗利累計実績</th><th className="tr">達成率</th>
-                    <th className="tr">営利累計予算</th><th className="tr">営利累計実績</th><th className="tr">達成率</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {mergedData.map((v, i) => {
-                    const cum = cumulativeData[i];
-                    const hasAct = v.sa !== null;
-                    const sr = hasAct ? achieveRate(cum.sa, cum.sb) : null;
-                    const gr = hasAct ? achieveRate(cum.ga, cum.gb) : null;
-                    const or = hasAct ? achieveRate(cum.oa, cum.ob) : null;
-
-                    return (
-                      <tr key={i} style={i === currentMonthIdx ? { borderLeft: "2px solid var(--ac)" } : undefined}>
-                        <td className="bold">{v.m}</td>
-                        <td className="tr mono">{M(cum.sb)}</td>
-                        <td className="tr mono">{hasAct ? M(cum.sa) : <span style={{ color: "var(--tx4)" }}>-</span>}</td>
-                        <td className="tr mono" style={{ color: rateColor(sr) }}>{fmtRate(sr)}</td>
-                        <td className="tr mono">{M(cum.gb)}</td>
-                        <td className="tr mono">{hasAct ? M(cum.ga) : <span style={{ color: "var(--tx4)" }}>-</span>}</td>
-                        <td className="tr mono" style={{ color: rateColor(gr) }}>{fmtRate(gr)}</td>
-                        <td className="tr mono">{M(cum.ob)}</td>
-                        <td className="tr mono">{hasAct ? M(cum.oa) : <span style={{ color: "var(--tx4)" }}>-</span>}</td>
-                        <td className="tr mono" style={{ color: rateColor(or) }}>{fmtRate(or)}</td>
+                  </thead>
+                  <tbody>
+                    {mergedData.map((v, i) => {
+                      const sd = v.sa !== null && v.sb !== null ? v.sa - v.sb : null;
+                      const od = v.oa !== null && v.ob !== null ? v.oa - v.ob : null;
+                      const sRate = achieveRate(v.sa, v.sb);
+                      return (
+                        <tr key={i} style={i === currentMonthIdx ? { borderLeft: "2px solid var(--ac)" } : undefined}>
+                          <td className="bold">{v.m}</td>
+                          <EditableCell mi={i} field="sb" value={v.sb} />
+                          <td className="tr mono">{v.sa !== null ? M(v.sa) : <span style={{ color: "var(--tx4)" }}>-</span>}</td>
+                          <td className="tr mono" style={{ color: sd !== null ? (sd >= 0 ? "var(--ac)" : "var(--rd)") : "" }}>
+                            {sd !== null ? `${sd >= 0 ? "+" : ""}${sd}万` : "-"}
+                          </td>
+                          <td className="tr mono" style={{ color: rateColor(sRate) }}>{fmtRate(sRate)}</td>
+                          <EditableCell mi={i} field="gb" value={v.gb} />
+                          <td className="tr mono">{v.ga !== null ? M(v.ga) : <span style={{ color: "var(--tx4)" }}>-</span>}</td>
+                          <EditableCell mi={i} field="ob" value={v.ob} />
+                          <td className="tr mono">{v.oa !== null ? M(v.oa) : <span style={{ color: "var(--tx4)" }}>-</span>}</td>
+                          <td className="tr mono" style={{ color: od !== null ? (od >= 0 ? "var(--ac)" : "var(--rd)") : "" }}>
+                            {od !== null ? `${od >= 0 ? "+" : ""}${od}万` : "-"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  {hasActuals && (
+                    <tfoot>
+                      <tr className="cf-total-row">
+                        <td className="bold">YTD合計</td>
+                        <td className="tr mono">{M(ytd.sb)}</td>
+                        <td className="tr mono">{M(ytd.sa)}</td>
+                        <td className="tr mono" style={{ color: ytd.sa - ytd.sb >= 0 ? "var(--ac)" : "var(--rd)" }}>
+                          {ytd.sa - ytd.sb >= 0 ? "+" : ""}{ytd.sa - ytd.sb}万
+                        </td>
+                        <td className="tr mono" style={{ color: rateColor(ytdSalesRate) }}>{fmtRate(ytdSalesRate)}</td>
+                        <td className="tr mono">{M(ytd.gb)}</td>
+                        <td className="tr mono">{M(ytd.ga)}</td>
+                        <td className="tr mono">{M(ytd.ob)}</td>
+                        <td className="tr mono">{M(ytd.oa)}</td>
+                        <td className="tr mono" style={{ color: ytd.oa - ytd.ob >= 0 ? "var(--ac)" : "var(--rd)" }}>
+                          {ytd.oa - ytd.ob >= 0 ? "+" : ""}{ytd.oa - ytd.ob}万
+                        </td>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            )}
-          </div>
+                    </tfoot>
+                  )}
+                </table>
+              ) : (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>月</th>
+                      <th className="tr">売上累計予算</th><th className="tr">売上累計実績</th><th className="tr">達成率</th>
+                      <th className="tr">粗利累計予算</th><th className="tr">粗利累計実績</th><th className="tr">達成率</th>
+                      <th className="tr">営利累計予算</th><th className="tr">営利累計実績</th><th className="tr">達成率</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mergedData.map((v, i) => {
+                      const cum = cumulativeData[i];
+                      const hasAct = v.sa !== null;
+                      const sr = hasAct ? achieveRate(cum.sa, cum.sb) : null;
+                      const gr = hasAct ? achieveRate(cum.ga, cum.gb) : null;
+                      const or = hasAct ? achieveRate(cum.oa, cum.ob) : null;
+                      return (
+                        <tr key={i} style={i === currentMonthIdx ? { borderLeft: "2px solid var(--ac)" } : undefined}>
+                          <td className="bold">{v.m}</td>
+                          <td className="tr mono">{M(cum.sb)}</td>
+                          <td className="tr mono">{hasAct ? M(cum.sa) : <span style={{ color: "var(--tx4)" }}>-</span>}</td>
+                          <td className="tr mono" style={{ color: rateColor(sr) }}>{fmtRate(sr)}</td>
+                          <td className="tr mono">{M(cum.gb)}</td>
+                          <td className="tr mono">{hasAct ? M(cum.ga) : <span style={{ color: "var(--tx4)" }}>-</span>}</td>
+                          <td className="tr mono" style={{ color: rateColor(gr) }}>{fmtRate(gr)}</td>
+                          <td className="tr mono">{M(cum.ob)}</td>
+                          <td className="tr mono">{hasAct ? M(cum.oa) : <span style={{ color: "var(--tx4)" }}>-</span>}</td>
+                          <td className="tr mono" style={{ color: rateColor(or) }}>{fmtRate(or)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
         </div>
       </>}
     </div></div>
