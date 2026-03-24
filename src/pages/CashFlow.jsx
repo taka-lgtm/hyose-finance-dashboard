@@ -1,13 +1,11 @@
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect } from "react";
 import { Chart, registerables } from "chart.js";
 import { CF as DEFAULT_CF, M, chartFont, chartGrid, chartLegend, getChartTheme } from "../data";
-import { generateCashFlowData, generateMonthlyPLData, readFileAsArrayBuffer } from "../lib/csvParser";
 import { useSettings } from "../contexts/SettingsContext";
-import { getFiscalYear } from "../contexts/SettingsContext";
 
 Chart.register(...registerables);
 
-export default function CashFlow({ cfData, saveCF, saveMonthlyPL, monthlyPLData, canEdit = true }) {
+export default function CashFlow({ cfData, canEdit = true, openImportModal }) {
   const { settings, fiscalMonths } = useSettings();
   const safetyLine = settings.safetyLine;
   // 決算月の順序に並び替え
@@ -23,7 +21,6 @@ export default function CashFlow({ cfData, saveCF, saveMonthlyPL, monthlyPLData,
     const 平均残高 = Math.round((prevBal + v.残高) / 2);
     const 月間増減 = v.残高 - prevBal;
     const 収支差額 = v.入金 - v.出金;
-    // PLベース推計残高：初月はBS残高、以降は前月推計+収支差額
     return { ...v, 平均残高, 月間増減, 収支差額 };
   });
 
@@ -39,61 +36,6 @@ export default function CashFlow({ cfData, saveCF, saveMonthlyPL, monthlyPLData,
   const avgI = hasData ? Math.round(CF.reduce((s, v) => s + v.入金, 0) / CF.length) : 0;
   const avgO = hasData ? Math.round(CF.reduce((s, v) => s + v.出金, 0) / CF.length) : 0;
   const r1 = useRef(null), r2 = useRef(null), c1 = useRef(null), c2 = useRef(null);
-  const bsFileRef = useRef(null), plFileRef = useRef(null);
-
-  // アップロード状態
-  const [uploading, setUploading] = useState(false);
-  const [uploadMsg, setUploadMsg] = useState(null);
-  const [bsFile, setBsFile] = useState(null);
-  const [plFile, setPlFile] = useState(null);
-
-  // CSVアップロード処理
-  const handleUpload = useCallback(async () => {
-    if (!bsFile || !plFile) {
-      setUploadMsg({ type: "error", text: "貸借対照表CSVと損益計算書CSVの両方を選択してください" });
-      return;
-    }
-    setUploading(true);
-    setUploadMsg({ type: "info", text: "CSVを解析中..." });
-    try {
-      const [bsBuffer, plBuffer] = await Promise.all([
-        readFileAsArrayBuffer(bsFile),
-        readFileAsArrayBuffer(plFile),
-      ]);
-      const cfResult = generateCashFlowData(bsBuffer, plBuffer, settings.fiscalMonth);
-      if (!cfResult.length) throw new Error("データを抽出できませんでした");
-      await saveCF(cfResult);
-      // 月次PL実績も同時に生成・保存（予実管理用）
-      // ファイル名から年度を自動判定（例: 損益計算書_月次推移_20260320_0156.csv → 2026年3月 → FY2025）
-      let plMsg = "";
-      if (saveMonthlyPL) {
-        try {
-          const plBuffer2 = await readFileAsArrayBuffer(plFile);
-          const monthlyResult = generateMonthlyPLData(plBuffer2, settings.fiscalMonth);
-          if (monthlyResult.length > 0) {
-            // ファイル名から日付を抽出して年度判定
-            const dateMatch = plFile.name.match(/(\d{4})(\d{2})(\d{2})/);
-            let fy;
-            if (dateMatch) {
-              const fileDate = new Date(Number(dateMatch[1]), Number(dateMatch[2]) - 1, Number(dateMatch[3]));
-              fy = String(getFiscalYear(settings.fiscalMonth, fileDate));
-            } else {
-              fy = String(getFiscalYear(settings.fiscalMonth));
-            }
-            const newData = { ...(monthlyPLData || {}), [fy]: monthlyResult };
-            await saveMonthlyPL(newData);
-            plMsg = ` + 予実管理（${fy}年度）も更新`;
-          }
-        } catch (_) { /* 月次PL生成失敗は無視（資金繰りは成功） */ }
-      }
-      setUploadMsg({ type: "success", text: `${cfResult.length}ヶ月分の資金繰りデータを登録しました${plMsg}` });
-      setBsFile(null);
-      setPlFile(null);
-    } catch (e) {
-      setUploadMsg({ type: "error", text: typeof e === "string" ? e : e.message || "CSVの解析に失敗しました" });
-    }
-    setUploading(false);
-  }, [bsFile, plFile, saveCF, saveMonthlyPL, monthlyPLData, settings.fiscalMonth]);
 
   // チャート描画
   const theme = settings.theme || "dark";
@@ -115,47 +57,20 @@ export default function CashFlow({ cfData, saveCF, saveMonthlyPL, monthlyPLData,
     <div className="page"><div className="g">
       <div className="ph">
         <div><h2>資金繰り</h2><p>資金繰りに特化。安全水準との距離感と先行きを管理する。</p></div>
-        {canEdit && <div className="ph-actions">
-          {/* BS CSV選択 */}
-          <button className="btn upload-compact-btn" onClick={() => bsFileRef.current?.click()} disabled={uploading}>
-            <input ref={bsFileRef} type="file" accept=".csv" style={{ display: "none" }}
-              onChange={(e) => { setBsFile(e.target.files[0] || null); e.target.value = ""; }} />
-            <span>{bsFile ? `BS: ${bsFile.name.slice(0, 15)}...` : "BS CSV"}</span>
-          </button>
-          {/* PL CSV選択 */}
-          <button className="btn upload-compact-btn" onClick={() => plFileRef.current?.click()} disabled={uploading}>
-            <input ref={plFileRef} type="file" accept=".csv" style={{ display: "none" }}
-              onChange={(e) => { setPlFile(e.target.files[0] || null); e.target.value = ""; }} />
-            <span>{plFile ? `PL: ${plFile.name.slice(0, 15)}...` : "PL CSV"}</span>
-          </button>
-          {/* アップロード実行 */}
-          <button className="btn pr upload-compact-btn" onClick={handleUpload} disabled={uploading || !bsFile || !plFile}>
-            {uploading ? (
-              <><div className="login-spinner" style={{ width: 14, height: 14, borderWidth: 2 }} /><span>解析中...</span></>
-            ) : (
-              <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>取り込み</span></>
-            )}
-          </button>
-        </div>}
       </div>
-
-      {/* アップロードメッセージ */}
-      {uploadMsg && (
-        <div className={`upload-msg upload-msg-${uploadMsg.type}`}>
-          {uploadMsg.type === "info" && <div className="login-spinner" style={{ width: 14, height: 14, borderWidth: 2, flexShrink: 0 }} />}
-          {uploadMsg.type === "success" && <span style={{ fontSize: 16 }}>✓</span>}
-          {uploadMsg.type === "error" && <span style={{ fontSize: 16 }}>✕</span>}
-          <span>{uploadMsg.text}</span>
-          <button className="upload-msg-close" onClick={() => setUploadMsg(null)}>&times;</button>
-        </div>
-      )}
 
       {/* データがない場合の案内 */}
       {!hasData && (
         <div className="c">
-          <div className="cb" style={{ padding: "40px 20px", textAlign: "center", color: "var(--tx3)" }}>
-            <p style={{ fontSize: 14, marginBottom: 8 }}>資金繰りデータがありません</p>
-            <p style={{ fontSize: 12 }}>マネーフォワードの「貸借対照表_月次推移」と「損益計算書_月次推移」のCSVをアップロードしてください</p>
+          <div className="cb import-guide-msg">
+            <p style={{ fontSize: 14 }}>資金繰りデータがありません</p>
+            <p style={{ fontSize: 12 }}>
+              {openImportModal ? (
+                <>サイドバーの「<span className="import-guide-link" onClick={openImportModal}>データ取込</span>」からCSVを登録してください</>
+              ) : (
+                <>管理者にCSVデータの取込を依頼してください</>
+              )}
+            </p>
           </div>
         </div>
       )}
