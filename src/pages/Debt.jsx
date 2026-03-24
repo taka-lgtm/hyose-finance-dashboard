@@ -5,6 +5,7 @@ import { BANK_COLORS, getBankColor } from "../data/banks";
 import { calcAllProjections } from "../lib/loanCalc";
 import { fetchLoanLogs } from "../lib/firestore";
 import { useSettings } from "../contexts/SettingsContext";
+import { useIsMobile } from "../lib/useIsMobile";
 import LoanModal from "../components/LoanModal";
 
 Chart.register(...registerables);
@@ -194,7 +195,35 @@ function BalanceBlock({ title, badge, data, projLabels, onEdit, isFirst }) {
   );
 }
 
+// 残高推移 折りたたみカード（スマホ用）
+function BalanceMobileCard({ loan, projLabels }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="bal-mc">
+      <div className="bal-mc-head" onClick={() => setOpen(!open)}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="bal-mc-title">{loan.bank} {loan.name}</div>
+          <div style={{ fontSize: 10, color: "var(--tx3)", marginTop: 2 }}>{loan.category} / {loan.rate}%</div>
+        </div>
+        <div className="bal-mc-bal">{Math.round(loan.balance / 10000).toLocaleString()}万</div>
+        <span className={`bal-mc-arrow ${open ? "open" : ""}`}>▶</span>
+      </div>
+      {open && (
+        <div className="bal-mc-detail">
+          {projLabels.map((m, i) => (
+            <div className="bal-mc-row" key={m}>
+              <span>{m}</span>
+              <span>{Math.round(loan.balances[i] / 10000).toLocaleString()}万</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function BalanceView({ proj, wRate, tMon, loans, bankFilter, onEdit }) {
+  const isMobile = useIsMobile();
   const { settings } = useSettings();
   const ct = getChartTheme(settings.theme);
   const themedGrid = { color: ct.gridColor };
@@ -235,30 +264,42 @@ function BalanceView({ proj, wRate, tMon, loans, bankFilter, onEdit }) {
           </button>
         </div>
       </div>
-      <div className="cb" style={{ padding: 0 }}>
-        <div className="scroll-table-wrap" ref={wrapRef}>
-          <div className="scroll-table-inner" ref={scrollRef}>
-            <table className="bal-tbl">
-              <thead><tr><th className="sticky sticky-0">銀行</th><th className="sticky sticky-1">融資名</th><th className="num-head">金利</th><th className="num-head">月返済</th><th className="num-head" style={{ background: "var(--acB)" }}>現在</th>{projLabels.map((m) => <th key={m} className="num-head">{m}</th>)}</tr></thead>
-              <tbody>
-                <BalanceBlock title="長期借入金" badge="cat-long" data={longTerm} projLabels={projLabels} onEdit={onEdit} isFirst={true} />
-                <BalanceBlock title="短期借入金" badge="cat-short" data={shortTerm} projLabels={projLabels} onEdit={onEdit} isFirst={!longTerm.length} />
-                <BalanceBlock title="当座貸越" badge="cat-od" data={overdraft} projLabels={projLabels} onEdit={onEdit} isFirst={!longTerm.length && !shortTerm.length} />
-                <tr className="total-row">
-                  <td className="bold sticky sticky-0">総合計</td><td className="sticky sticky-1" />
-                  <td className="num">{wRate}%</td><td className="num">{Math.round(tMon / 10000).toLocaleString()}</td>
-                  <td className="num" style={{ background: "var(--acB)" }}>{Math.round(curTotal / 10000).toLocaleString()}</td>
-                  {projTotals.map((v, i) => <td key={i} className="num">{Math.round(v / 10000).toLocaleString()}</td>)}
-                </tr>
-              </tbody>
-            </table>
+      {isMobile ? (
+        /* スマホ: 折りたたみカード */
+        <div className="cb">
+          <div className="mob-cards">
+            {projData.map((l, i) => (
+              <BalanceMobileCard key={l.id || i} loan={l} projLabels={projLabels} />
+            ))}
           </div>
         </div>
-        <div className="scroll-hint" style={{ padding: "8px 18px 14px" }}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
-          横スクロールで全月の残高を確認できます
+      ) : (
+        /* デスクトップ: テーブル */
+        <div className="cb" style={{ padding: 0 }}>
+          <div className="scroll-table-wrap" ref={wrapRef}>
+            <div className="scroll-table-inner" ref={scrollRef}>
+              <table className="bal-tbl">
+                <thead><tr><th className="sticky sticky-0">銀行</th><th className="sticky sticky-1">融資名</th><th className="num-head">金利</th><th className="num-head">月返済</th><th className="num-head" style={{ background: "var(--acB)" }}>現在</th>{projLabels.map((m) => <th key={m} className="num-head">{m}</th>)}</tr></thead>
+                <tbody>
+                  <BalanceBlock title="長期借入金" badge="cat-long" data={longTerm} projLabels={projLabels} onEdit={onEdit} isFirst={true} />
+                  <BalanceBlock title="短期借入金" badge="cat-short" data={shortTerm} projLabels={projLabels} onEdit={onEdit} isFirst={!longTerm.length} />
+                  <BalanceBlock title="当座貸越" badge="cat-od" data={overdraft} projLabels={projLabels} onEdit={onEdit} isFirst={!longTerm.length && !shortTerm.length} />
+                  <tr className="total-row">
+                    <td className="bold sticky sticky-0">総合計</td><td className="sticky sticky-1" />
+                    <td className="num">{wRate}%</td><td className="num">{Math.round(tMon / 10000).toLocaleString()}</td>
+                    <td className="num" style={{ background: "var(--acB)" }}>{Math.round(curTotal / 10000).toLocaleString()}</td>
+                    {projTotals.map((v, i) => <td key={i} className="num">{Math.round(v / 10000).toLocaleString()}</td>)}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div className="scroll-hint" style={{ padding: "8px 18px 14px" }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+            横スクロールで全月の残高を確認できます
+          </div>
         </div>
-      </div>
+      )}
     </div>
     <div className="c"><div className="ch"><div><div className="ct">借入残高 合計推移</div></div></div><div className="cb"><div className="chart"><canvas ref={totalChartRef} /></div></div></div>
     <div className="g2">
@@ -286,6 +327,7 @@ function BalanceView({ proj, wRate, tMon, loans, bankFilter, onEdit }) {
    ══════════════════════════════════ */
 
 function ListView({ loans, onEdit }) {
+  const isMobile = useIsMobile();
   const [sortKey, setSortKey] = useState("balance");
   const [sortAsc, setSortAsc] = useState(false);
 
@@ -304,6 +346,48 @@ function ListView({ loans, onEdit }) {
       {children}{sortKey === k ? (sortAsc ? " ↑" : " ↓") : ""}
     </th>
   );
+
+  const SORT_OPTIONS = [
+    { key: "balance", label: "残高順" },
+    { key: "rate", label: "金利順" },
+    { key: "bank", label: "銀行名順" },
+    { key: "endDate", label: "期限順" },
+  ];
+
+  if (isMobile) {
+    return (
+      <div>
+        {/* ソート */}
+        <div style={{ display: "flex", gap: 4, marginBottom: 12, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+          {SORT_OPTIONS.map((o) => (
+            <button key={o.key} className={`chip ${sortKey === o.key ? "on" : ""}`} onClick={() => toggleSort(o.key)}>
+              {o.label}{sortKey === o.key ? (sortAsc ? " ↑" : " ↓") : ""}
+            </button>
+          ))}
+        </div>
+        {/* カード一覧 */}
+        <div className="mob-cards">
+          {sorted.map((l, i) => (
+            <div className="loan-mc" key={l.id || i} onClick={() => onEdit && onEdit(l)}>
+              <div className="loan-mc-head">
+                <span className="loan-mc-bank">{l.bank}</span>
+                <span className={`p ${l.category === "長期" ? "cat-long" : l.category === "短期" ? "cat-short" : "cat-od"}`}>{l.category}</span>
+              </div>
+              <div className="loan-mc-num">{l.name}{l.num ? ` / ${l.num}` : ""}</div>
+              <div className="loan-mc-body">
+                <div><div className="loan-mc-label">Balance</div><div className="loan-mc-val">{MY(l.balance)}</div></div>
+                <div><div className="loan-mc-label">Rate</div><div className="loan-mc-val" style={{ color: l.rate >= 1.8 ? "var(--rd)" : l.rate >= 1.5 ? "var(--am)" : "var(--ac)" }}>{l.rate}%</div></div>
+              </div>
+              <div className="loan-mc-foot">
+                <span>月返済 {MY(l.monthly)}</span>
+                <span>最終期限 {l.endDate || "-"}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="c">
