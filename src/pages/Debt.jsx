@@ -264,42 +264,30 @@ function BalanceView({ proj, wRate, tMon, loans, bankFilter, onEdit }) {
           </button>
         </div>
       </div>
-      {isMobile ? (
-        /* スマホ: 折りたたみカード */
-        <div className="cb">
-          <div className="mob-cards">
-            {projData.map((l, i) => (
-              <BalanceMobileCard key={l.id || i} loan={l} projLabels={projLabels} />
-            ))}
+      <div className="cb" style={{ padding: 0 }}>
+        <div className="scroll-table-wrap" ref={wrapRef}>
+          <div className="scroll-table-inner" ref={scrollRef}>
+            <table className="bal-tbl">
+              <thead><tr><th className="sticky sticky-0">銀行</th><th className="sticky sticky-1">融資名</th><th className="num-head">金利</th><th className="num-head">月返済</th><th className="num-head" style={{ background: "var(--acB)" }}>現在</th>{projLabels.map((m) => <th key={m} className="num-head">{m}</th>)}</tr></thead>
+              <tbody>
+                <BalanceBlock title="長期借入金" badge="cat-long" data={longTerm} projLabels={projLabels} onEdit={onEdit} isFirst={true} />
+                <BalanceBlock title="短期借入金" badge="cat-short" data={shortTerm} projLabels={projLabels} onEdit={onEdit} isFirst={!longTerm.length} />
+                <BalanceBlock title="当座貸越" badge="cat-od" data={overdraft} projLabels={projLabels} onEdit={onEdit} isFirst={!longTerm.length && !shortTerm.length} />
+                <tr className="total-row">
+                  <td className="bold sticky sticky-0">総合計</td><td className="sticky sticky-1" />
+                  <td className="num">{wRate}%</td><td className="num">{Math.round(tMon / 10000).toLocaleString()}</td>
+                  <td className="num" style={{ background: "var(--acB)" }}>{Math.round(curTotal / 10000).toLocaleString()}</td>
+                  {projTotals.map((v, i) => <td key={i} className="num">{Math.round(v / 10000).toLocaleString()}</td>)}
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
-      ) : (
-        /* デスクトップ: テーブル */
-        <div className="cb" style={{ padding: 0 }}>
-          <div className="scroll-table-wrap" ref={wrapRef}>
-            <div className="scroll-table-inner" ref={scrollRef}>
-              <table className="bal-tbl">
-                <thead><tr><th className="sticky sticky-0">銀行</th><th className="sticky sticky-1">融資名</th><th className="num-head">金利</th><th className="num-head">月返済</th><th className="num-head" style={{ background: "var(--acB)" }}>現在</th>{projLabels.map((m) => <th key={m} className="num-head">{m}</th>)}</tr></thead>
-                <tbody>
-                  <BalanceBlock title="長期借入金" badge="cat-long" data={longTerm} projLabels={projLabels} onEdit={onEdit} isFirst={true} />
-                  <BalanceBlock title="短期借入金" badge="cat-short" data={shortTerm} projLabels={projLabels} onEdit={onEdit} isFirst={!longTerm.length} />
-                  <BalanceBlock title="当座貸越" badge="cat-od" data={overdraft} projLabels={projLabels} onEdit={onEdit} isFirst={!longTerm.length && !shortTerm.length} />
-                  <tr className="total-row">
-                    <td className="bold sticky sticky-0">総合計</td><td className="sticky sticky-1" />
-                    <td className="num">{wRate}%</td><td className="num">{Math.round(tMon / 10000).toLocaleString()}</td>
-                    <td className="num" style={{ background: "var(--acB)" }}>{Math.round(curTotal / 10000).toLocaleString()}</td>
-                    {projTotals.map((v, i) => <td key={i} className="num">{Math.round(v / 10000).toLocaleString()}</td>)}
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div className="scroll-hint" style={{ padding: "8px 18px 14px" }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
-            横スクロールで全月の残高を確認できます
-          </div>
+        <div className="scroll-hint" style={{ padding: "8px 18px 14px" }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+          横スクロールで全月の残高を確認できます
         </div>
-      )}
+      </div>
     </div>
     <div className="c"><div className="ch"><div><div className="ct">借入残高 合計推移</div></div></div><div className="cb"><div className="chart"><canvas ref={totalChartRef} /></div></div></div>
     <div className="g2">

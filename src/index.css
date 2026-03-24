@@ -644,7 +644,7 @@ select.form-input option{background:var(--sf);color:var(--tx)}
 
 /* Responsive */
 @media(max-width:1400px){.g4,.cal-grid{grid-template-columns:repeat(2,1fr)}.rpt-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:1100px){.shell{grid-template-columns:1fr}.nav{position:relative;height:auto}.gs,.g2,.g3{grid-template-columns:1fr}.hh{grid-template-columns:1fr}.hs{border-right:none;border-bottom:1px solid var(--bd);padding:20px}.ms-r{grid-template-columns:1fr 90px 80px}.ms-n{grid-column:1/-1}}
+@media(max-width:1100px){.shell{grid-template-columns:1fr}.nav{position:relative;height:auto}.gs,.g2{grid-template-columns:1fr}.g3{grid-template-columns:repeat(2,1fr);gap:12px}.hh{grid-template-columns:1fr}.hs{border-right:none;border-bottom:1px solid var(--bd);padding:20px}.ms-r{grid-template-columns:1fr 90px 80px}.ms-n{grid-column:1/-1}}
 @media(max-width:768px){.main{padding:16px 12px 100px}.g4,.cal-grid,.rpt-grid{grid-template-columns:1fr}.ph{flex-direction:column;align-items:flex-start}.ph h2{font-size:20px}}
 
 /* ── ボトムナビゲーション ── */
@@ -930,7 +930,7 @@ select.form-input option{background:var(--sf);color:var(--tx)}
 
   .g{gap:10px}
   .g2,.gs{grid-template-columns:1fr;gap:10px}
-  .g3{grid-template-columns:1fr 1fr;gap:8px}
+  .g3{grid-template-columns:1fr 1fr;gap:8px;grid-auto-flow:dense}
 
   /* Health compact on mobile */
   .hh{grid-template-columns:auto 1fr}
