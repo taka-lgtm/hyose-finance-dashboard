@@ -195,35 +195,7 @@ function BalanceBlock({ title, badge, data, projLabels, onEdit, isFirst }) {
   );
 }
 
-// 残高推移 折りたたみカード（スマホ用）
-function BalanceMobileCard({ loan, projLabels }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="bal-mc">
-      <div className="bal-mc-head" onClick={() => setOpen(!open)}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="bal-mc-title">{loan.bank} {loan.name}</div>
-          <div style={{ fontSize: 10, color: "var(--tx3)", marginTop: 2 }}>{loan.category} / {loan.rate}%</div>
-        </div>
-        <div className="bal-mc-bal">{Math.round(loan.balance / 10000).toLocaleString()}万</div>
-        <span className={`bal-mc-arrow ${open ? "open" : ""}`}>▶</span>
-      </div>
-      {open && (
-        <div className="bal-mc-detail">
-          {projLabels.map((m, i) => (
-            <div className="bal-mc-row" key={m}>
-              <span>{m}</span>
-              <span>{Math.round(loan.balances[i] / 10000).toLocaleString()}万</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 function BalanceView({ proj, wRate, tMon, loans, bankFilter, onEdit }) {
-  const isMobile = useIsMobile();
   const { settings } = useSettings();
   const ct = getChartTheme(settings.theme);
   const themedGrid = { color: ct.gridColor };
