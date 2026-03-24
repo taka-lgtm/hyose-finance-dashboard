@@ -2,11 +2,13 @@ import { useRef, useEffect } from "react";
 import { Chart, registerables } from "chart.js";
 import { CF as DEFAULT_CF, M, chartFont, chartGrid, chartLegend, getChartTheme } from "../data";
 import { useSettings } from "../contexts/SettingsContext";
+import { useIsMobile } from "../lib/useIsMobile";
 
 Chart.register(...registerables);
 
 export default function CashFlow({ cfData, canEdit = true, openImportModal }) {
   const { settings, fiscalMonths } = useSettings();
+  const isMobile = useIsMobile();
   const safetyLine = settings.safetyLine;
   // 決算月の順序に並び替え
   const rawCF = cfData && cfData.length > 0 ? cfData : DEFAULT_CF;
@@ -88,43 +90,66 @@ export default function CashFlow({ cfData, canEdit = true, openImportModal }) {
         </div>
         <div className="c">
           <div className="ch"><div><div className="ct">月次詳細</div></div></div>
-          <div className="cb tw">
-            <table>
-              <thead><tr><th>月</th><th className="tr">入金(PL)</th><th className="tr">出金(PL)</th><th className="tr">収支差額</th><th className="tr">BS月末残高</th><th className="tr">平均残高</th><th className="tr">月間増減</th></tr></thead>
-              <tbody>
+          {isMobile ? (
+            /* スマホ: カード表示 */
+            <div className="cb">
+              <div className="mob-cards">
                 {enriched.map((v, i) => (
-                  <tr key={i}>
-                    <td className="bold">{v.m}</td>
-                    <td className="tr mono">{M(v.入金)}</td><td className="tr mono">{M(v.出金)}</td>
-                    <td className="tr mono" style={{ color: v.収支差額 >= 0 ? "var(--ac)" : "var(--rd)" }}>{v.収支差額 >= 0 ? "+" : ""}{v.収支差額.toLocaleString()}万</td>
-                    <td className="tr mono">{M(v.残高)}</td>
-                    <td className="tr mono">{M(v.平均残高)}</td>
-                    <td className="tr mono" style={{ color: v.月間増減 >= 0 ? "var(--ac)" : "var(--rd)" }}>{v.月間増減 >= 0 ? "+" : ""}{v.月間増減.toLocaleString()}万</td>
-                  </tr>
+                  <div className="month-mc" key={i}>
+                    <div className="month-mc-title">{v.m}</div>
+                    <div className="month-mc-grid">
+                      <div className="month-mc-row"><span className="mc-label">入金(PL)</span><span className="mc-val">{M(v.入金)}</span></div>
+                      <div className="month-mc-row"><span className="mc-label">出金(PL)</span><span className="mc-val">{M(v.出金)}</span></div>
+                      <div className="month-mc-row"><span className="mc-label">収支差額</span><span className="mc-val" style={{ color: v.収支差額 >= 0 ? "var(--ac)" : "var(--rd)" }}>{v.収支差額 >= 0 ? "+" : ""}{v.収支差額.toLocaleString()}万</span></div>
+                      <div className="month-mc-divider" />
+                      <div className="month-mc-row"><span className="mc-label">BS残高</span><span className="mc-val">{M(v.残高)}</span></div>
+                      <div className="month-mc-row"><span className="mc-label">平均残高</span><span className="mc-val">{M(v.平均残高)}</span></div>
+                      <div className="month-mc-row"><span className="mc-label">月間増減</span><span className="mc-val" style={{ color: v.月間増減 >= 0 ? "var(--ac)" : "var(--rd)" }}>{v.月間増減 >= 0 ? "+" : ""}{v.月間増減.toLocaleString()}万</span></div>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-              {(() => {
-                const totalIn = enriched.reduce((s, v) => s + v.入金, 0);
-                const totalOut = enriched.reduce((s, v) => s + v.出金, 0);
-                const totalNet = totalIn - totalOut;
-                const lastBal = enriched[enriched.length - 1].残高;
-                const lastAvg = enriched[enriched.length - 1].平均残高;
-                const totalDelta = enriched.reduce((s, v) => s + v.月間増減, 0);
-                return (
-                  <tfoot>
-                    <tr className="cf-total-row">
-                      <td className="bold">合計</td>
-                      <td className="tr mono">{M(totalIn)}</td><td className="tr mono">{M(totalOut)}</td>
-                      <td className="tr mono" style={{ color: totalNet >= 0 ? "var(--ac)" : "var(--rd)" }}>{totalNet >= 0 ? "+" : ""}{totalNet.toLocaleString()}万</td>
-                      <td className="tr mono">{M(lastBal)}</td>
-                      <td className="tr mono">{M(lastAvg)}</td>
-                      <td className="tr mono" style={{ color: totalDelta >= 0 ? "var(--ac)" : "var(--rd)" }}>{totalDelta >= 0 ? "+" : ""}{totalDelta.toLocaleString()}万</td>
+              </div>
+            </div>
+          ) : (
+            /* デスクトップ: テーブル表示 */
+            <div className="cb tw">
+              <table>
+                <thead><tr><th>月</th><th className="tr">入金(PL)</th><th className="tr">出金(PL)</th><th className="tr">収支差額</th><th className="tr">BS月末残高</th><th className="tr">平均残高</th><th className="tr">月間増減</th></tr></thead>
+                <tbody>
+                  {enriched.map((v, i) => (
+                    <tr key={i}>
+                      <td className="bold">{v.m}</td>
+                      <td className="tr mono">{M(v.入金)}</td><td className="tr mono">{M(v.出金)}</td>
+                      <td className="tr mono" style={{ color: v.収支差額 >= 0 ? "var(--ac)" : "var(--rd)" }}>{v.収支差額 >= 0 ? "+" : ""}{v.収支差額.toLocaleString()}万</td>
+                      <td className="tr mono">{M(v.残高)}</td>
+                      <td className="tr mono">{M(v.平均残高)}</td>
+                      <td className="tr mono" style={{ color: v.月間増減 >= 0 ? "var(--ac)" : "var(--rd)" }}>{v.月間増減 >= 0 ? "+" : ""}{v.月間増減.toLocaleString()}万</td>
                     </tr>
-                  </tfoot>
-                );
-              })()}
-            </table>
-          </div>
+                  ))}
+                </tbody>
+                {(() => {
+                  const totalIn = enriched.reduce((s, v) => s + v.入金, 0);
+                  const totalOut = enriched.reduce((s, v) => s + v.出金, 0);
+                  const totalNet = totalIn - totalOut;
+                  const lastBal = enriched[enriched.length - 1].残高;
+                  const lastAvg = enriched[enriched.length - 1].平均残高;
+                  const totalDelta = enriched.reduce((s, v) => s + v.月間増減, 0);
+                  return (
+                    <tfoot>
+                      <tr className="cf-total-row">
+                        <td className="bold">合計</td>
+                        <td className="tr mono">{M(totalIn)}</td><td className="tr mono">{M(totalOut)}</td>
+                        <td className="tr mono" style={{ color: totalNet >= 0 ? "var(--ac)" : "var(--rd)" }}>{totalNet >= 0 ? "+" : ""}{totalNet.toLocaleString()}万</td>
+                        <td className="tr mono">{M(lastBal)}</td>
+                        <td className="tr mono">{M(lastAvg)}</td>
+                        <td className="tr mono" style={{ color: totalDelta >= 0 ? "var(--ac)" : "var(--rd)" }}>{totalDelta >= 0 ? "+" : ""}{totalDelta.toLocaleString()}万</td>
+                      </tr>
+                    </tfoot>
+                  );
+                })()}
+              </table>
+            </div>
+          )}
         </div>
       </>}
     </div></div>
