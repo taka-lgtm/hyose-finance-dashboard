@@ -1,5 +1,6 @@
-import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, setDoc, serverTimestamp, query, orderBy } from "firebase/firestore";
-import { db } from "./firebase";
+import { collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, setDoc, serverTimestamp, query, orderBy } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { db, storage } from "./firebase";
 
 // ═══════════════════════════════
 // LOANS
@@ -148,4 +149,71 @@ export async function seedLoansIfEmpty(defaultLoans) {
     seeded.push(saved);
   }
   return seeded;
+}
+
+// ═══════════════════════════════
+// 試算表PDF（月次）
+// ═══════════════════════════════
+
+const TB_PDF_DOC = "trialBalancePDFs";
+
+/**
+ * 試算表PDFをアップロードし、メタデータをFirestoreに保存する
+ * @param {string} fy - 年度（例: "2025"）
+ * @param {string} month - 月名（例: "4月"）
+ * @param {File} file - PDFファイル
+ * @returns {{ url: string, fileName: string, uploadedAt: string }}
+ */
+export async function uploadTrialBalancePDF(fy, month, file) {
+  // Firebase Storageにアップロード
+  const path = `trialBalancePDFs/${fy}/${month}.pdf`;
+  const storageRef = ref(storage, path);
+  await uploadBytes(storageRef, file);
+  const url = await getDownloadURL(storageRef);
+
+  // Firestoreにメタデータを保存
+  const docRef = doc(db, FIN_COL, TB_PDF_DOC);
+  const snap = await getDoc(docRef);
+  const existing = snap.exists() ? snap.data() : {};
+  const fyData = existing[fy] || {};
+  fyData[month] = { url, fileName: file.name, uploadedAt: new Date().toISOString() };
+  await setDoc(docRef, { ...existing, [fy]: fyData, updatedAt: serverTimestamp() });
+
+  return fyData[month];
+}
+
+/**
+ * 試算表PDFのメタデータを取得する
+ * @returns {object|null} { "2025": { "4月": { url, fileName, uploadedAt }, ... }, ... }
+ */
+export async function fetchTrialBalancePDFs() {
+  const docRef = doc(db, FIN_COL, TB_PDF_DOC);
+  const snap = await getDoc(docRef);
+  if (!snap.exists()) return null;
+  const { updatedAt, ...data } = snap.data();
+  return data;
+}
+
+/**
+ * 試算表PDFを削除する
+ * @param {string} fy - 年度
+ * @param {string} month - 月名
+ */
+export async function deleteTrialBalancePDF(fy, month) {
+  // Storageから削除
+  try {
+    const path = `trialBalancePDFs/${fy}/${month}.pdf`;
+    const storageRef = ref(storage, path);
+    await deleteObject(storageRef);
+  } catch (_) { /* ファイルが存在しない場合は無視 */ }
+
+  // Firestoreメタデータを更新
+  const docRef = doc(db, FIN_COL, TB_PDF_DOC);
+  const snap = await getDoc(docRef);
+  if (!snap.exists()) return;
+  const data = snap.data();
+  if (data[fy]) {
+    delete data[fy][month];
+    await setDoc(docRef, { ...data, updatedAt: serverTimestamp() });
+  }
 }
