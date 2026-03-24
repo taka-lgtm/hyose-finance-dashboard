@@ -454,6 +454,12 @@ td.cell-edited .ctv{color:var(--ac)}
 .debt-filters{display:flex;gap:6px;align-items:center}
 .debt-filters .sel{min-width:100px}
 
+/* ── 融資管理: 分析カード ── */
+.analysis-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.analysis-pill{text-align:center;padding:10px 8px;border-radius:var(--rs);border:1px solid;overflow:hidden}
+.analysis-pill-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--tx3);font-weight:600}
+.analysis-pill-val{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-nums;font-size:20px;font-weight:700;margin-top:4px}
+
 /* 予実管理のタブ切り替え */
 .perf-chart-tabs,.perf-table-tabs{display:flex;gap:4px}
 

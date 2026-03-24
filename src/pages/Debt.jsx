@@ -439,7 +439,7 @@ function AnalysisView({ bSum, bankInt, totalInt, fixedBal, varBal, loans, sorted
 
   useEffect(() => { c1.current?.destroy(); if (!r1.current) return; c1.current = new Chart(r1.current, { type: "doughnut", data: { labels: ["固定金利", "変動金利"], datasets: [{ data: [fixedBal, varBal], backgroundColor: ["rgba(34,201,148,.8)", "rgba(229,168,58,.8)"], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: "65%", plugins: { legend: chartLegend } } }); return () => c1.current?.destroy(); }, [fixedBal, varBal]);
   useEffect(() => { c2.current?.destroy(); if (!r2.current) return; c2.current = new Chart(r2.current, { type: "doughnut", data: { labels: ["プロパー", "保証付き"], datasets: [{ data: [proparBal, guarBal], backgroundColor: ["rgba(91,141,239,.8)", "rgba(155,124,246,.8)"], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: "65%", plugins: { legend: chartLegend } } }); return () => c2.current?.destroy(); }, [proparBal, guarBal]);
-  useEffect(() => { c3.current?.destroy(); if (!r3.current) return; const rateBands = [{ label: "〜1.0%", min: 0, max: 1.0 }, { label: "1.0〜1.5%", min: 1.0, max: 1.5 }, { label: "1.5〜2.0%", min: 1.5, max: 2.0 }, { label: "2.0%〜", min: 2.0, max: 99 }]; c3.current = new Chart(r3.current, { type: "bar", data: { labels: rateBands.map((b) => b.label), datasets: [{ data: rateBands.map((b) => loans.filter((l) => l.rate >= b.min && l.rate < b.max).reduce((s, l) => s + l.balance, 0)), backgroundColor: ["rgba(34,201,148,.8)", "rgba(91,141,239,.75)", "rgba(229,168,58,.75)", "rgba(229,91,91,.7)"], borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: (v) => Math.round(v / 10000) + "万", font: chartFont }, grid: chartGrid }, x: { grid: { display: false }, ticks: { font: chartFont } } } } }); return () => c3.current?.destroy(); }, [loans]);
+  useEffect(() => { c3.current?.destroy(); if (!r3.current) return; const rateBands = [{ label: "〜1.0%", min: 0, max: 1.0 }, { label: "1.0〜1.5%", min: 1.0, max: 1.5 }, { label: "1.5〜2.0%", min: 1.5, max: 2.0 }, { label: "2.0%〜", min: 2.0, max: 99 }]; c3.current = new Chart(r3.current, { type: "bar", data: { labels: rateBands.map((b) => b.label), datasets: [{ data: rateBands.map((b) => loans.filter((l) => l.rate >= b.min && l.rate < b.max).reduce((s, l) => s + l.balance, 0)), backgroundColor: ["rgba(34,201,148,.8)", "rgba(91,141,239,.75)", "rgba(229,168,58,.75)", "rgba(229,91,91,.7)"], borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: (v) => { const m = Math.round(v / 10000); return m >= 10000 ? (m / 10000).toFixed(1) + "億" : m.toLocaleString() + "万"; }, font: chartFont }, grid: chartGrid }, x: { grid: { display: false }, ticks: { font: chartFont } } } } }); return () => c3.current?.destroy(); }, [loans]);
 
   // バーチャートのレンダー用ヘルパー
   const BarList = ({ items, total, valFmt }) => (
@@ -469,28 +469,29 @@ function AnalysisView({ bSum, bankInt, totalInt, fixedBal, varBal, loans, sorted
       </div>
     </div>
 
-    {/* 2段目: 固定vs変動 + プロパーvs保証 + 金利帯別 */}
-    <div className="g3">
+    {/* 2段目: 固定vs変動 + プロパーvs保証 */}
+    <div className="g2">
       <div className="c"><div className="ch"><div><div className="ct">固定 vs 変動</div></div></div>
         <div className="cb">
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-            <div style={{ textAlign: "center", padding: 12, borderRadius: "var(--rs)", background: "var(--acB)", border: "1px solid var(--ac)" }}><div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--tx3)", fontWeight: 600 }}>固定</div><div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontVariantNumeric: "tabular-nums", fontSize: 22, fontWeight: 700, color: "var(--ac)", marginTop: 4 }}>{tBal > 0 ? (fixedBal / tBal * 100).toFixed(1) : 0}%</div></div>
-            <div style={{ textAlign: "center", padding: 12, borderRadius: "var(--rs)", background: "var(--amB)", border: "1px solid var(--am)" }}><div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--tx3)", fontWeight: 600 }}>変動</div><div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontVariantNumeric: "tabular-nums", fontSize: 22, fontWeight: 700, color: "var(--am)", marginTop: 4 }}>{tBal > 0 ? (varBal / tBal * 100).toFixed(1) : 0}%</div></div>
+          <div className="analysis-pair">
+            <div className="analysis-pill" style={{ background: "var(--acB)", borderColor: "var(--ac)" }}><div className="analysis-pill-label">固定</div><div className="analysis-pill-val" style={{ color: "var(--ac)" }}>{tBal > 0 ? (fixedBal / tBal * 100).toFixed(1) : 0}%</div></div>
+            <div className="analysis-pill" style={{ background: "var(--amB)", borderColor: "var(--am)" }}><div className="analysis-pill-label">変動</div><div className="analysis-pill-val" style={{ color: "var(--am)" }}>{tBal > 0 ? (varBal / tBal * 100).toFixed(1) : 0}%</div></div>
           </div>
           <div className="chart"><canvas ref={r1} /></div>
         </div>
       </div>
       <div className="c"><div className="ch"><div><div className="ct">プロパー vs 保証付き</div></div></div>
         <div className="cb">
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-            <div style={{ textAlign: "center", padding: 12, borderRadius: "var(--rs)", background: "var(--blB)", border: "1px solid var(--bl)" }}><div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--tx3)", fontWeight: 600 }}>プロパー</div><div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontVariantNumeric: "tabular-nums", fontSize: 22, fontWeight: 700, color: "var(--bl)", marginTop: 4 }}>{tBal > 0 ? (proparBal / tBal * 100).toFixed(1) : 0}%</div></div>
-            <div style={{ textAlign: "center", padding: 12, borderRadius: "var(--rs)", background: "var(--puB)", border: "1px solid var(--pu)" }}><div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--tx3)", fontWeight: 600 }}>保証付き</div><div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontVariantNumeric: "tabular-nums", fontSize: 22, fontWeight: 700, color: "var(--pu)", marginTop: 4 }}>{tBal > 0 ? (guarBal / tBal * 100).toFixed(1) : 0}%</div></div>
+          <div className="analysis-pair">
+            <div className="analysis-pill" style={{ background: "var(--blB)", borderColor: "var(--bl)" }}><div className="analysis-pill-label">プロパー</div><div className="analysis-pill-val" style={{ color: "var(--bl)" }}>{tBal > 0 ? (proparBal / tBal * 100).toFixed(1) : 0}%</div></div>
+            <div className="analysis-pill" style={{ background: "var(--puB)", borderColor: "var(--pu)" }}><div className="analysis-pill-label">保証付き</div><div className="analysis-pill-val" style={{ color: "var(--pu)" }}>{tBal > 0 ? (guarBal / tBal * 100).toFixed(1) : 0}%</div></div>
           </div>
           <div className="chart"><canvas ref={r2} /></div>
         </div>
       </div>
-      <div className="c"><div className="ch"><div><div className="ct">金利帯別残高分布</div></div></div><div className="cb"><div className="chart"><canvas ref={r3} /></div></div></div>
     </div>
+    {/* 3段目: 金利帯別 */}
+    <div className="c"><div className="ch"><div><div className="ct">金利帯別残高分布</div></div></div><div className="cb"><div className="chart"><canvas ref={r3} /></div></div></div>
 
     {refiTarget.length > 0 && (
       <div className="c"><div className="ch"><div><div className="ct">借換えシミュレーション</div></div><span className="p gd">▼{MY(refiSavings)}/年</span></div>
