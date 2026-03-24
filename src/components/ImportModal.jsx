@@ -295,34 +295,32 @@ export default function ImportModal({
               <input ref={tbRef} type="file" accept=".pdf" style={{ display: "none" }}
                 onChange={(e) => { const f = e.target.files[0]; if (f && tbTargetMonth) handleTbUpload(tbTargetMonth, f); e.target.value = ""; }} />
 
-              {/* 月別一覧 */}
-              <div className="tb-month-list">
-                {fiscalMonths.map((m) => {
-                  const pdf = fyPdfs[m];
-                  const isUploading = tbUploading === m;
-                  return (
-                    <div className="tb-month-row" key={m}>
-                      <span className="tb-month-name">{m}</span>
+              {/* 月別一覧 — import-file-areaスタイルに統一 */}
+              {fiscalMonths.map((m) => {
+                const pdf = fyPdfs[m];
+                const isUploading = tbUploading === m;
+                return (
+                  <div className="import-file-area" key={m}
+                    onClick={() => { if (!isUploading && !pdf) { setTbTargetMonth(m); tbRef.current?.click(); } }}>
+                    <div className="import-file-label">{m} 試算表PDF</div>
+                    <div className="import-file-status">
                       {isUploading ? (
                         <div className="login-spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />
                       ) : pdf ? (
-                        <div className="tb-month-actions">
-                          <a href={pdf.url} target="_blank" rel="noopener noreferrer" className="tb-pdf-btn tb-pdf-has" title={pdf.fileName}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-                            {pdf.fileName.length > 20 ? pdf.fileName.slice(0, 20) + "..." : pdf.fileName}
+                        <>
+                          <a href={pdf.url} target="_blank" rel="noopener noreferrer" className="import-file-name"
+                            onClick={(e) => e.stopPropagation()} style={{ textDecoration: "none" }}>
+                            {pdf.fileName}
                           </a>
-                          <button className="tb-pdf-btn" style={{ color: "var(--rd)", fontSize: 11 }} onClick={() => handleTbDelete(m)}>削除</button>
-                        </div>
+                          <button className="import-file-clear" onClick={(e) => { e.stopPropagation(); handleTbDelete(m); }}>&times;</button>
+                        </>
                       ) : (
-                        <button className="tb-pdf-btn tb-pdf-upload" onClick={() => { setTbTargetMonth(m); tbRef.current?.click(); }}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                          PDF登録
-                        </button>
+                        <span className="import-file-placeholder">ファイルを選択</span>
                       )}
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                );
+              })}
             </div>
           ) : tab === "csv" ? (
             /* ── 月次データタブ ── */
