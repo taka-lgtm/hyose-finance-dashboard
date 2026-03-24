@@ -449,6 +449,14 @@ td.cell-edited .ctv{color:var(--ac)}
 }
 .bal-tbl .total-row td.sticky{background:var(--bg2)}
 
+/* ── 融資管理: ビュータブ + フィルタ行 ── */
+.debt-view-tabs{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.debt-filter-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.debt-cat-chips{display:flex;gap:4px}
+.debt-cat-chips .chip{font-size:11px;padding:4px 10px}
+.debt-selects{display:flex;gap:6px;margin-left:auto}
+.debt-selects .sel{min-width:100px}
+
 /* 予実管理のタブ切り替え */
 .perf-chart-tabs,.perf-table-tabs{display:flex;gap:4px}
 
@@ -986,6 +994,20 @@ select.form-input option{background:var(--sf);color:var(--tx)}
   .debt-tabs .chip{flex-shrink:0;font-size:11px;padding:7px 12px}
   .debt-filter{width:100%;justify-content:space-between;flex-wrap:wrap;gap:6px}
   .sel{flex:1;font-size:13px;padding:8px 10px}
+
+  /* 融資管理: スマホ用レイアウト */
+  .debt-view-tabs{
+    display:flex;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+    flex-wrap:nowrap;padding-bottom:2px;
+  }
+  .debt-view-tabs .chip{flex-shrink:0;font-size:12px;padding:8px 14px}
+  .debt-filter-row{flex-direction:column;gap:8px;align-items:stretch}
+  .debt-cat-chips{
+    display:flex;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;
+  }
+  .debt-cat-chips .chip{flex-shrink:0;font-size:11px;padding:6px 12px}
+  .debt-selects{margin-left:0;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .debt-selects .sel{min-width:0;width:100%}
 
   /* 予実タブ（スマホ横スクロール対応） */
   .perf-chart-tabs,.perf-table-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap}
