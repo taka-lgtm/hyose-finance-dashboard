@@ -929,7 +929,8 @@ select.form-input option{background:var(--sf);color:var(--tx)}
   .pa .btn,.pa .btn.pr{flex-shrink:0;text-align:center;font-size:13px;padding:8px 16px}
 
   .g{gap:10px}
-  .g2,.g3,.gs{grid-template-columns:1fr;gap:10px}
+  .g2,.gs{grid-template-columns:1fr;gap:10px}
+  .g3{grid-template-columns:1fr 1fr;gap:8px}
 
   /* Health compact on mobile */
   .hh{grid-template-columns:auto 1fr}
