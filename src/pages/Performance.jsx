@@ -4,6 +4,8 @@ import { M, chartFont, chartGrid, chartLegend, getChartTheme } from "../data";
 import { useSettings } from "../contexts/SettingsContext";
 import { getFiscalYear, getFiscalYearLabel } from "../contexts/SettingsContext";
 import { useIsMobile } from "../lib/useIsMobile";
+import { uploadTrialBalancePDF, fetchTrialBalancePDFs, deleteTrialBalancePDF } from "../lib/firestore";
+import PdfPreviewModal from "../components/PdfPreviewModal";
 
 
 Chart.register(...registerables);
@@ -33,6 +35,50 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
   const hasActuals = actuals && actuals.length > 0;
   const hasBudget = budget && budget.length > 0;
   const hasData = hasActuals || hasBudget;
+
+  // 試算表PDF
+  const [tbPdfs, setTbPdfs] = useState(null); // { "2025": { "4月": { url, fileName, uploadedAt } } }
+  const [pdfPreview, setPdfPreview] = useState(null); // { url, title, fy, month }
+  const [pdfUploading, setPdfUploading] = useState(null); // アップロード中の月名
+  const pdfInputRef = useRef(null);
+  const [pdfTargetMonth, setPdfTargetMonth] = useState(null);
+
+  // 試算表PDFメタデータを読み込み
+  useEffect(() => {
+    fetchTrialBalancePDFs().then(setTbPdfs).catch(console.error);
+  }, []);
+
+  // 当年度のPDFマップ
+  const fyPdfs = tbPdfs?.[fyKey] || {};
+
+  // PDFアップロードハンドラ
+  const handlePdfUpload = useCallback(async (month, file) => {
+    if (!file || !file.name.toLowerCase().endsWith(".pdf")) return;
+    setPdfUploading(month);
+    try {
+      const meta = await uploadTrialBalancePDF(fyKey, month, file);
+      setTbPdfs((prev) => ({ ...prev, [fyKey]: { ...(prev?.[fyKey] || {}), [month]: meta } }));
+    } catch (e) {
+      console.error("PDF upload failed:", e);
+    }
+    setPdfUploading(null);
+  }, [fyKey]);
+
+  // PDF削除ハンドラ
+  const handlePdfDelete = useCallback(async (fy, month) => {
+    if (!confirm(`${month}の試算表PDFを削除しますか？`)) return;
+    try {
+      await deleteTrialBalancePDF(fy, month);
+      setTbPdfs((prev) => {
+        const updated = { ...prev };
+        if (updated[fy]) { delete updated[fy][month]; }
+        return updated;
+      });
+      setPdfPreview(null);
+    } catch (e) {
+      console.error("PDF delete failed:", e);
+    }
+  }, []);
 
   // 成長率（予算自動生成用）
   const [growthRate, setGrowthRate] = useState(5);
@@ -584,7 +630,22 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
                   const isCurrent = i === currentMonthIdx;
                   return (
                     <div className="month-mc" key={i} style={isCurrent ? { borderLeft: "3px solid var(--ac)" } : undefined}>
-                      <div className="month-mc-title">{v.m}{isCurrent ? " ●" : ""}</div>
+                      <div className="month-mc-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span>{v.m}{isCurrent ? " ●" : ""}</span>
+                        {canEdit && (
+                          fyPdfs[v.m] ? (
+                            <button className="tb-pdf-btn tb-pdf-has" onClick={() => setPdfPreview({ url: fyPdfs[v.m].url, title: `${v.m} 試算表`, fy: fyKey, month: v.m })}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                              <span style={{ fontSize: 10 }}>PDF</span>
+                            </button>
+                          ) : (
+                            <button className="tb-pdf-btn tb-pdf-upload" onClick={() => { setPdfTargetMonth(v.m); pdfInputRef.current?.click(); }}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                              <span style={{ fontSize: 10 }}>登録</span>
+                            </button>
+                          )
+                        )}
+                      </div>
                       <div className="perf-mc-section">
                         <div className="perf-mc-cat">売上</div>
                         <div className="perf-mc-pair">
@@ -625,6 +686,7 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
                       <th className="tr">売上予算</th><th className="tr">売上実績</th><th className="tr">売上差異</th><th className="tr">達成率</th>
                       <th className="tr">粗利予算</th><th className="tr">粗利実績</th>
                       <th className="tr">営利予算</th><th className="tr">営利実績</th><th className="tr">営利差異</th>
+                      {canEdit && <th style={{ textAlign: "center" }}>試算表</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -632,6 +694,7 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
                       const sd = v.sa !== null && v.sb !== null ? v.sa - v.sb : null;
                       const od = v.oa !== null && v.ob !== null ? v.oa - v.ob : null;
                       const sRate = achieveRate(v.sa, v.sb);
+                      const hasPdf = !!fyPdfs[v.m];
                       return (
                         <tr key={i} style={i === currentMonthIdx ? { borderLeft: "2px solid var(--ac)" } : undefined}>
                           <td className="bold">{v.m}</td>
@@ -648,6 +711,21 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
                           <td className="tr mono" style={{ color: od !== null ? (od >= 0 ? "var(--ac)" : "var(--rd)") : "" }}>
                             {od !== null ? `${od >= 0 ? "+" : ""}${od}万` : "-"}
                           </td>
+                          {canEdit && (
+                            <td style={{ textAlign: "center" }}>
+                              {pdfUploading === v.m ? (
+                                <div className="login-spinner" style={{ width: 16, height: 16, borderWidth: 2, margin: "0 auto" }} />
+                              ) : hasPdf ? (
+                                <button className="tb-pdf-btn tb-pdf-has" onClick={() => setPdfPreview({ url: fyPdfs[v.m].url, title: `${v.m} 試算表`, fy: fyKey, month: v.m })} title={fyPdfs[v.m].fileName}>
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                </button>
+                              ) : (
+                                <button className="tb-pdf-btn tb-pdf-upload" onClick={() => { setPdfTargetMonth(v.m); pdfInputRef.current?.click(); }} title="試算表PDFをアップロード">
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                </button>
+                              )}
+                            </td>
+                          )}
                         </tr>
                       );
                     })}
@@ -712,6 +790,19 @@ export default function Performance({ bmData, monthlyPLData, saveBudget, saveMon
           )}
         </div>
       </>}
+
+      {/* 試算表PDF: 非表示ファイル入力 */}
+      <input ref={pdfInputRef} type="file" accept=".pdf" style={{ display: "none" }}
+        onChange={(e) => { const f = e.target.files[0]; if (f && pdfTargetMonth) handlePdfUpload(pdfTargetMonth, f); e.target.value = ""; }} />
+
+      {/* 試算表PDFプレビューモーダル */}
+      <PdfPreviewModal
+        open={!!pdfPreview}
+        onClose={() => setPdfPreview(null)}
+        url={pdfPreview?.url}
+        title={pdfPreview?.title}
+        onDelete={pdfPreview ? () => handlePdfDelete(pdfPreview.fy, pdfPreview.month) : null}
+      />
     </div></div>
   );
 }
