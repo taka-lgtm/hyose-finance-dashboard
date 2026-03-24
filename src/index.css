@@ -920,13 +920,13 @@ select.form-input option{background:var(--sf);color:var(--tx)}
   body{font-size:14px}
 
   .ph{flex-direction:column;align-items:flex-start;gap:8px;padding-bottom:12px;margin-bottom:8px}
-  .ph h2{font-size:20px}
+  .ph h2{font-size:18px}
   .ph p{font-size:12px}
-  .ph-actions{width:100%;flex-wrap:wrap}
-  .ph-actions .fy-select{flex:1;min-width:0;font-size:13px;padding:8px 10px}
-  .ph-actions .btn,.ph-actions .upload-compact-btn{font-size:12px;padding:8px 12px}
-  .pa{width:100%;display:flex;gap:6px}
-  .pa .btn,.pa .btn.pr{flex:1;text-align:center;font-size:12px;padding:10px 10px}
+  .ph-actions{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;display:flex;gap:6px}
+  .ph-actions .fy-select{flex-shrink:0;min-width:0;font-size:13px;padding:8px 10px}
+  .ph-actions .btn,.ph-actions .upload-compact-btn{font-size:12px;padding:8px 12px;flex-shrink:0}
+  .pa{width:100%;display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .pa .btn,.pa .btn.pr{flex-shrink:0;text-align:center;font-size:12px;padding:10px 14px}
 
   .g{gap:10px}
   .g2,.g3,.g4,.gs{grid-template-columns:1fr;gap:10px}
@@ -1029,9 +1029,37 @@ select.form-input option{background:var(--sf);color:var(--tx)}
   .nav-user-role{font-size:11px}
   .nav-user-avatar{width:32px;height:32px;font-size:13px}
 
-  /* テーブル横スクロール改善 */
+  /* テーブル横スクロール + 左列sticky固定 */
   .tw{-webkit-overflow-scrolling:touch;overflow-x:auto}
-  .tw table{min-width:600px}
+  .tw table{min-width:600px;border-collapse:separate;border-spacing:0}
+  .tw table th:first-child,
+  .tw table td:first-child{
+    position:sticky;left:0;z-index:2;
+    background:var(--sf);min-width:60px;
+  }
+  .tw table th:first-child{z-index:3;background:var(--sf)}
+  /* sticky列の右端にシャドウ */
+  .tw table th:first-child::after,
+  .tw table td:first-child::after{
+    content:'';position:absolute;top:0;right:-6px;bottom:0;width:6px;
+    background:linear-gradient(90deg,rgba(0,0,0,.06),transparent);
+    pointer-events:none;
+  }
+
+  /* ct-tbl（決算書テーブル）sticky対応 */
+  .ct-tbl{border-collapse:separate;border-spacing:0}
+  .ct-tbl th:first-child,
+  .ct-tbl td:first-child{
+    position:sticky;left:0;z-index:2;
+    background:var(--sf);min-width:100px;
+  }
+  .ct-tbl th:first-child{z-index:3}
+  .ct-tbl th:first-child::after,
+  .ct-tbl td:first-child::after{
+    content:'';position:absolute;top:0;right:-6px;bottom:0;width:6px;
+    background:linear-gradient(90deg,rgba(0,0,0,.06),transparent);
+    pointer-events:none;
+  }
 
   /* モーダル: フルスクリーン */
   .modal{
@@ -1093,6 +1121,27 @@ select.form-input option{background:var(--sf);color:var(--tx)}
 
   /* セル編集入力のiOSズーム防止 */
   .cell-edit-input{font-size:16px !important}
+
+  /* ── タッチターゲット44px確保 ── */
+  .chip{min-height:44px;padding:10px 16px;font-size:13px}
+  .btn{min-height:44px;padding:10px 18px}
+  .modal-close{width:44px;height:44px;font-size:22px}
+  .sel{min-height:44px;font-size:16px}
+  .debt-tabs .chip{min-height:40px;padding:8px 14px}
+  .perf-chart-tabs .chip,.perf-table-tabs .chip{min-height:40px;padding:8px 12px}
+  .ni{min-height:44px}
+  .mob-nav-item{min-height:48px;padding:14px 14px}
+  .bottom-nav-item{min-height:48px}
+  .upload-compact-btn{min-height:44px}
+
+  /* セレクトボックスのタップ領域拡大 */
+  select,.fy-select{min-height:44px;font-size:16px;padding:10px 14px}
+
+  /* テーブル行の編集アイコン */
+  .tw table button,.tw table .btn{min-height:36px;min-width:36px}
+
+  /* ソートヘッダー */
+  th{min-height:40px}
 }
 
 @media(max-width:380px){
@@ -1106,6 +1155,11 @@ select.form-input option{background:var(--sf);color:var(--tx)}
   .bottom-nav-item svg{width:20px;height:20px}
   .bottom-nav-item span{font-size:9px}
   .g4{grid-template-columns:1fr;gap:8px}
+
+  /* 極小画面でのフィルタ・チップ調整 */
+  .ph-actions{gap:4px}
+  .ph-actions .btn{font-size:11px;padding:8px 10px}
+  .debt-tabs .chip{font-size:10px;padding:7px 10px}
 }
 
 /* ── 設定画面 ── */
