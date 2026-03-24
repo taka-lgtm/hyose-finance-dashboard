@@ -468,10 +468,20 @@ td.cell-edited .ctv{color:var(--ac)}
   transition:.15s var(--e);white-space:nowrap;
 }
 .tb-pdf-btn:hover{border-color:var(--bdh);color:var(--tx)}
-.tb-pdf-has{color:var(--ac);border-color:rgba(34,201,148,.2)}
+.tb-pdf-has{color:var(--ac);border-color:rgba(34,201,148,.2);text-decoration:none}
 .tb-pdf-has:hover{background:var(--acB);border-color:var(--ac)}
 .tb-pdf-upload{color:var(--tx3)}
 .tb-pdf-upload:hover{color:var(--bl);border-color:var(--bl)}
+
+/* ── 試算表PDF月別リスト ── */
+.tb-month-list{display:flex;flex-direction:column;gap:0}
+.tb-month-row{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:10px 0;border-bottom:1px solid var(--bd);
+}
+.tb-month-row:last-child{border-bottom:none}
+.tb-month-name{font-size:13px;font-weight:600;color:var(--tx);min-width:36px}
+.tb-month-actions{display:flex;gap:6px;align-items:center}
 
 /* ── PDFプレビューモーダル ── */
 .pdf-preview-modal{width:900px;max-width:calc(100vw - 24px);height:calc(100vh - 60px)}
