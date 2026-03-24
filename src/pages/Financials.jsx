@@ -4,69 +4,9 @@ import { YEARS, M, pct, sgn, chartFont, chartGrid, chartLegend, getChartTheme } 
 import { useSettings } from "../contexts/SettingsContext";
 import { useAuth } from "../contexts/AuthContext";
 import { addLoanLog } from "../lib/firestore";
-import * as XLSX from "xlsx";
 
 Chart.register(...registerables);
 
-// ── Column mapping ──
-const PL_MAP = {
-  "売上高":"売上高","売上":"売上高","revenue":"売上高","sales":"売上高",
-  "売上原価":"売上原価","原価":"売上原価","cogs":"売上原価",
-  "減価償却費":"減価償却費","償却費":"減価償却費","depreciation":"減価償却費",
-  "支払利息":"支払利息","利息":"支払利息","interest":"支払利息",
-  "売上総利益":"売上総利益","粗利":"売上総利益","粗利益":"売上総利益",
-  "販管費":"販管費","販売費及び一般管理費":"販管費",
-  "営業利益":"営業利益","経常利益":"経常利益",
-  "当期純利益":"当期純利益","純利益":"当期純利益",
-  "予算売上":"予算売上","売上予算":"予算売上",
-  "予算営業利益":"予算営業利益","営業利益予算":"予算営業利益",
-};
-const BS_MAP = {
-  "流動資産":"流動資産","固定資産":"固定資産",
-  "資産合計":"資産合計","総資産":"資産合計",
-  "流動負債":"流動負債","固定負債":"固定負債",
-  "短期借入金":"短期借入金",
-  "純資産":"純資産","棚卸資産":"棚卸資産","在庫":"棚卸資産",
-  "現預金":"現預金","現金及び預金":"現預金","現金":"現預金",
-};
-
-function parseExcel(file, mapDef) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const wb = XLSX.read(new Uint8Array(e.target.result), { type: "array" });
-        const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: 0 });
-        if (!json.length) return reject("データが空です");
-        const headers = Object.keys(json[0]);
-        const yearKey = headers.find((h) => /年度|year|期/i.test(h)) || headers[0];
-        const result = json.map((row) => {
-          const mapped = { y: String(row[yearKey]).replace(/年度?/, "") };
-          for (const [header, value] of Object.entries(row)) {
-            if (header === yearKey) continue;
-            const norm = header.trim().toLowerCase();
-            const key = mapDef[header.trim()] || mapDef[norm] ||
-              Object.entries(mapDef).find(([k]) => norm.includes(k.toLowerCase()))?.[1];
-            if (key) mapped[key] = Number(value) || 0;
-          }
-          return mapped;
-        });
-        resolve(result);
-      } catch (err) { reject("ファイル解析に失敗: " + err.message); }
-    };
-    reader.onerror = () => reject("ファイル読み込みに失敗");
-    reader.readAsArrayBuffer(file);
-  });
-}
-
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(",")[1]);
-    reader.onerror = () => reject("ファイル読み込みに失敗");
-    reader.readAsDataURL(file);
-  });
-}
 
 function CompTable({ rows, dataset, header = "項目", yoy = true, years, editable, onCellEdit, editedCells }) {
   const displayYears = years || dataset.map((d) => d.y);
@@ -176,16 +116,11 @@ function RatioTable({ groups, dataset, years }) {
   );
 }
 
-export default function Financials({ plData, bsData, loans = [], savePL, saveBS, canEdit = true }) {
+export default function Financials({ plData, bsData, loans = [], savePL, saveBS, canEdit = true, openImportModal }) {
   const { user } = useAuth();
   const { settings } = useSettings();
-  const [uploading, setUploading] = useState(false);
-  const [uploadMsg, setUploadMsg] = useState(null);
   const [taxRate, setTaxRate] = useState(30);
   const [editedCells, setEditedCells] = useState(new Set());
-  const pdfRef = useRef(null);
-  const plExcelRef = useRef(null);
-  const bsExcelRef = useRef(null);
   const plChartRef = useRef(null), bsChartRef = useRef(null);
   const c1 = useRef(null), c2 = useRef(null);
   const years = plData.map((d) => d.y);
@@ -322,50 +257,6 @@ export default function Financials({ plData, bsData, loans = [], savePL, saveBS,
     {label:"現預金",key:"現預金"},{label:"棚卸資産",key:"棚卸資産"},
   ];
 
-  // ── PDF Upload (PL+BS unified) ──
-  const handlePdfUpload = useCallback(async (file) => {
-    if (!file) return;
-    setUploading(true);
-    setUploadMsg({ type: "info", text: "PDFをAIで解析中... PL・BSを自動抽出します（15〜30秒）" });
-    try {
-      const base64 = await fileToBase64(file);
-      const resp = await fetch("/api/parse-pdf", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pdfBase64: base64, type: "both" }),
-      });
-      const result = await resp.json();
-      if (!resp.ok) throw result.error || "PDF解析に失敗しました";
-
-      const msgs = [];
-      if (result.pl?.length) { await savePL(result.pl); msgs.push(`PL ${result.pl.length}年度分`); }
-      if (result.bs?.length) { await saveBS(result.bs); msgs.push(`BS ${result.bs.length}年度分`); }
-
-      if (msgs.length === 0) throw "PL/BSのデータを抽出できませんでした";
-      setUploadMsg({ type: "success", text: `${msgs.join(" + ")} を登録しました。` });
-    } catch (e) {
-      setUploadMsg({ type: "error", text: typeof e === "string" ? e : e.message || "アップロードに失敗しました" });
-    }
-    setUploading(false);
-  }, [savePL, saveBS]);
-
-  // ── Excel Upload (PL or BS individual) ──
-  const handleExcelUpload = useCallback(async (type, file) => {
-    if (!file) return;
-    setUploading(true);
-    setUploadMsg(null);
-    try {
-      const parsed = await parseExcel(file, type === "pl" ? PL_MAP : BS_MAP);
-      if (!parsed.length) throw "データが見つかりません";
-      const keys = type === "pl" ? ["売上高","営業利益"] : ["資産合計","純資産"];
-      if (!keys.some(k => parsed[0][k] !== undefined)) throw `${type==="pl"?"PL":"BS"}の項目が見つかりません`;
-      if (type === "pl") await savePL(parsed); else await saveBS(parsed);
-      setUploadMsg({ type: "success", text: `${type==="pl"?"損益計算書":"貸借対照表"}を${parsed.length}年度分登録しました。` });
-    } catch (e) {
-      setUploadMsg({ type: "error", text: typeof e === "string" ? e : e.message });
-    }
-    setUploading(false);
-  }, [savePL, saveBS]);
 
   // Charts
   useEffect(() => {
@@ -389,41 +280,13 @@ export default function Financials({ plData, bsData, loans = [], savePL, saveBS,
     <div className="page"><div className="g">
       <div className="ph">
         <div><h2>決算書</h2><p>PL/BS/指標を一元管理。PDF1枚でPL・BSを自動抽出。</p></div>
-        {canEdit && <div className="ph-actions">
-          {/* PDF取り込みボタン */}
-          <button className="btn pr upload-compact-btn" onClick={() => !uploading && pdfRef.current?.click()} disabled={uploading}>
-            <input ref={pdfRef} type="file" accept=".pdf" style={{ display: "none" }}
-              onChange={(e) => { handlePdfUpload(e.target.files[0]); e.target.value = ""; }} />
-            {uploading ? (
-              <><div className="login-spinner" style={{ width: 14, height: 14, borderWidth: 2 }} /><span>AI解析中...</span></>
-            ) : (
-              <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg><span>PDF取り込み</span></>
-            )}
-          </button>
-          {/* Excel/CSV取り込みボタン */}
-          <button className="btn upload-compact-btn" onClick={() => plExcelRef.current?.click()} disabled={uploading}>
-            <input ref={plExcelRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }}
-              onChange={(e) => { handleExcelUpload("pl", e.target.files[0]); e.target.value = ""; }} />
-            <span>PL Excel</span>
-          </button>
-          <button className="btn upload-compact-btn" onClick={() => bsExcelRef.current?.click()} disabled={uploading}>
-            <input ref={bsExcelRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }}
-              onChange={(e) => { handleExcelUpload("bs", e.target.files[0]); e.target.value = ""; }} />
-            <span>BS Excel</span>
+        {canEdit && openImportModal && <div className="ph-actions">
+          <button className="btn upload-compact-btn" onClick={openImportModal}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span>データ取込</span>
           </button>
         </div>}
       </div>
-
-      {/* ── Upload message ── */}
-      {uploadMsg && (
-        <div className={`upload-msg upload-msg-${uploadMsg.type}`}>
-          {uploadMsg.type === "info" && <div className="login-spinner" style={{ width: 14, height: 14, borderWidth: 2, flexShrink: 0 }} />}
-          {uploadMsg.type === "success" && <span style={{ fontSize: 16 }}>✓</span>}
-          {uploadMsg.type === "error" && <span style={{ fontSize: 16 }}>✕</span>}
-          <span>{uploadMsg.text}</span>
-          <button className="upload-msg-close" onClick={() => setUploadMsg(null)}>&times;</button>
-        </div>
-      )}
 
       {/* ── Charts ── */}
       <div className="g2">
