@@ -165,21 +165,26 @@ const TB_PDF_DOC = "trialBalancePDFs";
  * @returns {{ url: string, fileName: string, uploadedAt: string }}
  */
 export async function uploadTrialBalancePDF(fy, month, file) {
-  // Firebase Storageにアップロード
   const path = `trialBalancePDFs/${fy}/${month}.pdf`;
   const storageRef = ref(storage, path);
-  await uploadBytes(storageRef, file);
-  const url = await getDownloadURL(storageRef);
-
-  // Firestoreにメタデータを保存
   const docRef = doc(db, FIN_COL, TB_PDF_DOC);
-  const snap = await getDoc(docRef);
-  const existing = snap.exists() ? snap.data() : {};
-  const fyData = existing[fy] || {};
-  fyData[month] = { url, fileName: file.name, uploadedAt: new Date().toISOString() };
-  await setDoc(docRef, { ...existing, [fy]: fyData, updatedAt: serverTimestamp() });
 
-  return fyData[month];
+  // Storageアップロード と Firestoreメタデータ読み込みを並列実行
+  const [, existingSnap] = await Promise.all([
+    uploadBytes(storageRef, file),
+    getDoc(docRef),
+  ]);
+  const downloadUrl = await getDownloadURL(storageRef);
+
+  const existing = existingSnap.exists() ? existingSnap.data() : {};
+  const fyData = existing[fy] || {};
+  const meta = { url: downloadUrl, fileName: file.name, uploadedAt: new Date().toISOString() };
+  fyData[month] = meta;
+
+  // メタデータ保存はawaitせず即座にUIに返す
+  setDoc(docRef, { ...existing, [fy]: fyData, updatedAt: serverTimestamp() }).catch(console.error);
+
+  return meta;
 }
 
 /**
