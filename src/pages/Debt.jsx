@@ -114,22 +114,19 @@ export default function Debt({ loans, addLoan, updateLoan, removeLoan, loading, 
         ))}
       </div>
 
-      {/* フィルタ行: 区分チップ + セレクト */}
-      <div className="debt-filter-row">
-        <div className="debt-cat-chips">
-          {["all", ...CATEGORIES].map((c) => (
-            <button key={c} className={`chip ${catFilter === c ? "on" : ""}`} onClick={() => setCatFilter(c)}>{c === "all" ? "全区分" : c}</button>
-          ))}
-        </div>
-        <div className="debt-selects">
-          <select className="sel" value={bankFilter} onChange={(e) => setBankFilter(e.target.value)}>
-            <option value="all">全銀行</option>
-            {banks.map((b) => <option key={b} value={b}>{b}</option>)}
-          </select>
-          <select className="sel" value={periodFilter} onChange={(e) => setPeriodFilter(e.target.value)}>
-            {Object.entries(PERIOD_FILTERS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </select>
-        </div>
+      {/* フィルタ行: 3つのセレクトを横並び */}
+      <div className="debt-filters">
+        <select className="sel" value={catFilter} onChange={(e) => setCatFilter(e.target.value)}>
+          <option value="all">全区分</option>
+          {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <select className="sel" value={bankFilter} onChange={(e) => setBankFilter(e.target.value)}>
+          <option value="all">全銀行</option>
+          {banks.map((b) => <option key={b} value={b}>{b}</option>)}
+        </select>
+        <select className="sel" value={periodFilter} onChange={(e) => setPeriodFilter(e.target.value)}>
+          {Object.entries(PERIOD_FILTERS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+        </select>
       </div>
 
       {loans.length === 0 && (
