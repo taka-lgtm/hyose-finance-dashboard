@@ -26,7 +26,42 @@ function NavIcon({ d }) {
   );
 }
 
-export default function Layout({ page, navigate, loans, plData, children }) {
+// 最終取込日のアラート判定（月初5日以降で前月未取込なら警告）
+function isImportStale(lastImportDate) {
+  if (!lastImportDate) return true;
+  const now = new Date();
+  const parts = lastImportDate.split("/");
+  if (parts.length < 3) return true;
+  const lastDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  // 今月5日以降で、最終取込が先月以前なら警告
+  if (now.getDate() >= 5) {
+    const thisMonth = now.getFullYear() * 12 + now.getMonth();
+    const lastMonth = lastDate.getFullYear() * 12 + lastDate.getMonth();
+    return thisMonth > lastMonth;
+  }
+  return false;
+}
+
+// 最終取込日の短縮表示（○/○）
+function formatImportDate(lastImportDate) {
+  if (!lastImportDate) return null;
+  const parts = lastImportDate.split("/");
+  if (parts.length < 3) return lastImportDate;
+  return `${Number(parts[1])}/${Number(parts[2])}`;
+}
+
+// データ取込アイコン
+function ImportIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/>
+      <line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+  );
+}
+
+export default function Layout({ page, navigate, loans, plData, children, onOpenImport }) {
   const { userDoc, logout } = useAuth();
   const { settings } = useSettings();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -44,6 +79,10 @@ export default function Layout({ page, navigate, loans, plData, children }) {
   }, [menuOpen]);
 
   const handleNav = (id) => { navigate(id); setMenuOpen(false); };
+
+  // データ取込状態
+  const stale = isImportStale(settings.lastImportDate);
+  const importDateShort = formatImportDate(settings.lastImportDate);
 
   // ページアクセス制限: adminは全ページ表示、それ以外はallowedPagesに従う
   const isAdmin = userDoc?.role === "admin";
@@ -88,6 +127,21 @@ export default function Layout({ page, navigate, loans, plData, children }) {
             );
           })}
         </div>
+        {onOpenImport && (
+          <div className="nav-import">
+            <button className="nav-import-btn" onClick={onOpenImport}>
+              <ImportIcon />
+              <div className="nav-import-info">
+                <div className="nav-import-label">データ取込</div>
+                <div className={`nav-import-date ${stale ? "stale" : ""}`}>
+                  {stale && !importDateShort && "未取込"}
+                  {stale && importDateShort && `未更新 最終: ${importDateShort}`}
+                  {!stale && importDateShort && `最終: ${importDateShort}`}
+                </div>
+              </div>
+            </button>
+          </div>
+        )}
         <div className="nav-user">
           <div className="nav-user-info">
             {userDoc?.photoURL
@@ -147,6 +201,20 @@ export default function Layout({ page, navigate, loans, plData, children }) {
             );
           })}
         </div>
+        {onOpenImport && (
+          <div className="mob-drawer-import">
+            <button className="mob-import-btn" onClick={() => { setMenuOpen(false); onOpenImport(); }}>
+              <ImportIcon />
+              <span>データ取込</span>
+              {stale && <span style={{ fontSize: 9, color: "var(--rd)", fontWeight: 600, marginLeft: "auto" }}>
+                {importDateShort ? `未更新 ${importDateShort}` : "未取込"}
+              </span>}
+              {!stale && importDateShort && <span style={{ fontSize: 9, color: "var(--tx3)", marginLeft: "auto" }}>
+                最終: {importDateShort}
+              </span>}
+            </button>
+          </div>
+        )}
         <div className="mob-drawer-foot">
           <div className="mob-drawer-user">
             {userDoc?.photoURL
@@ -173,6 +241,13 @@ export default function Layout({ page, navigate, loans, plData, children }) {
             <span>{n.shortLabel}</span>
           </button>
         ))}
+        {onOpenImport && (
+          <button className="bottom-nav-import" onClick={onOpenImport} style={{ position: "relative" }}>
+            <ImportIcon />
+            <span>取込</span>
+            {stale && <span className="nav-import-dot" />}
+          </button>
+        )}
         <button className={`bottom-nav-item ${isOtherActive?"on":""}`} onClick={() => setMenuOpen(true)}>
           <NavIcon d={MORE_ICON} />
           <span>その他</span>

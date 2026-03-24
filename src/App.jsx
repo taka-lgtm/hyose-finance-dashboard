@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { SettingsProvider, useSettings } from "./contexts/SettingsContext";
 import Login from "./pages/Login";
 import Layout from "./components/Layout";
+import ImportModal from "./components/ImportModal";
 import Overview from "./pages/Overview";
 import Performance from "./pages/Performance";
 import Financials from "./pages/Financials";
@@ -21,7 +22,7 @@ const RESTRICTED_PAGES = ["overview", "performance", "cashflow", "debt", "financ
 
 function Dashboard() {
   const { user, userDoc, loading: authLoading } = useAuth();
-  const { settings, settingsLoading } = useSettings();
+  const { settings, settingsLoading, saveSettings } = useSettings();
   const [page, setPage] = useState("overview");
 
   // テーマをbodyに適用
@@ -43,6 +44,17 @@ function Dashboard() {
 
   // ── Onboarding state ──
   const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // ── データ取込モーダル ──
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const openImportModal = useCallback(() => setImportModalOpen(true), []);
+  const closeImportModal = useCallback(() => setImportModalOpen(false), []);
+  // 取込完了時にlastImportDateを更新
+  const handleImportComplete = useCallback(() => {
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}/${String(now.getDate()).padStart(2, "0")}`;
+    saveSettings({ lastImportDate: dateStr });
+  }, [saveSettings]);
 
   // Load loans from Firestore on mount
   useEffect(() => {
@@ -193,8 +205,8 @@ function Dashboard() {
   const pages = {
     overview: <Overview loans={loans} navigate={navigate} plData={plData} bsData={bsData} cfData={cfData} monthlyPLData={monthlyPLData} loading={dataLoading} />,
     performance: <Performance bmData={bmData} monthlyPLData={monthlyPLData} saveBudget={canEdit ? saveBudget : null} saveMonthlyPL={canEdit ? saveMonthlyPL : null} canEdit={canEdit} />,
-    financials: <Financials plData={plData} bsData={bsData} loans={loans} savePL={canEdit ? savePL : null} saveBS={canEdit ? saveBS : null} canEdit={canEdit} />,
-    cashflow: <CashFlow cfData={cfData} saveCF={canEdit ? saveCF : null} saveMonthlyPL={canEdit ? saveMonthlyPL : null} monthlyPLData={monthlyPLData} canEdit={canEdit} />,
+    financials: <Financials plData={plData} bsData={bsData} loans={loans} savePL={canEdit ? savePL : null} saveBS={canEdit ? saveBS : null} canEdit={canEdit} openImportModal={openImportModal} />,
+    cashflow: <CashFlow cfData={cfData} canEdit={canEdit} openImportModal={openImportModal} />,
     debt: <Debt loans={loans} addLoan={canEdit ? addLoan : null} updateLoan={canEdit ? updateLoan : null} removeLoan={canEdit ? removeLoan : null} loading={loansLoading} plData={plData} canEdit={canEdit} />,
     actions: <Actions loans={loans} plData={plData} bsData={bsData} monthlyPLData={monthlyPLData} canEdit={canEdit} />,
     users: <Users />,
@@ -203,7 +215,7 @@ function Dashboard() {
   };
 
   return (
-    <Layout page={activePage} navigate={navigate} loans={loans} plData={plData}>
+    <Layout page={activePage} navigate={navigate} loans={loans} plData={plData} onOpenImport={canEdit ? openImportModal : null}>
       {dataLoading && (
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 0", fontSize: 12, color: "var(--tx3)" }}>
           <div className="login-spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
@@ -211,6 +223,19 @@ function Dashboard() {
         </div>
       )}
       {pages[activePage] || pages.overview}
+      {canEdit && (
+        <ImportModal
+          open={importModalOpen}
+          onClose={closeImportModal}
+          settings={settings}
+          saveCF={saveCF}
+          saveMonthlyPL={saveMonthlyPL}
+          savePL={savePL}
+          saveBS={saveBS}
+          monthlyPLData={monthlyPLData}
+          onImportComplete={handleImportComplete}
+        />
+      )}
     </Layout>
   );
 }
