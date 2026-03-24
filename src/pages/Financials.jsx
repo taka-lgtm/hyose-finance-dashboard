@@ -4,6 +4,7 @@ import { YEARS, M, pct, sgn, chartFont, chartGrid, chartLegend, getChartTheme } 
 import { useSettings } from "../contexts/SettingsContext";
 import { useAuth } from "../contexts/AuthContext";
 import { addLoanLog } from "../lib/firestore";
+import { useIsMobile } from "../lib/useIsMobile";
 
 Chart.register(...registerables);
 
@@ -119,6 +120,7 @@ function RatioTable({ groups, dataset, years }) {
 export default function Financials({ plData, bsData, loans = [], savePL, saveBS, canEdit = true, openImportModal }) {
   const { user } = useAuth();
   const { settings } = useSettings();
+  const isMobile = useIsMobile();
   const [taxRate, setTaxRate] = useState(30);
   const [editedCells, setEditedCells] = useState(new Set());
   const plChartRef = useRef(null), bsChartRef = useRef(null);
@@ -308,8 +310,29 @@ export default function Financials({ plData, bsData, loans = [], savePL, saveBS,
           </div>
           <span className="p wr">指標</span>
         </div>
-        <div className="cb tw">
-          <RatioTable groups={ratioGroups} dataset={plData} years={years} />
+        <div className={isMobile ? "cb" : "cb tw"}>
+          {isMobile ? (
+            /* スマホ: カード表示 */
+            <div className="mob-cards">
+              {ratioGroups.map((g, gi) => (
+                <div className="ratio-mc" key={gi}>
+                  <div className="ratio-mc-title">{g.label}</div>
+                  {g.rows.map((r, ri) => (
+                    <div className="ratio-mc-row" key={ri}>
+                      <span className="mc-label">{r.label}</span>
+                      <div className="mc-vals">
+                        {plData.map((item, i) => (
+                          <span className="mc-yr" key={i}>{r.fmt(r.fn(item, i))}</span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <RatioTable groups={ratioGroups} dataset={plData} years={years} />
+          )}
           {(!hasDepreciation || !hasInterest) && (
             <div className="rat-footnote">
               ※ 減価償却費・支払利息がPLデータに含まれていないため、一部指標が算出できません。PDF/Excelで取り込むと自動計算されます。
